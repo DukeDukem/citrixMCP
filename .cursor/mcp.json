@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "citrix": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--project",
+        "c:\\Users\\PC ENTER\\Desktop\\Citrix",
+        "scratchspace/mcp_citrix_server.py"
+      ],
+      "cwd": "c:\\Users\\PC ENTER\\Desktop\\Citrix"
+    }
+  }
+}

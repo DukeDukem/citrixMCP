@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "citrix": {
+      "command": "python",
+      "args": ["-u", "C:\\Users\\PC ENTER\\Desktop\\Citrix\\scratchspace\\mcp_citrix_server.py"],
+      "cwd": "C:\\Users\\PC ENTER\\Desktop\\Citrix"
+    }
+  }
+}
