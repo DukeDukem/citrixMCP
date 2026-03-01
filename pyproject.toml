@@ -34,6 +34,7 @@ dependencies = [
     "langchain-openai>=0.3.27",
     "markdownify>=1.1.0",
     "pillow>=11.2.1",
+    "playwright>=1.49.0",
     "psutil>=7.0.0",
     "pyautogui>=0.9.54",
     "pydantic>=2.11.7",
