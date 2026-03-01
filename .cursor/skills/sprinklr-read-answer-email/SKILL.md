@@ -1,11 +1,11 @@
 ---
 name: sprinklr-read-answer-email
-description: Reads the current email in Sprinklr Console and prints it to output; then Cursor summarizes the entire email conversation in the chat, queries the knowledge base, and writes the suggested reply. Does not write to the browser. Use sprinklr-write-reply when the user says "reply with ...". Requires sprinklr-open-login-status first.
+description: Reads the current email in Sprinklr Console and prints it to output; then Cursor summarizes the entire email conversation in the chat, queries the knowledge base, writes the suggested reply, provides the response logic explaining the reasoning, and lists detailed agent instructions for required backend actions (tickets, forms, forwarding). Does not write to the browser. Use sprinklr-write-reply when the user says "reply with ...". Requires sprinklr-open-login-status first.
 ---
 
 # Sprinklr: Read Email (script prints email, Cursor writes reply in chat)
 
-The **script** only reads the current email and **prints it to stdout, then terminates**. It does **not** query the knowledge base or generate the reply. **You (Cursor)** must then **summarize the entire email conversation** in the Cursor chat, query the KnowledgeBase, and **write the suggested reply** in the chat window.
+The **script** only reads the current email and **prints it to stdout, then terminates**. It does **not** query the knowledge base or generate the reply. **You (Cursor)** must then **summarize the entire email conversation** in the Cursor chat, query the KnowledgeBase, **write the suggested reply** in the chat window, followed by the **Response Logic Segment** (explaining why you drafted this specific reply) and the **Agent Instruction Section** (listing precise backend actions the agent must take).
 
 ## Agent instructions (required when you run this skill)
 
@@ -15,7 +15,20 @@ The **script** only reads the current email and **prints it to stdout, then term
 4. **If NOT verified:** Use **only** the premade template for unverified customers (case-specific thank you + sympathy + the fixed security text asking for last 4 IBAN and Kundennummer + tip Mein o2). Do **not** query the KnowledgeBase. Skip to step 6.
 5. **If verified:** Check **Exceptions – do NOT query Knowledge Base** (name change, bill clarification, closing/thank-you email, new offer/contract/extension). If the case falls under an exception, handle as described there (e.g. hotline template for offers/contracts) and skip KB query. Otherwise: **query the KnowledgeBase** (grep/search only; never read entire files) for relevant articles and solution; advise the agent on documentation/tickets; apply the **Authentifizierung matrix** (E-Mail column, 3 Eckdaten) where relevant. Draft a **fitting reply** (e.g. confirm ticket created, case forwarded, refund initiated) based on KB and handling actions.
 6. **Write the suggested reply in the chat (German customer email).** Show the **suggested email reply** text in the chat, written **in German** and following the **mandatory email reply template** (salutation mirroring contact / "Guten Tag" or "Guten Tag [Vorname Nachname],", case-specific thank you + sympathy, survey line, fixed signature block). Use this German template for unverified, verified, or exception replies.
-7. **When the user says "reply with …" or "write that reply in the box"**: run the **sprinklr-write-reply** skill with a file containing the reply text.
+7. **Response Logic Segment (in English, after the reply).** Immediately after the suggested German reply, add a clearly labeled section **"--- Response Logic ---"** explaining in short detail:
+   - **Why** this specific reply was chosen (e.g. "Customer is unverified -- used security template", "Customer verified with 3 Eckdaten -- queried KB for refund process", "Exception: contract extension request -- referred to hotline per policy").
+   - **Which KnowledgeBase articles or rules** were applied and how they informed the reply content (cite specific article titles, section names, or search terms that matched).
+   - **Which Authentifizierung matrix rules** were applied (e.g. "E-Mail column, process type: Rechnung & Zahlung -- zulassig with 3 Eckdaten").
+   - **Why specific phrasing or actions** were included in the reply (e.g. "Confirmed refund initiation because KB article states refunds under 50 EUR can be processed directly via E-Mail").
+   - Keep this concise -- 3 to 6 bullet points maximum.
+8. **Agent Instruction Section (in English, after the Logic Segment).** Add a clearly labeled section **"--- Agent Actions Required ---"** with **detailed, precise, actionable instructions** for the human agent on what backend steps must be taken. These instructions must be:
+   - **Specific**, not broad -- state the exact action (e.g. "Create a Stoerungsticket in BSS with category 'Netzproblem > Kein Empfang > Outdoor'" rather than "create a ticket").
+   - **Derived from the KnowledgeBase** -- only instruct actions that are supported by KB articles or documented processes found during the search.
+   - **Sequenced** -- list steps in the order they should be performed.
+   - Include where applicable: **ticket creation** (which system, which category/type, what to fill in), **form fulfillment** (which form, which fields, link if known), **case forwarding** (to which department, via which channel), **documentation** (what to note in the case, where), **follow-up actions** (callback scheduling, deadline for customer response, escalation path).
+   - If **no backend action is needed** (e.g. unverified customer template, closing/thank-you email), explicitly state: "No backend action required -- response-only case."
+   - If the case **cannot be handled via E-Mail** per Authentifizierung matrix, instruct the agent on the correct channel referral and any internal documentation needed.
+9. **When the user says "reply with ..." or "write that reply in the box"**: run the **sprinklr-write-reply** skill with a file containing the reply text. The Logic Segment and Agent Instruction Section are **not** included in the reply file -- they are agent-facing only and remain in the chat.
 
 **No reload or navigation:** The script must **not** reload the page or navigate to any URL. It only reads from the **current tab** (email content page). Run **sprinklr-open-login-status** first. The script processes the current page once (extract-only), prints the email, then exits. It does **not** write to the editor.
 
@@ -146,15 +159,41 @@ Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflic
 
 ---
 
+## Complete chat output structure (mandatory order)
+
+Every time this skill runs, the **full output in the Cursor chat** must follow this exact structure, in this order:
+
+1. **Conversation Summary** (English) -- who wrote what, in what order, main points, current status.
+2. **Customer Verification** (English) -- "Customer verified: Yes/No" with listed identifiers.
+3. **Suggested Email Reply** (German) -- the full customer-facing email using the mandatory template.
+4. **Response Logic Segment** (English) -- labeled **"--- Response Logic ---"**, 3-6 concise bullet points explaining:
+   - Why this reply type was chosen (unverified template / verified KB-based / exception handling).
+   - Which KnowledgeBase articles, sections, or search terms informed the reply.
+   - Which Authentifizierung matrix rules were applied (process type, E-Mail column result).
+   - Why specific phrasing, actions, or referrals were included.
+5. **Agent Instruction Section** (English) -- labeled **"--- Agent Actions Required ---"**, containing:
+   - Numbered, sequential, **specific** backend steps the agent must perform.
+   - For ticket creation: which system, ticket category/type, required fields, priority.
+   - For form fulfillment: which form (name or link), which fields to fill, with what values.
+   - For case forwarding: target department, forwarding channel, what to include.
+   - For documentation: what to note in the case history, where to log it.
+   - For follow-up: deadlines, callback scheduling, escalation paths if no resolution.
+   - If no backend action is needed: explicitly state "No backend action required -- response-only case."
+
+**Only the Suggested Email Reply (item 3) goes into the reply file** for sprinklr-write-reply. Items 1, 2, 4, and 5 are agent-facing and remain in the Cursor chat only.
+
+---
+
 ## Case processing (when customer IS verified)
 
-1. **Query the KnowledgeBase** (grep/search only – do not read entire files) for **relevant articles and the most likely solution** to the customer's case.
-2. **Advise the customer service agent** on necessary **documentation or tickets** that need to be filled out (e.g. which form, which ticket type).
-3. **Create a fitting reply** for the customer that:
+1. **Query the KnowledgeBase** (grep/search only -- do not read entire files) for **relevant articles and the most likely solution** to the customer's case.
+2. **Create a fitting reply** for the customer that:
    - **Uses the mandatory email reply template** (salutation, case-specific thank you + sympathy, survey line, signature block),
    - Reflects **specific handling actions** (e.g. ticket created, case forwarded, refund initiated, document sent),
    - Follows **KnowledgeBase instructions and guidelines** for that type of case,
    - Is case-specific (confirm what was done or what will happen next).
+3. **Response Logic Segment** (after the reply): Explain the reasoning behind the reply -- which KB articles matched, which rules/matrix entries applied, and why the chosen approach was selected. Keep it concise (3-6 bullet points).
+4. **Agent Instruction Section** (after the logic segment): Provide the agent with **detailed, precise backend action steps** derived from the KnowledgeBase -- ticket creation (system, category, fields), form fulfillment (which form, which fields), case forwarding (department, channel), documentation requirements, and follow-up actions. Every instruction must be specific and actionable, not generic.
 
 ---
 
@@ -178,7 +217,7 @@ In the following situations, **do not query the KnowledgeBase** for solution art
 1. Connect to the browser Skill 1 left open (CDP port 9222). **Do not reload the page or navigate to any URL.**
 2. Use **only the current tab** as-is. **Must be on the email content page** (case/Fall #... open).
 3. Extract case ID and email (subject, from, body) from the current page. **Print** the customer email to stdout, then **exit**.
-4. **Cursor:** Read the printed email and full conversation thread, **summarize the entire email conversation** in the Cursor chat, query KnowledgeBase (via grep/search), then write the suggested reply in the chat.
+4. **Cursor:** Read the printed email and full conversation thread, **summarize the entire email conversation** in the Cursor chat, query KnowledgeBase (via grep/search), write the suggested reply in the chat, then append the **Response Logic Segment** and the **Agent Instruction Section**.
 
 If the user is on the console list (no case open), the script asks them to open a case and run again.
 
@@ -188,7 +227,7 @@ If the user is on the console list (no case open), the script asks them to open 
 uv run python .cursor/skills/sprinklr-read-answer-email/run.py
 ```
 
-The script runs with **`--process-current-only --extract-only`**: reads the email and full thread, prints them, then stops. You must then: (1) **summarize the entire email conversation** in the Cursor chat, (2) query the KnowledgeBase (grep/search), (3) write the suggested reply in the chat. To put that reply into the Sprinklr reply box, use **sprinklr-write-reply** with a file containing the reply.
+The script runs with **`--process-current-only --extract-only`**: reads the email and full thread, prints them, then stops. You must then: (1) **summarize the entire email conversation** in the Cursor chat, (2) query the KnowledgeBase (grep/search), (3) write the suggested reply in the chat, (4) append the **Response Logic Segment** explaining your reasoning, (5) append the **Agent Instruction Section** with specific backend actions. To put the reply into the Sprinklr reply box, use **sprinklr-write-reply** with a file containing only the reply text (Logic Segment and Agent Instructions stay in chat only).
 
 ## UI mapping (Sprinklr)
 
@@ -199,7 +238,7 @@ The script runs with **`--process-current-only --extract-only`**: reads the emai
 ## Script file
 
 - **Path:** `.cursor/skills/sprinklr-read-answer-email/run.py`
-- **Does:** Invokes the runner with **`--process-current-only --extract-only`**. Script prints the customer email and full conversation thread and exits; **Cursor** summarizes the entire conversation in the chat, queries KnowledgeBase (grep/search), and writes the suggested reply in the chat.
+- **Does:** Invokes the runner with **`--process-current-only --extract-only`**. Script prints the customer email and full conversation thread and exits; **Cursor** summarizes the entire conversation in the chat, queries KnowledgeBase (grep/search), writes the suggested reply in the chat, then appends the Response Logic Segment and the Agent Instruction Section.
 
 ## Knowledge base
 
