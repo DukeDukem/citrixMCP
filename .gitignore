@@ -21,7 +21,8 @@ scratchspace/mcp_citrix_error.txt
 *.swp
 .DS_Store
 Thumbs.db
-./knowledgeBase/
+# KnowledgeBase markdown is tracked; images excluded (too large for git - ~440MB)
+KnowledgeBase/images/
 
 # Sprinklr automation – Chrome profile and logs (local only)
 .cursor/skills/sprinklr-email-automation/chrome_debug_profile/
