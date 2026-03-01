@@ -21,6 +21,7 @@ scratchspace/mcp_citrix_error.txt
 *.swp
 .DS_Store
 Thumbs.db
+./knowledgeBase/
 
 # Sprinklr automation – Chrome profile and logs (local only)
 .cursor/skills/sprinklr-email-automation/chrome_debug_profile/
