@@ -5,7 +5,7 @@ description: Writes the suggested email reply into the Sprinklr reply box. Clear
 
 # Sprinklr: Write Reply to Editor
 
-**When to use:** After running **sprinklr-read-answer-email** (Skill 2), the suggested reply is shown in the chat only. When the user says **"reply with …"** or **"write that reply in the box"**, run this skill to clear the reply box and write the suggested email into the browser editor.
+**When to use:** After running **sprinklr-read-answer-email** (Skill 2), the suggested reply is shown in the chat only. When the user says **"reply with …"**, **"write the email"**, **"write the response"**, **"send it"**, or any similar phrase implying they want the reply placed in Sprinklr, run this skill to clear the reply box and write the suggested email into the browser editor — then immediately run the **O2 Case Tracker form** step.
 
 ## What this skill does
 
@@ -15,6 +15,23 @@ description: Writes the suggested email reply into the Sprinklr reply box. Clear
 4. **Clears** all existing content in the editor (including placeholder like `[Antwort]` and signature blocks).
 5. **Writes** the preformatted reply into the editor (plain text is converted to HTML paragraphs for TinyMCE).
 6. **Waits for send and auto-reads the next email (extract-only).** After the reply is written, the automation waits until you send the email (return to Console / case leaves the list). Then it continuously checks the Console for the **next new email**, opens that new case once, and prints the **customer email + full conversation thread** in the same extract-only format as Skill 2 (`sprinklr-read-answer-email`). Cursor then summarizes that new case in English and drafts the German reply for you.
+
+## Step 7 - ALWAYS run after write-reply: O2 Case Tracker Form
+
+**After writing the reply into Sprinklr** (regardless of whether the user sends it immediately),
+run the case tracker form **automatically without being asked**:
+
+```powershell
+python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "<CASE_ID>" --attachments <N>
+```
+
+Where:
+- `<CASE_ID>` = the full Fall # exactly as shown in the case (always 8 digits after #, e.g. `#00646469` - never strip leading zeros)
+- `<N>` = number of attachments visible in the customer email (count from the email body/thread; default `0`)
+
+This opens the form in a new tab, fills all 4 fields (NQ10061547, case ID, E-Mail Care, attachment count), and leaves it open for the user to review and submit manually. The Sprinklr tab is not affected.
+
+**Do this automatically — never wait for the user to ask.**
 
 ## How to invoke
 

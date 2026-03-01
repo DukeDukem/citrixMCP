@@ -28,7 +28,13 @@ The **script** only reads the current email and **prints it to stdout, then term
    - Include where applicable: **ticket creation** (which system, which category/type, what to fill in), **form fulfillment** (which form, which fields, link if known), **case forwarding** (to which department, via which channel), **documentation** (what to note in the case, where), **follow-up actions** (callback scheduling, deadline for customer response, escalation path).
    - If **no backend action is needed** (e.g. unverified customer template, closing/thank-you email), explicitly state: "No backend action required -- response-only case."
    - If the case **cannot be handled via E-Mail** per Authentifizierung matrix, instruct the agent on the correct channel referral and any internal documentation needed.
-9. **When the user says "reply with ..." or "write that reply in the box"**: run the **sprinklr-write-reply** skill with a file containing the reply text. The Logic Segment and Agent Instruction Section are **not** included in the reply file -- they are agent-facing only and remain in the chat.
+9. **Trigger phrases -- always run sprinklr-write-reply automatically:** Any of the following user messages (exact or approximate) must immediately trigger saving the reply to a temp file and running the **sprinklr-write-reply** skill without asking for confirmation:
+   - "write the email", "write the response", "write the reply"
+   - "send it", "put it in", "write that in sprinklr", "write it in sprinklr"
+   - "create response", "create the reply"
+   - any variation where the user is clearly asking you to place the reply into the Sprinklr editor
+   - **When in doubt, assume the user wants the reply written to Sprinklr.**
+   Save the German reply text (without the Logic Segment or Agent Instructions) to `scratchspace/reply_<case_id>.txt`, then run: `python .cursor/skills/sprinklr-write-reply/run.py scratchspace/reply_<case_id>.txt`
 
 **No reload or navigation:** The script must **not** reload the page or navigate to any URL. It only reads from the **current tab** (email content page). Run **sprinklr-open-login-status** first. The script processes the current page once (extract-only), prints the email, then exits. It does **not** write to the editor.
 
@@ -163,7 +169,7 @@ Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflic
 
 Every time this skill runs, the **full output in the Cursor chat** must follow this exact structure, in this order:
 
-1. **Conversation Summary** (English) -- who wrote what, in what order, main points, current status.
+1. **Conversation Summary** (English) -- who wrote what, in what order, main points, current status. Include at the end: **"Attachments visible: N"** (count any file/image attachments visible in the customer's inbound email; default 0 if none).
 2. **Customer Verification** (English) -- "Customer verified: Yes/No" with listed identifiers.
 3. **Suggested Email Reply** (German) -- the full customer-facing email using the mandatory template.
 4. **Response Logic Segment** (English) -- labeled **"--- Response Logic ---"**, 3-6 concise bullet points explaining:
@@ -242,4 +248,23 @@ The script runs with **`--process-current-only --extract-only`**: reads the emai
 
 ## Knowledge base
 
-**You (Cursor)** draft the reply using **KnowledgeBase/** at repo root. The files there (e.g. **KnowledgeBase_Complete.md**, **TransferMatrix_KnowledgeBase.md**) are **extremely long (millions of lines)**. You must **never read an entire KnowledgeBase file**. Instead: **grep or search** for keywords/phrases from the customer email (e.g. Rückerstattung, refund, Kündigung, transfer, Rechnung, IBAN, Kundennummer, specific product names) and read only the **matching lines or surrounding context**. Use the search results to draft and cite the reply.
+**You (Cursor)** draft the reply using **KnowledgeBase/** at repo root. Read the skill file at `.cursor/skills/query-knowledgebase/SKILL.md` first for the full query procedure.
+
+**Available KB files** (all converted from original Word documents):
+- `KnowledgeBase/knowledgebase1.md`
+- `KnowledgeBase/knowledgebase3.md`
+- `KnowledgeBase/knowledgebase4.md`
+- `KnowledgeBase/knowledgebase5.md`
+- `KnowledgeBase/knowledgebase6.md`
+- `KnowledgeBase/knowledgebase7.md`
+- `KnowledgeBase/INDEX.md` (table of contents with previews)
+- `KnowledgeBase/SEARCH_HINT.md` (query strategy)
+- `KnowledgeBase/images/<docname>/img_NNN.png` (embedded diagrams/screenshots)
+
+**These files are very large (500K-1.3M chars each). You must NEVER read an entire KnowledgeBase file.** Instead:
+1. Use `Grep` with `path="KnowledgeBase/"` and a German keyword from the customer email (e.g. Rückerstattung, Kündigung, Rechnung, SIM, eSIM, Sperrung, Transfermatrix).
+2. Read only the **matching lines and surrounding context** (50-100 lines around the match).
+3. If an image is referenced near the match (`![...]`), read that PNG from `KnowledgeBase/images/` to inspect the diagram.
+4. Use the search results to draft the reply and cite the relevant KB section in the Response Logic Segment.
+
+**Transfer Matrix:** Search with `Grep(pattern="Transfermatrix|Weiterleitung", path="KnowledgeBase/")` to find routing rules for cases that must be forwarded to other divisions.
