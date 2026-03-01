@@ -1,0 +1,7 @@
+{
+  "cdp_endpoint": "http://localhost:9222",
+  "url": "https://telefonica-germany.sprinklr.com/app/console",
+  "check_interval_seconds": 5,
+  "login_email": "harun.husic.external@telefonica.com",
+  "login_password": "tHUnDerBoLt!92#fLaMe"
+}
