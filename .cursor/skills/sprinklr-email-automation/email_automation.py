@@ -3530,7 +3530,20 @@ Use cursor-agent's file reading capabilities to read these files before generati
             print("[INFO] On console but no unprocessed email in list. Open a case (Fall #...) then run again.")
             return False
         if extract_only and current_state == 'console':
-            print("[INFO] Extract-only requires an open email. Please open a case (Fall #...) in the browser, then run this skill again.")
+            # Auto-open first visible email so Cursor can get content without user opening a case manually
+            new_emails = self.get_new_emails()
+            if new_emails:
+                email_data = new_emails[0]
+                case_id = email_data.get('case_id', '') or ''
+                logger.info(f"Extract-only on console: opening first email (case {case_id}) then printing for Cursor.")
+                print("[INFO] On console: opening first visible email, then extracting for Cursor...")
+                email_content = self.click_email_and_extract_content(email_data)
+                if not email_content:
+                    email_content = {'body': '', 'subject': '', 'from': '', 'case_id': case_id}
+                extracted_case_id = email_content.get('case_id') or case_id
+                self._print_customer_email_and_exit(extracted_case_id, email_content)
+                return True
+            print("[INFO] Extract-only requires an open email. No emails in list. Open a case (Fall #...) in the browser, then run this skill again.")
             return False
         print("[INFO] Please open an email case (Fall #...) in the browser, then run this skill again.")
         return False

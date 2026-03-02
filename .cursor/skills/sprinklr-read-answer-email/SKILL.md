@@ -192,6 +192,13 @@ Every time this skill runs, the **full output in the Cursor chat** must follow t
 
 ## Case processing (when customer IS verified)
 
+0. **Check the Transfer Matrix FIRST.** Before querying the general KnowledgeBase, check `KnowledgeBase/TransferMatrix.md` to determine if the case belongs to us (CBC_CARE_ALLGEMEIN) or must be transferred to another team. Search for the case topic/theme in the Transfer Matrix:
+   - `Grep(pattern="<case_topic_keyword>", path="KnowledgeBase/TransferMatrix.md")`
+   - **If Ziel-Kontakt = CBC_CARE_ALLGEMEIN**: The case stays with us. Proceed to step 1.
+   - **If Ziel-Kontakt = another team**: Instruct the agent to transfer the case in Sprinklr to that queue. Draft a reply informing the customer their case has been forwarded. Do NOT query the general KB for solution -- the other team handles it.
+   - **If Ziel-Kontakt = an email address**: Instruct the agent to forward the case/documents to that email. Draft a brief reply confirming forwarding.
+   - **If Ziel-Kontakt = "Kein Transfer" with handling instructions**: Follow those instructions (refer to hotline, use text block, handle per KB, etc.).
+   - **If Ziel-Kontakt = a ticket instruction (e.g. "Ticket Themen-ID 653")**: Instruct the agent to create that ticket. Draft reply confirming the case is being processed.
 1. **Query the KnowledgeBase** (grep/search only -- do not read entire files) for **relevant articles and the most likely solution** to the customer's case.
 2. **Create a fitting reply** for the customer that:
    - **Uses the mandatory email reply template** (salutation, case-specific thank you + sympathy, survey line, signature block),
@@ -251,6 +258,7 @@ The script runs with **`--process-current-only --extract-only`**: reads the emai
 **You (Cursor)** draft the reply using **KnowledgeBase/** at repo root. Read the skill file at `.cursor/skills/query-knowledgebase/SKILL.md` first for the full query procedure.
 
 **Available KB files** (all converted from original Word documents):
+- `KnowledgeBase/TransferMatrix.md` **(CHECK THIS FIRST for every case -- determines if we handle or transfer)**
 - `KnowledgeBase/knowledgebase1.md`
 - `KnowledgeBase/knowledgebase3.md`
 - `KnowledgeBase/knowledgebase4.md`
