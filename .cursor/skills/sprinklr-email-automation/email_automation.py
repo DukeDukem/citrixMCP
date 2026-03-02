@@ -1208,18 +1208,39 @@ class EmailAutomation:
                     return {'case_id': email_data['case_id'], 'subject': '', 'from': '', 'body': '', 'attachments': []}
             
             # Always try to extract the real case ID from multiple sources
+            # PRIORITY: h2 header is the AUTHORITATIVE source for case ID
             real_case_id = None
             
-            # Method 1: Try to extract from page content
-            page_content = self.page.content()
-            real_case_id = self.extract_case_id(page_content)
+            # Method 1 (HIGHEST PRIORITY): Extract from h2 header "Fall #XXXXXXXX"
+            try:
+                case_header = self.page.locator('h2:has-text("Fall #")').first
+                if case_header.is_visible(timeout=2000):
+                    header_text = case_header.inner_text()
+                    fall_match = re.search(r'Fall\s*#(\d+)', header_text)
+                    if fall_match:
+                        real_case_id = f"#{fall_match.group(1)}"
+                        logger.info(f"Case ID from h2 header (authoritative): {real_case_id}")
+            except:
+                pass
             
-            # Method 2: Try to extract from URL
+            # Method 2: Try h1 or other header elements
+            if not real_case_id:
+                try:
+                    case_header = self.page.locator('h1:has-text("Fall #"), [data-testid*="case"]:has-text("Fall #")').first
+                    if case_header.is_visible(timeout=1200):
+                        header_text = case_header.inner_text()
+                        fall_match = re.search(r'Fall\s*#(\d+)', header_text)
+                        if fall_match:
+                            real_case_id = f"#{fall_match.group(1)}"
+                except:
+                    pass
+            
+            # Method 3: Try to extract from URL
             if not real_case_id:
                 current_url = self.page.url
                 real_case_id = self.extract_case_id(current_url)
             
-            # Method 3: Try to extract from page title
+            # Method 4: Try to extract from page title
             if not real_case_id:
                 try:
                     page_title = self.page.title()
@@ -1227,24 +1248,23 @@ class EmailAutomation:
                 except:
                     pass
             
-            # Method 4: Try to extract from page header (Fall #30091006 format)
+            # Method 5 (LAST RESORT): Extract from page content
             if not real_case_id:
-                try:
-                    case_header = self.page.locator('h2:has-text("Fall #"), h1:has-text("Fall #"), [data-testid*="case"]:has-text("#")').first
-                    if case_header.is_visible(timeout=1200):
-                        header_text = case_header.inner_text()
-                        real_case_id = self.extract_case_id(header_text)
-                except:
-                    pass
+                page_content = self.page.content()
+                fall_match = re.search(r'Fall\s*#(\d+)', page_content)
+                if fall_match:
+                    real_case_id = f"#{fall_match.group(1)}"
+                else:
+                    real_case_id = self.extract_case_id(page_content)
             
-            # Method 5: Try to extract from ConversationId in email content (as fallback identifier)
+            # Method 6: ConversationId fallback
             if not real_case_id:
                 try:
-                    # Look for ConversationId pattern: %%[ConversationId: ...]%%
+                    if not page_content:
+                        page_content = self.page.content()
                     conv_id_match = re.search(r'%%\[ConversationId:\s*([a-f0-9]+)\]%%', page_content, re.IGNORECASE)
                     if conv_id_match:
                         conv_id = conv_id_match.group(1)
-                        # Use first 8 chars as a case identifier if no real case ID found
                         real_case_id = f"#CONV{conv_id[:8].upper()}"
                         logger.info(f"Using ConversationId as case identifier: {real_case_id}")
                 except:
