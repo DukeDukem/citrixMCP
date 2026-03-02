@@ -232,6 +232,15 @@ In the following situations, **do not query the KnowledgeBase** for solution art
 3. Extract case ID and email (subject, from, body) from the current page. **Print** the customer email to stdout, then **exit**.
 4. **Cursor:** Read the printed email and full conversation thread, **summarize the entire email conversation** in the Cursor chat, query KnowledgeBase (via grep/search), write the suggested reply in the chat, then append the **Response Logic Segment** and the **Agent Instruction Section**.
 
+**CRITICAL -- Case ID extraction rule:** The case ID must **always** be read from the `h2` element on the **currently open Sprinklr page** that contains "Fall #XXXXXXXX". This is the **authoritative** case ID. The script output may occasionally show an incorrect or stale case ID. If the script output case ID does not match the live page, **always use the live page case ID**. When in doubt, query the browser directly:
+```python
+h2_elements = page.query_selector_all('h2')
+for h2 in h2_elements:
+    text = h2.inner_text()
+    if 'Fall' in text: # This is the real case ID
+```
+Each case is unique. Never reuse a case ID from a previous session. The full 8-digit format (e.g., `#36013462`) must be preserved including any leading zeros.
+
 If the user is on the console list (no case open), the script asks them to open a case and run again.
 
 ## How to invoke
