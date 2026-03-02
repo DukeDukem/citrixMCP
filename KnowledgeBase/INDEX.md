@@ -7,6 +7,7 @@ Source documents were Word files (knowledgebase*.docx) converted to Markdown.
 
 | File | Characters | Images | Preview |
 | --- | --- | --- | --- |
+| [TransferMatrix.md](TransferMatrix.md) | ~25,000 | 0 | **CHECK FIRST** -- Sabio transfer tree: 20 Thema categories, 150+ case routes, determines if case stays with us (CBC_CARE_ALLGEMEIN) or transfers to another team |
 | [knowledgebase1.md](knowledgebase1.md) | 845,045 | 205 | Tarife>Beeinträchtigungen>Rabattentzug o2 my All in One/o2 One Unlimited... |
 | [knowledgebase3.md](knowledgebase3.md) | 1,070,604 | 463 | Vorheriger Ast... |
 | [knowledgebase4.md](knowledgebase4.md) | 1,161,572 | 624 | Rechnung & Zahlung>Zahlung>Zahlarten>SEPA-Lastschrift>Auf einen Blick... |
@@ -23,6 +24,6 @@ Source documents were Word files (knowledgebase*.docx) converted to Markdown.
 
 ## Total Coverage
 
-- 6 documents
-- 5,746,765 total characters
+- 7 documents (6 general KB + 1 Transfer Matrix)
+- ~5,770,000 total characters
 - 3,252 total images

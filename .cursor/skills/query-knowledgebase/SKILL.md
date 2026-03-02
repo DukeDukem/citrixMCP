@@ -14,6 +14,7 @@ Use this skill whenever you need to look up:
 KnowledgeBase/
   INDEX.md              <- table of contents (start here)
   SEARCH_HINT.md        <- detailed query strategy
+  TransferMatrix.md     <- TRANSFER MATRIX (check FIRST for every case!)
   knowledgebase1.md     <- KB article 1 (full text + image refs)
   knowledgebase3.md     <- KB article 3
   knowledgebase4.md     <- KB article 4
@@ -59,12 +60,18 @@ Read(path="KnowledgeBase/images/<docname>/img_NNN.png")
 ```
 This may show a form, system screen, or flow diagram.
 
-### Step 5 - Cross-reference Transfer Matrix
-If the case may require transfer to another division, search specifically for:
+### Step 5 - Check Transfer Matrix FIRST
+**Before anything else**, determine routing via the Transfer Matrix:
 ```
-Grep(pattern="Transfermatrix|Transfer Matrix|Weiterleitung", path="KnowledgeBase/", -i=True)
+Grep(pattern="<case_topic>", path="KnowledgeBase/TransferMatrix.md", -i=True)
 ```
-Then read that section to get the exact transfer destination.
+The Transfer Matrix has 20 Thema (topic) sections with 150+ case routes.
+- **CBC_CARE_ALLGEMEIN** = us. Handle the case directly.
+- **Any other Ziel-Kontakt** = transfer to that team in Sprinklr (or forward to the listed email address).
+- **"Kein Transfer"** = follow the specific handling instructions noted in the Action column.
+- **Ticket instructions** = create the specified ticket (e.g., "Ticket Themen-ID 653 an NP-Desk").
+
+Only proceed to query the general KB articles (knowledgebase1-7.md) if the Transfer Matrix confirms the case stays with us.
 
 ## Output Rules (always follow these for agent responses)
 
