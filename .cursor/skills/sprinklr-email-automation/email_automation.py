@@ -86,7 +86,9 @@ class EmailAutomation:
         self.login_email = config.get('login_email', 'harun.husic.external@telefonica.com')
         self.login_password = config.get('login_password', 'Avalon!1_1')
         self.login_url = config.get('login_url', 'https://telefonica-germany-app.sprinklr.com/ui/login')
-        
+        # When True (e.g. --process-current-only / read-email): never navigate away from email content page
+        self._leave_page_unchanged = False
+
     def _load_processed_case_ids(self) -> set:
         """Load previously processed case IDs from file"""
         try:
@@ -197,11 +199,14 @@ class EmailAutomation:
     def connect_to_browser(self, cdp_endpoint: Optional[str] = None, leave_page_unchanged: bool = False):
         """
         Connect to an existing Chrome browser instance via CDP (Chrome DevTools Protocol)
-        
+
         Args:
             cdp_endpoint: CDP endpoint URL (e.g., 'http://localhost:9222')
                          If None, will try to find Chrome's CDP endpoint
+            leave_page_unchanged: If True (read-email / process-current-only), do not navigate
+                                 away from current page; ensure_console_page() will not leave email content.
         """
+        self._leave_page_unchanged = leave_page_unchanged
         logger.info("Connecting to existing Chrome browser instance...")
         self.playwright = sync_playwright().start()
         
@@ -810,6 +815,8 @@ class EmailAutomation:
             current_url = self.page.url.lower()
             url_has_console = '/console' in current_url or '/app/console' in current_url
             url_has_email = '/case/' in current_url or '/email/' in current_url or 'fall' in current_url
+            # Case-open page (e.g. .../app/console/c/699d1e46...) = email content view; don't treat as console list
+            url_is_case_page = '/console/c/' in current_url or bool(re.search(r'/app/console/c/[a-z0-9]+', current_url))
             
             # Check for email content page indicators (highest priority)
             email_content_indicators = [
@@ -857,11 +864,17 @@ class EmailAutomation:
                 except:
                     continue
             
-            # Check if URL suggests console page (even if elements not visible yet)
-            if url_has_console:
+            # Check if URL suggests console page (even if elements not visible yet).
+            # Do NOT return 'console' when URL is a case-open page (url_is_case_page) so we don't
+            # mis-detect the email content page as console and re-navigate away.
+            if url_has_console and not url_is_case_page:
                 logger.info("Detected: Console page (URL pattern)")
                 print("[PAGE DETECTION] Console page detected via URL pattern")
                 return 'console'
+            if url_has_console and url_is_case_page:
+                # Could be email content view with case open; indicators may still be loading
+                logger.info("URL is case page (/console/c/...), not assuming console")
+                print("[PAGE DETECTION] URL suggests case page - not assuming console")
             
             # Check for login page
             if 'login' in current_url or 'ui/login' in current_url:
@@ -882,8 +895,8 @@ class EmailAutomation:
                         elem = self.page.locator(indicator).first
                         if elem.is_visible(timeout=500):
                             # If we find Sprinklr elements but can't determine exact page,
-                            # and URL has console, assume console
-                            if url_has_console:
+                            # and URL has console (and is not a case-open page), assume console
+                            if url_has_console and not url_is_case_page:
                                 logger.info("Detected: Console page (Sprinklr elements + URL)")
                                 print("[PAGE DETECTION] Console page detected (Sprinklr elements + URL)")
                                 return 'console'
@@ -906,6 +919,11 @@ class EmailAutomation:
         """Ensure we're on the console page, navigate if needed - AVOID UNNECESSARY RELOADS"""
         current_state = self._detect_page_state()
         
+        # When in read-email / process-current-only mode: never navigate away from email content.
+        # Stay on the email page so we only "navigate to email" once (user already has it open).
+        if getattr(self, '_leave_page_unchanged', False) and current_state == 'email_content':
+            logger.info("Leave-page-unchanged: already on email content page, not navigating to console")
+            return True
         # If already on console, return immediately (no navigation needed)
         if current_state == 'console':
             logger.debug("Already on console page - no navigation needed")
@@ -1208,39 +1226,18 @@ class EmailAutomation:
                     return {'case_id': email_data['case_id'], 'subject': '', 'from': '', 'body': '', 'attachments': []}
             
             # Always try to extract the real case ID from multiple sources
-            # PRIORITY: h2 header is the AUTHORITATIVE source for case ID
             real_case_id = None
             
-            # Method 1 (HIGHEST PRIORITY): Extract from h2 header "Fall #XXXXXXXX"
-            try:
-                case_header = self.page.locator('h2:has-text("Fall #")').first
-                if case_header.is_visible(timeout=2000):
-                    header_text = case_header.inner_text()
-                    fall_match = re.search(r'Fall\s*#(\d+)', header_text)
-                    if fall_match:
-                        real_case_id = f"#{fall_match.group(1)}"
-                        logger.info(f"Case ID from h2 header (authoritative): {real_case_id}")
-            except:
-                pass
+            # Method 1: Try to extract from page content
+            page_content = self.page.content()
+            real_case_id = self.extract_case_id(page_content)
             
-            # Method 2: Try h1 or other header elements
-            if not real_case_id:
-                try:
-                    case_header = self.page.locator('h1:has-text("Fall #"), [data-testid*="case"]:has-text("Fall #")').first
-                    if case_header.is_visible(timeout=1200):
-                        header_text = case_header.inner_text()
-                        fall_match = re.search(r'Fall\s*#(\d+)', header_text)
-                        if fall_match:
-                            real_case_id = f"#{fall_match.group(1)}"
-                except:
-                    pass
-            
-            # Method 3: Try to extract from URL
+            # Method 2: Try to extract from URL
             if not real_case_id:
                 current_url = self.page.url
                 real_case_id = self.extract_case_id(current_url)
             
-            # Method 4: Try to extract from page title
+            # Method 3: Try to extract from page title
             if not real_case_id:
                 try:
                     page_title = self.page.title()
@@ -1248,23 +1245,24 @@ class EmailAutomation:
                 except:
                     pass
             
-            # Method 5 (LAST RESORT): Extract from page content
-            if not real_case_id:
-                page_content = self.page.content()
-                fall_match = re.search(r'Fall\s*#(\d+)', page_content)
-                if fall_match:
-                    real_case_id = f"#{fall_match.group(1)}"
-                else:
-                    real_case_id = self.extract_case_id(page_content)
-            
-            # Method 6: ConversationId fallback
+            # Method 4: Try to extract from page header (Fall #30091006 format)
             if not real_case_id:
                 try:
-                    if not page_content:
-                        page_content = self.page.content()
+                    case_header = self.page.locator('h2:has-text("Fall #"), h1:has-text("Fall #"), [data-testid*="case"]:has-text("#")').first
+                    if case_header.is_visible(timeout=1200):
+                        header_text = case_header.inner_text()
+                        real_case_id = self.extract_case_id(header_text)
+                except:
+                    pass
+            
+            # Method 5: Try to extract from ConversationId in email content (as fallback identifier)
+            if not real_case_id:
+                try:
+                    # Look for ConversationId pattern: %%[ConversationId: ...]%%
                     conv_id_match = re.search(r'%%\[ConversationId:\s*([a-f0-9]+)\]%%', page_content, re.IGNORECASE)
                     if conv_id_match:
                         conv_id = conv_id_match.group(1)
+                        # Use first 8 chars as a case identifier if no real case ID found
                         real_case_id = f"#CONV{conv_id[:8].upper()}"
                         logger.info(f"Using ConversationId as case identifier: {real_case_id}")
                 except:
@@ -1796,21 +1794,45 @@ STEP 2 - ANALYZE THE CASE:
 - Identify the specific issue(s) mentioned in the email
 - Determine what type of inquiry this is (billing, contract, technical, etc.)
 - Note any specific details mentioned (amounts, dates, phone numbers, etc.)
-- Create a concise summary of the entire communication thread for quick understanding
 
-STEP 3 - GENERATE RESPONSE:
-Provide your response in the EXACT format specified in the prompt template above with these sections:
-   - COMMUNICATION THREAD SUMMARY (concise, time-efficient summary of all customer communications)
-   - TRANSFER ELIGIBILITY ASSESSMENT (based on TransferMatrix_KnowledgeBase.md)
-   - DETAILED HANDLING INSTRUCTIONS FOR AGENT (based on KnowledgeBase_Complete.md)
-   - CUSTOMER EMAIL RESPONSE (ONLY IF Transfer Eligible = NO, otherwise leave empty or write "NOT APPLICABLE - Case is transferable")
+STEP 3 - GENERATE RESPONSE IN THIS EXACT ORDER (MANDATORY OUTPUT STRUCTURE):
+You MUST output the following sections in this order. Use these exact section headers so the script can parse your response.
 
-COMMUNICATION THREAD SUMMARY REQUIREMENTS:
-- Provide a concise, time-efficient summary of the entire communication thread
-- Focus on key points: what the customer asked, when, and what has been discussed
-- Use bullet points for clarity
-- Keep it brief but comprehensive enough to bring the agent up to speed quickly
-- Include: customer's main concern, any previous responses, current status
+---
+## 1. CUSTOMER CASE SUMMARY
+Concise summary in English: case ID, subject, from; who wrote what (customer vs. brand), in order; main request and current status. No long prose.
+
+---
+## 2. VERIFICATION
+Customer verified: Yes or No. If Yes, list verified key data (name, Kundennummer, last 4 IBAN, address, Geburtsdatum, etc.) in English. Never ask for PKK.
+
+---
+## 3. TRANSFER ELIGIBILITY
+Query KnowledgeBase/TransferMatrix.md. Identify Thema and Fall; state Ziel-Kontakt.
+Transfer eligible: Yes (case goes to another team/queue/email) or No (we handle directly or Kein Transfer).
+
+---
+## 4a. TRANSFER GOAL (if transferable)
+If Transfer eligible = Yes: state Transfer goal (queue/team name or email) and action (e.g. "Transfer in Sprinklr" or "Forward to email").
+If Transfer eligible = No, write "Not applicable - case not transferable".
+
+---
+## 4b. IF NOT TRANSFERABLE
+If Transfer eligible = No: briefly state that KB was queried for handling. (Skip 4a.)
+
+---
+## 5. INSTRUCTIONS ON HANDLING CASE
+KB-based + agent steps in one section: which path, ticket type/Themen-ID, inbox, Buchungsgrund, or "direct customer to X"; what to do in Sprinklr/systems. Cite KB where relevant. Numbered or bulleted.
+
+---
+## 6. YOUR RESPONSE TO CUSTOMER
+Full suggested email reply in German (copyable block). ONLY IF Transfer eligible = No. If Transfer eligible = Yes, write "NOT APPLICABLE - Case is transferable, no customer email will be sent".
+Use the exact template (salutation, body, survey line, signature block) specified below. Do not truncate.
+
+---
+## 7. SUMMARY OF RESPONSE
+One short paragraph in English: what the reply says and what the agent/customer should do next.
+---
 
 CRITICAL RULE FOR CUSTOMER EMAIL RESPONSE:
 - IF Transfer Eligible = YES: DO NOT generate any customer email response. Write "NOT APPLICABLE - Case is transferable, no customer email will be sent" or leave the section empty.
@@ -2446,16 +2468,17 @@ Use cursor-agent's file reading capabilities to read these files before generati
             'full_response': response_text
         }
         
-        # Try to extract sections from the response
-        # Look for communication thread summary first
-        thread_summary_match = re.search(r'COMMUNICATION THREAD SUMMARY[:\s]*\n(.*?)(?=\n\n===|\n\nTRANSFER|TRANSFER ELIGIBILITY|$)', response_text, re.DOTALL | re.IGNORECASE)
+        # Try to extract sections from the response (supports both 7-step structure and legacy format)
+        # Look for customer case summary / communication thread summary first
+        thread_summary_match = re.search(
+            r'(?:##\s*1\.\s*CUSTOMER CASE SUMMARY|COMMUNICATION THREAD SUMMARY)[:\s]*\n(.*?)(?=\n\n---|\n\n##\s*2\.|\n\nTRANSFER|TRANSFER ELIGIBILITY|$)', response_text, re.DOTALL | re.IGNORECASE
+        )
         if thread_summary_match:
             parsed['thread_summary'] = thread_summary_match.group(1).strip()
-            logger.info("Extracted communication thread summary")
+            logger.info("Extracted customer case summary / thread summary")
         else:
-            # Try alternative patterns
             thread_summary_patterns = [
-                r'Thread Summary[:\s]*\n(.*?)(?=\n\n===|\n\nTRANSFER|$)', 
+                r'Thread Summary[:\s]*\n(.*?)(?=\n\n===|\n\nTRANSFER|$)',
                 r'Communication Summary[:\s]*\n(.*?)(?=\n\n===|\n\nTRANSFER|$)',
                 r'Summary of Communications[:\s]*\n(.*?)(?=\n\n===|\n\nTRANSFER|$)'
             ]
@@ -2463,7 +2486,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 match = re.search(pattern, response_text, re.DOTALL | re.IGNORECASE)
                 if match:
                     parsed['thread_summary'] = match.group(1).strip()
-                    logger.info("Extracted communication thread summary (alternative pattern)")
+                    logger.info("Extracted thread summary (alternative pattern)")
                     break
         
         # Look for transfer eligibility
@@ -2476,18 +2499,23 @@ Use cursor-agent's file reading capabilities to read these files before generati
         if reasoning_match:
             parsed['transfer_reasoning'] = reasoning_match.group(1).strip()
         
-        # Look for suggested transfer goal
-        goal_match = re.search(r'Suggested Transfer Goal[:\s]*\n(.*?)(?=\n\n|\n\d+\.|$)', response_text, re.DOTALL | re.IGNORECASE)
+        # Look for suggested transfer goal (4a. TRANSFER GOAL or legacy)
+        goal_match = re.search(
+            r'(?:##\s*4a\.\s*TRANSFER GOAL|Suggested Transfer Goal)[:\s]*\n(.*?)(?=\n\n---|\n\n##\s*[45]\.|\n\nCUSTOMER|CUSTOMER EMAIL|YOUR RESPONSE|$)', response_text, re.DOTALL | re.IGNORECASE
+        )
         if goal_match:
-            parsed['suggested_transfer_goal'] = goal_match.group(1).strip()
+            raw = goal_match.group(1).strip()
+            if raw and 'not applicable' not in raw.lower() and 'not transferable' not in raw.lower():
+                parsed['suggested_transfer_goal'] = raw
         
-        # Look for handling instructions (usually after "DETAILED HANDLING INSTRUCTIONS" or step numbers)
-        instructions_match = re.search(r'(DETAILED HANDLING INSTRUCTIONS|Step \d+:|Handling Instructions)[:\s]*\n(.*?)(?=\n\nCUSTOMER|CUSTOMER EMAIL|$)', response_text, re.DOTALL | re.IGNORECASE)
+        # Look for handling instructions (5. INSTRUCTIONS ON HANDLING CASE or legacy)
+        instructions_match = re.search(
+            r'(?:##\s*5\.\s*INSTRUCTIONS ON HANDLING CASE|DETAILED HANDLING INSTRUCTIONS|Step \d+:|Handling Instructions)[:\s]*\n(.*?)(?=\n\n---|\n\n##\s*6\.|\n\nCUSTOMER EMAIL RESPONSE|CUSTOMER EMAIL|YOUR RESPONSE TO CUSTOMER|$)', response_text, re.DOTALL | re.IGNORECASE
+        )
         if instructions_match:
             parsed['handling_instructions'] = instructions_match.group(2).strip()
         else:
-            # Fallback: get everything before customer response
-            parts = re.split(r'CUSTOMER EMAIL RESPONSE|Customer Email Response', response_text, flags=re.IGNORECASE)
+            parts = re.split(r'CUSTOMER EMAIL RESPONSE|Customer Email Response|YOUR RESPONSE TO CUSTOMER', response_text, flags=re.IGNORECASE)
             if len(parts) > 1:
                 parsed['handling_instructions'] = parts[0].strip()
         
@@ -2507,18 +2535,24 @@ Use cursor-agent's file reading capabilities to read these files before generati
         
         # Only extract customer response if case is NOT transferable
         if not parsed.get('transfer_eligible'):
-            # Pattern 1: Look for "CUSTOMER EMAIL RESPONSE" section
-            customer_match = re.search(r'CUSTOMER EMAIL RESPONSE[:\s]*\n(.*?)(?=\n\n===|\n\nFULL CURSOR|$)', response_text, re.DOTALL | re.IGNORECASE)
+            # Pattern 1: Look for "## 6. YOUR RESPONSE TO CUSTOMER" (7-step structure)
+            customer_match = re.search(r'##\s*6\.\s*YOUR RESPONSE TO CUSTOMER[:\s]*\n(.*?)(?=\n\n---|\n\n##\s*7\.|$)', response_text, re.DOTALL | re.IGNORECASE)
             if customer_match:
                 customer_response = customer_match.group(1).strip()
-            
-            # Pattern 2: Look for "3. CUSTOMER EMAIL RESPONSE" (numbered section)
+                if 'NOT APPLICABLE' in customer_response.upper():
+                    customer_response = None
+            # Pattern 2: Look for "CUSTOMER EMAIL RESPONSE" section (legacy)
+            if not customer_response:
+                customer_match = re.search(r'CUSTOMER EMAIL RESPONSE[:\s]*\n(.*?)(?=\n\n===|\n\nFULL CURSOR|$)', response_text, re.DOTALL | re.IGNORECASE)
+                if customer_match:
+                    customer_response = customer_match.group(1).strip()
+            # Pattern 3: Look for "3. CUSTOMER EMAIL RESPONSE" (numbered section)
             if not customer_response:
                 customer_match = re.search(r'3\.\s*CUSTOMER EMAIL RESPONSE[:\s]*\n(.*?)(?=\n\n===|\n\nFULL CURSOR|$)', response_text, re.DOTALL | re.IGNORECASE)
                 if customer_match:
                     customer_response = customer_match.group(1).strip()
             
-            # Pattern 3: Look for German email content (starts with "Guten Tag" or similar)
+            # Pattern 4: Look for German email content (starts with "Guten Tag" or similar)
             if not customer_response:
                 german_starters = ['Guten Tag', 'Sehr geehrte', 'Hallo', 'Liebe', 'Lieber']
                 for starter in german_starters:
@@ -2532,7 +2566,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
                             customer_response = text
                             break
             
-            # Pattern 4: Fallback - try to find German text at the end (likely the customer response)
+            # Pattern 5: Fallback - try to find German text at the end (likely the customer response)
             if not customer_response:
                 german_closings = ['Mit freundlichen Grüßen', 'Freundliche Grüße', 'Ihr o2 Team', 'Ihre o2 Kundenbetreuung', 'Ihr o2 Kundenbetreuer']
                 for closing in german_closings:
@@ -3549,21 +3583,25 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 return True
             print("[INFO] On console but no unprocessed email in list. Open a case (Fall #...) then run again.")
             return False
+        # Extract-only on console: if there is a (new) email in the list, open it and then read it
         if extract_only and current_state == 'console':
-            # Auto-open first visible email so Cursor can get content without user opening a case manually
             new_emails = self.get_new_emails()
             if new_emails:
+                logger.info("Extract-only on console: opening first available case, then reading email")
+                print("[INFO] On console with case(s) in list — opening first case and reading email...")
                 email_data = new_emails[0]
-                case_id = email_data.get('case_id', '') or ''
-                logger.info(f"Extract-only on console: opening first email (case {case_id}) then printing for Cursor.")
-                print("[INFO] On console: opening first visible email, then extracting for Cursor...")
-                email_content = self.click_email_and_extract_content(email_data)
-                if not email_content:
-                    email_content = {'body': '', 'subject': '', 'from': '', 'case_id': case_id}
-                extracted_case_id = email_content.get('case_id') or case_id
-                self._print_customer_email_and_exit(extracted_case_id, email_content)
-                return True
-            print("[INFO] Extract-only requires an open email. No emails in list. Open a case (Fall #...) in the browser, then run this skill again.")
+                try:
+                    email_content = self.click_email_and_extract_content(email_data)
+                    case_id = email_content.get('case_id', email_data.get('case_id', ''))
+                    if not case_id:
+                        case_id = email_data.get('case_id', '')
+                    self._print_customer_email_and_exit(case_id, email_content)
+                    return True
+                except Exception as e:
+                    logger.error(f"Error opening case and extracting: {e}")
+                    print(f"[ERROR] Failed to open case and read email: {e}")
+                    return False
+            print("[INFO] Extract-only requires an open email. Please open a case (Fall #...) in the browser, then run this skill again.")
             return False
         print("[INFO] Please open an email case (Fall #...) in the browser, then run this skill again.")
         return False
@@ -3916,6 +3954,16 @@ def main():
 
             print("[INFO] Reply written to editor. Execution stopped.")
             automation.cleanup()
+            return
+
+        # Wait-next-extract-only (standalone): monitor for the next new email, open it, print email + thread, then exit.
+        # This is used after case-tracker form submission (manual by default) to immediately pick up the next case.
+        if wait_next_extract_only:
+            try:
+                automation.ensure_console_page()
+                automation.monitor_next_email_extract_only(check_interval=CHECK_INTERVAL)
+            finally:
+                automation.cleanup()
             return
         
         # Skill 2: process current page once then exit
