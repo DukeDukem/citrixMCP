@@ -10,4 +10,4 @@
 ## Case commands
 
 - RE / PR / LF / login: follow `.cursor/rules/` and skills under `.cursor/skills/`.
-- Instructions-only chats: do not process customer cases.
+- **Instructions-only chats:** Do **not** run RE, PR, LF, or login — warn user to use a separate chat (`.cursor/rules/instructions-only-no-re-pr-lf.mdc`).
