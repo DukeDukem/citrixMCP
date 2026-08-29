@@ -8,7 +8,7 @@ These skills are **separate, independent scripts**. Each skill has its own **run
 |-----------|---------|--------|
 | **RE** | Read email | sprinklr-read-answer-email |
 | **PR** | Paste reply (write reply into Sprinklr box) | sprinklr-write-reply |
-| **LF** | Log form (fill O2 case tracker / Microsoft form) | fill-microsoft-form |
+| **LF** | Log form (fill Roberta O2 case tracker) | fill-microsoft-form |
 
 ## How to invoke
 
@@ -46,11 +46,12 @@ Run the sprinklr-read-answer-email skill: read the current email, then in the Cu
 Reply with the suggested email you just showed me. (Agent: save that reply to a file, then run .cursor/skills/sprinklr-write-reply/run.py <path-to-file>)
 ```
 
-**Test Skill 3 only (fill form):**  
-*(Do Skill 1 first so Chrome is running, then run this with your form URL and answers file.)*
+**Test LF (Roberta Case Tracker):**  
+*(After login; case visible in Sprinklr.)*
 ```
-Run the fill-microsoft-form skill. Form URL: https://forms.office.com/...  Answers file: path/to/answers.json  (Use .cursor/skills/fill-microsoft-form/run.py with --url and --answers.)
+LF
 ```
+Or: `uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --attachments 0`
 
 ---
 
@@ -95,7 +96,7 @@ The **KnowledgeBase/** folder (e.g. `KnowledgeBase_Complete.md`, `TransferMatrix
 ## Requirements (once per machine)
 
 - Chrome installed; `uv sync`; `uv run playwright install chromium`
-- `config.json` at repo root: `login_email`, `login_password`, `cdp_endpoint`
+- `config.json` at repo root: `login_email`, `login_password`, `cdp_endpoint`, `case_tracker_url`, `case_tracker_nq`, `case_tracker_password`
 
 ## Skills in this folder
 
@@ -103,5 +104,5 @@ The **KnowledgeBase/** folder (e.g. `KnowledgeBase_Complete.md`, `TransferMatrix
 - **sprinklr-read-answer-email** – Read email, output summary + suggested reply in chat only. Script: `run.py`
 - **sprinklr-write-reply** – Clear reply box and write reply from file (use when user says "reply with …"). Script: `run.py <reply-file>`
 - **sprinklr-email-automation** – Shared runner + email_automation (do not run directly).
-- **fill-microsoft-form** – Fill Microsoft Form. Script: `run.py` (needs `--url`, `--answers`)
+- **fill-microsoft-form** – **LF:** Roberta Case Tracker (`fill_case_tracker.py`). Legacy MS Forms: `run.py` (`--url`, `--answers`)
 - **start-and-login** – (Legacy) Prefer **sprinklr-open-login-status**.

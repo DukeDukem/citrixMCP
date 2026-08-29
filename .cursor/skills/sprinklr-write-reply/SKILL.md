@@ -16,7 +16,7 @@ description: Writes the suggested email reply into the Sprinklr reply box. Clear
 3. **Preformats** the reply text from the file: normalizes line endings, trims each line, and enforces consistent paragraph spacing (one blank line between paragraphs, no leading/trailing blank lines) so the email displays correctly in the editor.
 4. **Clears** all existing content in the editor (including placeholder like `[Antwort]` and signature blocks).
 5. **Writes** the preformatted reply into the editor (plain text is converted to HTML paragraphs for TinyMCE).
-6. **Fills the O2 Roberta case tracker** in a **new tab**: opens `https://roberta.yoummday.com/casetracker/`, fills Case # (Fall ID), Kanal (E-Mail Care), and optional Anhänge note. **Speichern** is **not** clicked — you save manually after sending the email. To skip this step, run with `--no-fill-case-tracker`.
+6. **Fills the Roberta Case Tracker** (unless `--no-fill-case-tracker`): Case #, **Salcus from Sprinklr Kundennummer**, Kanal E-Mail Care, Transfer/target per `.cursor/rules/lf-log-form.mdc`, Ticketstatus Salcus (transfer → always 3). **Speichern** not clicked — use **LF** separately if PR runs with `--no-fill-case-tracker`.
 
 By default the script **exits after writing the reply and filling the form**; it does **not** wait for you to send or monitor for the next email. To enable that behaviour (wait for send, then open and print the next new email once), run with `--wait-next-extract-only`.
 

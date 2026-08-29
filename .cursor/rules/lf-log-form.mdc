@@ -5,53 +5,73 @@ alwaysApply: true
 
 # LF = Log Form (ONE CASE ONLY)
 
-CRITICAL: This command MUST fill ONE case tracker form ONLY. Never combine or fill multiple cases at once.
+CRITICAL: This command MUST fill ONE Roberta Case Tracker entry ONLY. Never combine or fill multiple cases at once.
+
+**Platform:** Roberta / Yoummday Case Tracker — `https://roberta.yoummday.com/casetracker/`  
+**Legacy Microsoft Forms (`forms.office.com`) is retired for LF.** Do not use shortcut tiles or NQ10061547 MS Form navigation.
 
 When the user prompts with LF/lf:
 
-## BEFORE PROCEEDING:
+## BEFORE PROCEEDING
 
-1. Identify the **currently visible case in Sprinklr**.
-   - By default, LF always refers to the case that is currently open and visible in the Sprinklr console (the active tab/thread).
-   - Do **not** require the user to restate the case ID if exactly one case is open and active.
+1. Identify the **currently visible case in Sprinklr** (active tab/thread). Do not require the user to restate the case ID if exactly one case is open.
+2. Verify **ONE** Fall # in context. If ambiguous → STOP and ask which case ID.
+3. Verify **ONE** customer (optional). If multiple names on the visible case → STOP and clarify.
 
-2. Verify ONE case ID in context
-   - Look at the current Sprinklr page (and, if needed, the recent RE output for that same case).
-   - Confirm you see only ONE Fall # / case ID for the currently visible case.
-   - If multiple case IDs are simultaneously visible or ambiguous → STOP and ask: Which case ID should I fill the form for?
-
-3. Verify ONE customer name (optional but good practice)
-   - Check the customer details on the currently visible case.
-   - If multiple customer names are associated with the visible case → STOP and clarify before proceeding.
-
-## THEN:
-
-1. Use the current case ID in context (e.g. Fall ID from recent RE)
-   - If no case ID is clear → Ask: What is the case ID (Fall #) for this form?
-2. Open or reuse the **Roberta Case Tracker** tab from the current Sprinklr browser context:
-   - URL: `https://roberta.yoummday.com/casetracker/` (or `case_tracker_url` from `config.json`).
-   - First, check whether a Roberta Case Tracker tab is already open; if yes, reuse it.
-   - Otherwise open a **new tab** from the Sprinklr context and navigate to the Case Tracker URL.
-   - If the password gate is shown, log in using `case_tracker_nq` + `case_tracker_password` from `config.json`.
-   - After open/fill, return focus to the Sprinklr email tab.
-3. Run the fill script for ONE case only:
+## RUN LF
 
 ```powershell
 uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --attachments 0
 ```
 
-   - Default: E-Mail Care, no transfer — **do not** click Speichern unless the user asks.
-   - **Salcus (Roberta) / Kundennummer (Sprinklr):** read from sidebar field **`data-entityid="Kundennummer"`** (value in `span[data-testid="htmlText"]`, e.g. `60543052`). Paste into Roberta `input#salcus`. Leave empty when **Nicht festgelegt** or missing — do **not** use email body text.
-   - **Ticketstatus Salcus:** Transfer **Ja** → always `3-Bot dokumentiert nicht in Salcus`. Transfer **Nein** → `1-Erfolgreich` when Kundennummer present, else `3-Bot dokumentiert nicht in Salcus`.
-   - **Transfer:** auto from Sprinklr **Quelle/Ziel** — e.g. **Widerruf** → Transfer **Ja**, target **`CBC_XF_E_WIDERRUF`**; handle-directly queues → Transfer **Nein**.
-4. Do NOT fill multiple forms or multiple cases in one LF command
+Script reads Sprinklr sidebar automatically when `--salcus`, `--transfer`, and `--target` are omitted.
 
-## AFTER EXECUTION:
+### Open / reuse tracker tab
 
-- ONE form only has been opened and filled for ONE case
+- Reuse an open `roberta.yoummday.com/casetracker/` tab if present; otherwise open a **new tab** from the Sprinklr browser context.
+- Login gate → `case_tracker_nq` + `case_tracker_password` in `config.json`.
+- After fill, return focus to Sprinklr. **Do not** click **Speichern** unless the user asks (`--submit`).
+
+### Field mapping (Sprinklr → Roberta)
+
+| Roberta field | Selector | Source on Sprinklr | Rule |
+|---------------|----------|-------------------|------|
+| Case # | `input[name="sikas"]` | Fall # (visible case) | Digits only; `#` optional |
+| Salcus | `input[name="salcus"]` | **Kundennummer** sidebar field `data-entityid="Kundennummer"`, value in `span[data-testid="htmlText"]` | Fill when present. **Empty** when **Nicht festgelegt** or missing. **Never** use email body text. Sprinklr label = Kundennummer; Roberta label = Salcus. |
+| Kanal | `#channel_em_care` | Default | E-Mail Care |
+| Transfer | `#transfer0` / `#transfer1` | See transfer rules below | |
+| Target | `input[name="target"]` | Sprinklr **Ziel** or routing rule | Only when Transfer = Ja |
+| Ticketstatus Salcus | `#tstate1` / `#tstate3` | Derived — see below | |
+| Anhänge | `input[name="note"]` | `--attachments N` | Note only when N > 0 |
+
+### Ticketstatus Salcus (mandatory)
+
+| Condition | Select |
+|-----------|--------|
+| **Transfer = Ja** | **3-Bot dokumentiert nicht in Salcus** (`#tstate3`) — always, even if Kundennummer is present |
+| **Transfer = Nein** + Kundennummer present | **1-Erfolgreich** (`#tstate1`) |
+| **Transfer = Nein** + no Kundennummer | **3-Bot dokumentiert nicht in Salcus** (`#tstate3`) |
+
+### Transfer (mandatory)
+
+**Never log Transfer Ja to our own team.** `CBC_*_CARE_ALLGEMEIN` queues (including `CBC_XF_E_CARE_ALLGEMEIN`, `CBC_E_CARE_ALLGEMEIN`, `CBC_CARE_ALLGEMEIN`) = **we handle directly** → **Transfer: Nein**, target empty.
+
+| Sprinklr signal | Transfer | Target |
+|-----------------|----------|--------|
+| **Quelle** or **Subject** contains **Widerruf** | **Ja** | `CBC_XF_E_WIDERRUF` |
+| **Ziel** is our Care team (`*CARE_ALLGEMEIN*`) | **Nein** | (empty) |
+| **Ziel** is external queue (e.g. `CBC_XF_E_WIDERRUF`, `CBC_XF_E_KUNDENDATEN`, …) | **Ja** | Ziel value |
+| **Ziel** is email address | **Ja** | email |
+| **Ziel** unset / **Nicht festgelegt** | **Nein** | (empty) |
+
+Read **Ziel** from Case Informationen (`data-entityid="Ziel"` in the same section as Fallnummer/Quelle). Do not use historical-case Ziel rows.
+
+Routing rules will be extended case-by-case in chat; script default lives in `fill_case_tracker.py` → `resolve_transfer()`.
+
+## AFTER EXECUTION
+
+- ONE tracker form filled for ONE case
 - User clicks **Speichern** manually after sending the email
-- Case Tracker tab may stay open for the next LF
-- Next LF command is for the NEXT case (if any)
+- Tracker tab may stay open for the next LF
 
 VIOLATION OF THIS RULE = DATA BREACH. DO NOT PROCEED IF UNCERTAIN.
-

@@ -185,8 +185,23 @@ _HANDLE_DIRECTLY_ZIELS = frozenset(
     {
         "CBC_E_CARE_ALLGEMEIN",
         "CBC_CARE_ALLGEMEIN",
+        "CBC_XF_E_CARE_ALLGEMEIN",
     }
 )
+
+
+def _normalize_ziel(ziel: str) -> str:
+    return (ziel or "").strip().upper().replace(" ", "")
+
+
+def _is_our_care_ziel(ziel: str) -> bool:
+    """True when Sprinklr Ziel is our Backoffice team (handle directly, no transfer log)."""
+    z = _normalize_ziel(ziel)
+    if not z or z.lower() in _SALCUS_UNSET:
+        return False
+    if z in _HANDLE_DIRECTLY_ZIELS:
+        return True
+    return "CARE_ALLGEMEIN" in z
 
 _EXTRACT_CASE_INFO_JS = r"""
 () => {
@@ -246,17 +261,21 @@ def resolve_transfer(case_info: dict | None) -> tuple[str, str]:
     ziel = (case_info.get("Ziel") or "").strip()
     subject = (case_info.get("Subject") or "").lower()
 
-    # Widerruf cases → transfer to Widerruf queue (workspace routing rule)
+    # Widerruf cases → real transfer to Widerruf queue (not our Care Allgemein team)
     if "widerruf" in quelle or "widerruf" in subject:
         return "1", "CBC_XF_E_WIDERRUF"
+
+    # Our team (CBC_*_CARE_ALLGEMEIN incl. CBC_XF_E_CARE_ALLGEMEIN) — never Transfer Ja to ourselves
+    if _is_our_care_ziel(ziel):
+        return "0", ""
 
     if not ziel or ziel.lower() in _SALCUS_UNSET:
         return "0", ""
 
-    if ziel in _HANDLE_DIRECTLY_ZIELS:
-        return "0", ""
+    if "@" in ziel:
+        return "1", ziel
 
-    if "_" in ziel or "@" in ziel:
+    if "_" in ziel:
         return "1", ziel
 
     return "0", ""

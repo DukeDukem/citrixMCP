@@ -24,8 +24,9 @@ Use this as the startup instruction set for any new agent session.
 ## 3b) Login discipline
 
 - If user types `login`, run startup/login flow immediately.
-- `login` command is login-only: authenticate and stop immediately after successful login.
-- If post-submit page appears and audio/missing-audio popup is shown, treat login as complete and stop immediately (no extra retries/new tabs).
+- `login` command is login-only: authenticate Sprinklr, **open Roberta Case Tracker tab**, then stop.
+- After Sprinklr login verified, automation opens `https://roberta.yoummday.com/casetracker/` in a new tab (Sprinklr tab stays active). Reuses existing tracker tab if open. Credentials: `case_tracker_nq` + `case_tracker_password` in `config.json`.
+- If post-submit page appears and audio/missing-audio popup is shown, treat Sprinklr login as complete; then open Case Tracker and stop (no monitor/RE/PR/LF).
 - Before any monitoring or case action, verify authenticated state:
   - not on login form (`uid/pass` not active), and
   - Sprinklr console workspace is loaded.
@@ -103,11 +104,29 @@ Unless user explicitly instructs exact wording for that reply:
 - On leak/double-paste detection: stop, block send, rebuild clean from current case only.
 - Prefer safe refusal over risky send.
 
-## 10) LF form navigation
+## 10) LF — Roberta Case Tracker
 
-- For LF, open **Roberta Case Tracker** in a new tab (or reuse an open tab) from the Sprinklr browser context.
-- URL: `https://roberta.yoummday.com/casetracker/`
-- Run: `uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --attachments 0`
-- **Salcus ID:** Sprinklr sidebar **Kundennummer** (`data-entityid="Kundennummer"`) → Roberta field `salcus`. Empty when **Nicht festgelegt**.
-- **Ticketstatus Salcus:** Transfer **Ja** → always `3-Bot dokumentiert nicht in Salcus`. Transfer **Nein** → `1-Erfolgreich` when Kundennummer present, else `3`.
+**URL:** `https://roberta.yoummday.com/casetracker/` — replaces Microsoft Forms for LF.
+
+**Command:**
+```powershell
+uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --attachments 0
+```
+
+**Auto-fill from visible Sprinklr case:**
+
+| Field | Rule |
+|-------|------|
+| **Case #** (`sikas`) | Fall # |
+| **Salcus** (`salcus`) | Sprinklr **Kundennummer** (`data-entityid="Kundennummer"` → `htmlText`); empty if **Nicht festgelegt** |
+| **Kanal** | E-Mail Care |
+| **Transfer** | See below |
+| **Ticketstatus Salcus** | Transfer **Ja** → always **3**; Transfer **Nein** + Kundennummer → **1**; else **3** |
+
+**Transfer (never to ourselves):**
+- **Widerruf** (Quelle/Subject) → **Ja** → `CBC_XF_E_WIDERRUF`
+- **Our team** (`CBC_*_CARE_ALLGEMEIN`, incl. `CBC_XF_E_CARE_ALLGEMEIN`) → **Nein**
+- Other external **Ziel** / email → **Ja** + target
+
+User clicks **Speichern** manually. Full spec: `.cursor/rules/lf-log-form.mdc`.
 

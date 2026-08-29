@@ -57,11 +57,15 @@
 - Count "Guten Tag" (must = 1) and signature blocks (must = 1)
 - If merged → REJECT and ask which customer
 
-### 9. LF = LOG FORM (ONE CASE ONLY)
+### 9. LF = LOG FORM — Roberta Case Tracker (ONE CASE ONLY)
 - Location: `.cursor/rules/lf-log-form.mdc`
-- Fill ONE case tracker form only per LF command
-- Verify ONE case ID in context
-- If multiple case IDs → STOP and ask which one
+- Platform: `https://roberta.yoummday.com/casetracker/` (NOT Microsoft Forms)
+- Fill ONE tracker entry per LF; verify ONE case ID
+- **Salcus** = Sprinklr **Kundennummer** (`data-entityid="Kundennummer"`) → Roberta `salcus`
+- **Ticketstatus Salcus:** Transfer Ja → always **3-Bot dokumentiert nicht in Salcus**; non-transfer + Kundennummer → **1-Erfolgreich**; else **3**
+- **Transfer:** Widerruf → Ja + `CBC_XF_E_WIDERRUF`; our team (`CBC_*_CARE_ALLGEMEIN`) → **Nein** (never transfer to ourselves); other external Ziel → Ja + target
+- Script: `uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --attachments 0`
+- User clicks **Speichern** manually after sending email
 
 ### 10. POST-PASTE VERIFICATION
 - Location: `.cursor/rules/post-pr-leak-verification.mdc`
