@@ -1,15 +1,51 @@
 ---
-description: When the user has designated the chat as instructions-only (rules/configuration only), never run RE, PR, or LF for customer cases.
-alwaysApply: false
+description: Instructions-only / rules chats must never run RE, PR, LF, or login. Warn if user mistakes the chat for case processing.
+alwaysApply: true
 ---
-# Instructions-only chat: no RE, PR, LF
 
-When the user has **explicitly stated** in this conversation that this chat is for **rules, configuration, or instructions only** (e.g. "this chat is for rule configuration and updates ONLY", "do not process RE/PR/LF here"), then:
+# Instructions-only chat — no RE, PR, LF, login
 
-- **Do not run** the read-email script or produce the 7-step RE output.
-- **Do not run** paste-reply (PR) or log-form (LF) for any customer case.
-- If the user types **RE/re**, **PR/pr**, or **LF/lf** in this chat, **do not process** the command. Respond instead:
+Some workspace chats are **rules/configuration only** (agent directives, skill updates, transfer-matrix changes, Case Tracker setup, etc.). **This is not the customer-case processing chat.**
 
-  **Wrong chat – use the separate agent for customer cases (RE/PR/LF).**
+## When this rule applies
 
-This rule applies only when the user has previously designated the current conversation as instructions-only. It does not affect other chats where RE/PR/LF are used normally.
+Treat the current chat as **instructions-only** when **any** of these is true:
+
+1. The user **previously stated** this chat is for rules/configuration only (e.g. "this chat is for rule configuration ONLY", "do not process RE/PR/LF here").
+2. The conversation is **clearly** about rules, skills, config, or automation design — **not** an active Sprinklr case thread (no visible-case RE workflow in progress for paste/send).
+3. The user is asking to **retain/update rules** or agent behaviour (like this directive).
+
+When in doubt in a mixed thread: if the user sends **only** `RE`, `PR`, `LF`, or `login` without rules context → **warn and refuse** case processing.
+
+## Blocked commands (do not run scripts or automation)
+
+| Command | Blocked action |
+|---------|----------------|
+| **RE** / **re** | read-email script, 7-step case output |
+| **PR** / **pr** | paste reply, write-reply script |
+| **LF** / **lf** | fill_case_tracker.py, log form |
+| **login** | Sprinklr login-only / startup automation |
+
+Also do **not** partially run case steps (no CDP Sprinklr reads "just to check" unless explicitly for **rules/testing documentation** the user asked for in this chat).
+
+## Mandatory warning (use every time)
+
+When the user triggers a blocked command in an instructions-only chat, **do not process it**. Reply with this (or equivalent) **before anything else**:
+
+```
+⚠️ Wrong chat — this thread is for rules and configuration only, not Sprinklr login or email processing (RE / PR / LF).
+
+Open a separate chat for customer cases, then run your command there.
+```
+
+If the user also asked a rules/config question in the same message, answer that **after** the warning.
+
+## What IS allowed here
+
+- Updating `.cursor/rules/`, skills, AGENT-INSTRUCTIONS, TransferMatrix, config structure (not live case handling)
+- Explaining how RE/PR/LF/login work
+- Documenting test results from configuration work **without** treating the chat as the live processing queue
+
+## Customer-case chats
+
+Other chats where the user is actively processing a visible Sprinklr case (RE → PR → LF flow) follow the normal RE/PR/LF rules. This file does not disable those chats — only prevents **mistaken** use of an instructions-only thread.

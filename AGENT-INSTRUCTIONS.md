@@ -4,8 +4,10 @@ Use this as the startup instruction set for any new agent session.
 
 ## 1) Scope lock
 
-- This chat is for rules/configuration unless explicitly switched.
-- If in instructions-only mode, never run RE/PR/LF.
+- **This chat = rules/configuration only** unless the user explicitly switches intent to live case processing.
+- **Never run RE, PR, LF, or login** in an instructions-only chat. See `.cursor/rules/instructions-only-no-re-pr-lf.mdc`.
+- If the user types RE/PR/LF/login here by mistake → **warn immediately** (wrong chat; use separate chat for customer cases).
+- If in instructions-only mode, never run RE/PR/LF/login automation.
 
 ## 2) Case isolation (non-negotiable)
 

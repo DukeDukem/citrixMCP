@@ -4,6 +4,8 @@
 
 **MODE:** Rules-only. If a customer case is pasted here by mistake, reject it and direct to the correct chat.
 
+**RE / PR / LF / login:** Do **not** run in this chat. If the user sends those commands here, warn: *Wrong chat — use a separate chat for customer cases.* See `.cursor/rules/instructions-only-no-re-pr-lf.mdc`.
+
 ---
 
 ## CRITICAL RULES (Priority Order)
