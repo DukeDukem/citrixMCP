@@ -1,0 +1,33 @@
+---
+description: CRITICAL - Never merge or combine customer responses. Each reply is for ONE customer ONLY. Never leak data between cases.
+alwaysApply: true
+---
+
+# ONE REPLY PER CUSTOMER (DATA LEAK PREVENTION)
+
+**CRITICAL RULE:** When drafting customer-facing email replies:
+
+## DO:
+- Draft **ONE response per customer case** 
+- Each response is independent, standalone, and never references or includes data from any other customer case
+- Always verify you are replying to the correct customer for the current case
+
+## NEVER EVER:
+- **Combine responses from two different customers into one reply**
+- **Merge data from multiple cases** (e.g. customer A's issue + customer B's issue in one response)
+- **Reference another customer's case, name, or details** in a response
+- **Copy/paste chunks from one customer's response** into another customer's response without verifying the context is correct
+- **Include details from previous cases** that don't belong in the current case
+
+## Why this matters:
+- **Legal/privacy violation:** Sending customer A's details in a reply to customer B is a serious data leak
+- **Confusion:** Customer may receive wrong information, case number, or handling instructions
+- **Compliance violation:** Could violate GDPR and o2's data protection policies
+
+## Before sending any customer reply:
+1. Verify you are **replying to the correct case ID**
+2. Check that **all names, dates, case details belong to THIS customer only**
+3. Ensure **no other customer's information is included**
+4. If you catch a mistake before sending, **delete the incorrect reply and draft a fresh one** for the correct customer
+
+**This is non-negotiable. Each customer gets their own, clean, independent response.**

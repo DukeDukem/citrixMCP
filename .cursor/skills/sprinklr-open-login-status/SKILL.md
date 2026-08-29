@@ -1,34 +1,53 @@
 ---
 name: sprinklr-open-login-status
-description: Opens the Sprinklr (Telefonica Germany) webpage, logs in with configured credentials, and sets agent status to "Verfügbar" (active). Use when the user wants to open Sprinklr, log in, set status as available/active, or prepare the console for handling emails. Must run first before read-answer-email or fill-microsoft-form.
+description: Opens the Sprinklr (Telefonica Germany) webpage, logs in with configured credentials, sets agent status to "Verfügbar" (active), and starts the email monitor so new emails are auto-detected and replied. Use for cold start (after restart) or to open Sprinklr and keep monitoring active. Stop with Ctrl+C.
 ---
 
-# Sprinklr: Open, Login, Set Status Active
+# Sprinklr: Open, Login, Set Status, and Start Email Monitor
 
-**Independent script:** This skill runs on its own. It does not call any other skill. Run it first so the browser is logged in; Skills 2 and 3 then use that same browser when you run them separately.
+**One command:** Run this to open Sprinklr, log in, set status to **Verfügbar**, and **start the email monitoring loop**. The script stays active and watches for new emails until you press **Ctrl+C**. Ideal after closing Cursor or restarting the PC.
 
-**Order:** Skill 1 of 3. Run this first. Without it, read-answer-email and fill-microsoft-form have no logged-in session to attach to.
+**Order:** Skill 1 of 3. Run this first; it now includes the monitor so you do not need to run the monitor script separately.
 
 ## How to invoke
 
-**Run the script in this skill.** From repo root (or anywhere, script finds repo):
+From repo root (or anywhere, script finds repo):
 
 ```powershell
 uv run python .cursor/skills/sprinklr-open-login-status/run.py
 ```
 
-Or with system Python if dependencies are installed:
+Or with system Python:
 
 ```powershell
 python .cursor/skills/sprinklr-open-login-status/run.py
 ```
 
-The script runs `scratchspace/run_sprinklr_email_automation.py --login-only` (starts Chrome with CDP if needed, logs in, sets status to Verfügbar, then exits).
+The script runs the automation with **--login-then-monitor**: starts Chrome with CDP if needed, opens Sprinklr, logs in, sets status to Verfügbar, then **starts the email monitor** and keeps running until Ctrl+C.
+
+## Mandatory login verification gate
+
+Before any follow-up automation (monitoring, RE, PR, LF, or case handling), the agent must verify that login actually succeeded.
+
+- Required checks (at least one must be true, and none may indicate login page):
+  - Sprinklr console URL is loaded (`/app/console` or console workspace visible), or
+  - UI shows authenticated console elements (queue/case area, agent status controls), and
+  - Login form is no longer present (`input[name="uid"]` / `input[name="pass"]` not active).
+- If login is not verified:
+  - Re-run login flow once.
+  - If still not verified, stop and report login failure instead of continuing.
+
+**To stop:** Press **Ctrl+C** in the terminal.
+
+**Login only (no monitor):** If you only want to log in and exit without starting the monitor, run the runner directly with `--login-only`:
+```powershell
+uv run python .cursor/skills/sprinklr-email-automation/run_sprinklr_email_automation.py --login-only
+```
 
 ## Script file
 
 - **Path:** `.cursor/skills/sprinklr-open-login-status/run.py`
-- **Does:** Resolves repo root, sets `SPRINKLR_CDP_ENDPOINT`, runs the runner with `--login-only`.
+- **Does:** Runs the automation with `--login-then-monitor` (login + set status, then start email monitoring).
 
 ## Prerequisites
 

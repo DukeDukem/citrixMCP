@@ -1,0 +1,43 @@
+---
+description: RE section 1 — ultra-clear case summary; minimal words, no filler.
+alwaysApply: true
+---
+
+# Case Summary Format (Section 1 of RE)
+
+**Goal:** Anyone skimming section 1 must instantly know **what is wrong** and **what the customer wants** — nothing else.
+
+## Length (strict)
+
+- **Target: 35–50 words.** Hard **max 60** words (even with multiple issues: compress, do not list everything).
+- If you exceed 60 words, you failed the format — rewrite shorter.
+
+## What to put (in this order, plain language)
+
+1. **Fall # + customer name** (once, short).
+2. **The actual problem** — one concrete sentence (wrong bill, missing delivery, login fails, cancellation not processed, etc.). No vague “issue” or “concern”.
+3. **What they want now** — one short phrase (refund, fix, confirmation, transfer, etc.).
+4. **Prior o2/brand** — **optional, max one short clause** only if it changes understanding (e.g. “o2 already sent duplicate invoice”). If nothing material, **omit**.
+5. **Date context** — one short clause if a deadline or date matters (past/future). Otherwise **omit**.
+
+## Cut out (mandatory)
+
+- Thread play-by-play, chronology, “first they wrote then we…”
+- Emotions, apologies, “customer feels”, “unfortunately”
+- Explaining Sprinklr, process, or internal steps
+- Repeating subject line or long quotes from the email
+- Secondary issues unless they are the same problem in one phrase
+- Anything that does not help a human decide **case type + urgency + ask** in 5 seconds
+
+## Style
+
+- **One short paragraph.** No bullets. No “The customer stated…”.
+- Prefer **subject–verb–object** sentences over abstract nouns.
+- Bad: *“There have been ongoing difficulties regarding billing alignment post-migration.”*
+- Good: *“Double charge on March invoice; customer wants correction.”*
+
+## Micro-template (mental)
+
+`Fall #____, Name: [concrete problem]. Wants: [ask]. [Optional: one prior o2 fact.] [Optional: date note.]`
+
+Apply to **every** RE section 1.

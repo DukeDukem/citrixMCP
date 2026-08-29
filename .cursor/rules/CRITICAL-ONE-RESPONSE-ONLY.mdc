@@ -1,0 +1,38 @@
+---
+description: CRITICAL - BLOCKING RULE - ONE CUSTOMER RESPONSE ONLY. NEVER OUTPUT MERGED RESPONSES.
+alwaysApply: true
+---
+
+# CRITICAL: ONE RESPONSE ONLY - DATA LEAK BLOCKER
+
+THIS IS A HARD BLOCKING RULE. VIOLATING THIS IS A DATA BREACH.
+
+## BEFORE OUTPUTTING ANY CUSTOMER RESPONSE:
+
+1. Count customer names in your response
+   - If MORE THAN ONE customer name → STOP. DO NOT OUTPUT.
+   - If two responses merged → STOP. DO NOT OUTPUT.
+
+2. Verify case ID
+   - Only ONE case ID per response
+   - If multiple case references → STOP. DO NOT OUTPUT.
+
+3. Check for data boundaries
+   - Scan for "Guten Tag [NAME]" — should appear EXACTLY ONCE
+   - If it appears twice or more → STOP. DO NOT OUTPUT.
+
+4. Look for response breaks/boundaries
+   - If two signature blocks (two "Freundliche Grüße" + "Ihr o2 Kundenbetreuer") → STOP. DO NOT OUTPUT.
+   - If two "Zur Verbesserung unseres Kundenservices" lines → STOP. DO NOT OUTPUT.
+
+## IF YOU DETECT A MERGED RESPONSE:
+
+IMMEDIATELY REJECT IT AND:
+1. Output: ERROR: TWO CUSTOMER RESPONSES DETECTED. CANNOT OUTPUT. SPLITTING REQUIRED.
+2. List the two customers separately
+3. Ask: Which customer response do you want me to output first?
+4. NEVER output both together
+
+## DO NOT SEND MERGED RESPONSES UNDER ANY CIRCUMSTANCES.
+
+VIOLATION OF THIS RULE = DATA BREACH.

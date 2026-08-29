@@ -41,17 +41,17 @@ def main() -> int:
         return 1
     env = os.environ.copy()
     env["SPRINKLR_CDP_ENDPOINT"] = "http://127.0.0.1:9222"
-    return subprocess.call(
-        [
-            sys.executable,
-            str(runner),
-            "--write-reply-only",
-            f"--reply-file={reply_path}",
-            "--wait-next-extract-only",
-        ],
-        cwd=str(_REPO_ROOT),
-        env=env,
-    )
+    args = [
+        sys.executable,
+        str(runner),
+        "--write-reply-only",
+        f"--reply-file={reply_path}",
+    ]
+    if "--no-fill-case-tracker" in sys.argv:
+        args.append("--no-fill-case-tracker")
+    if "--wait-next-extract-only" in sys.argv:
+        args.append("--wait-next-extract-only")
+    return subprocess.call(args, cwd=str(_REPO_ROOT), env=env)
 
 
 if __name__ == "__main__":

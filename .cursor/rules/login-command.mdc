@@ -1,0 +1,48 @@
+---
+description: Handle explicit "login" input by running Sprinklr login and verifying authenticated state before any further automation.
+alwaysApply: true
+---
+
+# LOGIN command behavior
+
+When the user input is **"login"** (or clearly requests login/startup login), execute login handling immediately.
+
+## Required flow
+
+1. Run Sprinklr login/startup skill:
+   - For explicit `login` command, use **login-only** mode:
+     - `uv run python .cursor/skills/sprinklr-email-automation/run_sprinklr_email_automation.py --login-only`
+   - Do **not** start monitor, RE, PR, LF, status-setting, or other post-login steps in this command flow.
+
+2. **Do not proceed** to monitoring, RE, PR, LF, or any case handling until login success is verified.
+
+3. Verify authenticated state (must pass):
+   - Not on login page anymore (no active `uid/pass` login form), and
+   - Console is visible/loaded (Sprinklr console workspace elements or console URL).
+   - If current tab is not a Sprinklr page, force navigation to login URL before credential fill.
+
+4. If verification fails:
+   - Retry login flow once.
+   - If still failing, stop and report: `ERROR: LOGIN NOT VERIFIED. STOPPING AUTOMATION.`
+
+## Post-login Case Tracker tab (required)
+
+After Sprinklr login is verified in **login-only** mode, the automation **opens Roberta Case Tracker** in a new browser tab:
+
+- URL: `https://roberta.yoummday.com/casetracker/`
+- Opened from the Sprinklr email-processing window; Sprinklr tab stays active afterward.
+- Reuses an existing Case Tracker tab if already open.
+- If the password gate appears, credentials come from `config.json` (`case_tracker_nq`, `case_tracker_password`).
+
+This is the only extra tab opened during login-only (no monitor, no RE/PR/LF).
+
+## Stop condition (strict)
+
+- As soon as credentials are submitted and login is verified, complete Case Tracker tab open, then stop.
+- In login-only mode: once the post-submit page opens and the audio-related popup appears (e.g. missing audio), treat Sprinklr login as complete; then open Case Tracker and stop.
+- Do not start email monitoring or case processing after login-only.
+
+## Safety
+
+- Never assume login succeeded just because the script started.
+- Login verification is a hard gate before all other flows.

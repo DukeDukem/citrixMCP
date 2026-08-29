@@ -1,0 +1,45 @@
+---
+description: Never mention internal company tools/systems (Authentifizierungsmatrix, Sabio, TIM, Wissensbasis, etc.) to customers.
+alwaysApply: true
+---
+
+# No internal company systems in customer replies
+
+**Hard rule:** Customer-facing text (RE section 5/6, `temp_reply.txt`, Sprinklr editor, PR paste) must **never** name or allude to internal tools, systems, databases, or process documents.
+
+## Forbidden in customer body (examples — not exhaustive)
+
+Do **not** mention:
+
+- **Authentifizierungsmatrix** / Authentifizierung Matrix / Auth-Matrix
+- **Sabio**
+- **TIM**
+- **Wissensbasis** / KnowledgeBase / KB
+- **TransferMatrix** / Transfermatrix / Transferziel / Ziel-Kontakt (as internal routing jargon)
+- **Sprinklr** / SIKAS / Marquez / SalCus / CACS (as system names)
+- **Themen-ID** / Ticket-Themen-ID / Buchungsgrund (as internal ticket codes)
+- Internal queue names (e.g. CBC_CARE_ALLGEMEIN, CBC_XF_E_KUNDENDATEN, CS_Hardware)
+
+Agent chat sections (1–4, 7) **may** use these names for the agent. The **customer email only** must stay free of them.
+
+## What to write instead
+
+Describe the **customer-visible** path only, e.g.:
+
+- Mein o2 / o2.de / App steps
+- Documents the customer can send (Ausweis, IBAN last digits, Kundennummer)
+- That the request was forwarded to the responsible team (without naming internal queues/tools)
+- Official public contact channels only when allowed by other reply rules
+
+## Pre-output / pre-paste gate
+
+Before outputting section 6 or running PR:
+
+1. Scan the reply for the forbidden terms above (case-insensitive).
+2. If any appear → **STOP**. Rewrite without internal names.
+3. On PR paste failure due to this rule, output:  
+   `ERROR: INTERNAL SYSTEM NAME IN CUSTOMER REPLY. DO NOT PASTE.`
+
+## Intent
+
+Customers must not see internal process infrastructure. Keep replies customer-facing and QA-safe.

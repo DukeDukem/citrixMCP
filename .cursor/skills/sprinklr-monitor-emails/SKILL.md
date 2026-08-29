@@ -31,6 +31,24 @@ Run this once at the start of a shift and leave it running in the background whi
 
 This skill uses the same formatting + template rules defined in `sprinklr-read-answer-email` and `sprinklr-write-reply`.
 
+## Cold start (after closing Cursor or restarting PC)
+
+**Recommended – one command:** The login skill now starts the monitor automatically. Run:
+
+```powershell
+uv run python .cursor/skills/sprinklr-open-login-status/run.py
+```
+
+This starts Chrome (if needed), logs in, sets status to Verfügbar, and **starts the email monitor** in the same process. Leave it running; press **Ctrl+C** to stop.
+
+**Alternative – monitor only:** If Chrome is already running and you are already logged in (e.g. you only want to start the monitor in a second terminal):
+
+```powershell
+uv run python .cursor/skills/sprinklr-monitor-emails/run.py
+```
+
+**Legacy – two-step helper:** You can still use `start_monitoring.py` (login script then monitor script in sequence) if you prefer.
+
 ## How to invoke
 
 From the repo root (or any directory, the script finds the repo root automatically):

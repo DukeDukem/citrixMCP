@@ -1,0 +1,47 @@
+---
+description: Customer reply solutions — no default hotline; case-specific alternatives; QA-safe substance.
+alwaysApply: true
+---
+
+# Customer reply solutions (QA-safe, efficient)
+
+## No default hotline in customer body
+
+**Do not** add care hotline / Kundenbetreuung phone numbers (e.g. **089 78 79 79 400**) or generic “call us” routing in section 6 **unless** one of these applies:
+
+1. **KnowledgeBase** or **TransferMatrix** explicitly requires hotline referral for this case type/topic, or
+2. A **documented exception** in `sprinklr-read-answer-email` SKILL.md applies (e.g. new offer/VVL), or
+3. The **chat user explicitly instructs** that exact hotline wording for this reply.
+
+If none apply → **omit hotline**. Prefer **Mein o2**, **o2.de**, app paths, official forms, and concrete self-service steps instead.
+
+Matrix/channel rows that say **Hotline** or **Web/App/Hotline** mean **routing for the agent** (transfer or do not process by E-Mail); they do **not** automatically require pasting the hotline number into the customer email unless KB text for that scenario says to include it.
+
+---
+
+## Case-specific alternatives (default when drafting section 6)
+
+When building the customer reply:
+
+1. Query **KB/TransferMatrix** first (existing flow).
+2. If KB gives thin/generic guidance, **or** the chat user’s post-RE rewrite instructions are **insufficient or lack substance**, **search the web** (official o2/Telefónica sources, help pages, reputable forums/community threads) for **viable paths that match this customer’s exact issue**.
+3. Include **1–3 concrete alternatives** in the reply body where helpful, e.g.:
+   - exact **Mein o2** menu path,
+   - official **o2.de** page or form,
+   - documented self-service step the customer can take now,
+   - sensible fallback only when KB or official sources support it.
+
+Alternatives must be **specific to this case** — not generic filler. Do not paste unrelated canned blocks (e.g. random cancellation confirmations).
+
+---
+
+## QA / workflow efficiency (intent)
+
+Customer replies should let the customer **act immediately** without vague “we will check” language (see no-uninvited-promises rules).
+
+- **Substance over boilerplate:** enough detail that QA does not bounce the reply for being empty or non-actionable.
+- **No invented backend actions:** still no promises of internal processing unless chat user instructs.
+- **No internal system names:** never mention Authentifizierungsmatrix, Sabio, TIM, Wissensbasis, or other internal tools in section 6 (see `.cursor/rules/reply-no-internal-systems.mdc`).
+- **Efficiency:** one clear reply with real next steps beats a short deflection plus hotline.
+
+Agent sections (4–5) may still note hotline/transfer for **you**; section 6 only includes hotline when the rules above allow it.

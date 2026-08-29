@@ -1,0 +1,22 @@
+---
+description: In customer-facing email replies, the thank you must be case-specific and meaningful—never generic.
+alwaysApply: true
+---
+
+# Case-specific thank you (mandatory)
+
+When drafting **customer-facing email replies** (e.g. in Sprinklr read-email / RE flow), the **thank you must be specific to the customer's individual concern and case**, not generic.
+
+## NEVER use generic lines like:
+- *"vielen Dank für Ihre E-Mail zu Fall #36747021"* / "thank you for contacting us about your case" 
+  - **Do NOT mention "Fall #" or the case number to the customer**
+- *"vielen Dank für Ihre E-Mail"* / "thank you for your email"
+- *"wir danken Ihnen für Ihre Nachricht"* / "we thank you for your message"
+
+## ALWAYS use a personalized, case-specific thank you:
+- *"vielen Dank, dass Sie uns auf die fehlende Gutschrift aufmerksam gemacht haben"* / "thank you for bringing the missing refund to our attention"
+- *"vielen Dank für Ihre Geduld bezüglich der Verzögerung bei der Bearbeitung Ihrer Kündigung"* / "thank you for your patience as we process your cancellation"
+- *"vielen Dank für Ihre Anfrage zu Ihrer Tarifänderung"* / "thank you for your inquiry regarding your plan change"
+- *"vielen Dank, dass Sie uns über diesen Fehler informiert haben"* / "thank you for reporting this error to us"
+
+The thank you should **reflect the specific issue** (refund, cancellation, plan change, billing error, product complaint, etc.) so the customer feels heard and understood.

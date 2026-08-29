@@ -1,0 +1,94 @@
+---
+description: Mandatory email reply template: salutation (Guten Tag + name or Guten Tag only), case-specific thank you, context-based empathy, then fixed survey/signature block.
+alwaysApply: true
+---
+
+# Email reply template (mandatory structure)
+
+Use this structure for **every** customer-facing email reply (RE flow Section 5/6, temp_reply.txt, Sprinklr). Do not omit or reorder parts.
+
+---
+
+## 1. Salutation
+
+- **Mirror** what the contact uses in their signature.
+- **Preferred:** **Guten Tag [First Name Last Name],** — use the customer’s first and last name **only**. Do **not** use Herr/Frau.
+- **If no name is known,** or **only the last name** is given **without** (abbreviated) first name: use **Guten Tag,** only. Do not guess or invent a first name.
+
+### Salutation integrity gate (hard stop)
+
+Before outputting or pasting, the salutation must be validated against the **currently visible case**:
+
+1. The salutation name must belong to the visible-case customer/signature only.
+2. Never reuse a name from previous cases, cached drafts, clipboard, or temp files.
+3. If salutation source is ambiguous, use `Guten Tag,` (no name) rather than risking a wrong name.
+4. If draft salutation name does not match visible-case customer identity, STOP.
+5. If no customer name is visibly verifiable in the current case, the salutation must be exactly `Guten Tag,` (no name). Never paste any named salutation in this condition.
+
+Mandatory stop message:
+
+`ERROR: SALUTATION NAME MISMATCH DETECTED. DO NOT SEND.`
+
+Examples: *Guten Tag Viktoria Anaya,* | *Guten Tag Mohammed Saad,* | *Guten Tag,* (when no/full name not provided).
+
+---
+
+## 2. Body (in order)
+
+1. **Case-specific thank you** to the customer, tailored to the specific concern (refund, cancellation, billing issue, etc.) and **without mentioning "Fall #" or any case number**.
+2. Show **specific sympathy** for the customer’s case and circumstances.  
+   - Add an apology **only when contextually necessary** (e.g. service failure, wrong charge, delay, misinformation, missed commitment, inconvenience caused by us).  
+   - If no apology context exists (neutral request, info request, routine update), **do not apologise by default**.
+
+(Then add any case-specific content only as required — **without** promising internal checks, processing, timelines, or further messages from us, **unless** you are explicitly instructed in chat to include that wording.)
+
+### No uninvited promises (customer body)
+
+**Unless explicitly instructed in chat** for that reply:
+
+- Do **not** promise internal reviews, ticket handling, logistics checks, or future Rückmeldung / callbacks / timelines.
+- Do **not** copy KB or template lines that add such promises; **omit or neutralize** them by default.
+
+### No internal systems in customer body (hard rule)
+
+**Never** name internal company tools or process docs to the customer — e.g. **Authentifizierungsmatrix**, **Sabio**, **TIM**, **Wissensbasis**, TransferMatrix, Sprinklr, Marquez, Themen-ID, queue names. See `.cursor/rules/reply-no-internal-systems.mdc`. Use only customer-visible wording (Mein o2, o2.de, documents to provide, responsible team without internal labels).
+
+### Solutions-first; no quoted internal actions (customer body)
+
+**Default:** Give the customer **viable, case-specific options** — self-service (**Mein o2**, **o2.de**), app paths, official forms, links, and **concrete alternatives** they can use now. Base on KB first; see `.cursor/rules/reply-customer-solutions-qa.mdc`.
+
+**Hotline (strict):** Do **not** add care hotline / Kundenbetreuung numbers or generic “rufen Sie uns an” unless **KB, TransferMatrix, a documented SKILL exception, or explicit chat instruction** requires it for this reply.
+
+**When KB or your draft is thin:** Use **web research** (official o2 sources, help pages, forums where relevant) to add **1–3 specific alternatives** for this customer’s issue — especially if post-RE instructions from the chat user lack substance.
+
+**Unless you are explicitly instructed in chat** to include exact wording for this reply:
+
+- Do **not** quote **direct actions by us** in the customer email (e.g. *wir haben ein Ticket angelegt*, *wir prüfen das intern*, *wir leiten weiter*, *wir bearbeiten*, *wir kümmern uns darum*, *wir haben … veranlasst*).
+- Keep the visible reply focused on **what the customer can do** and **where to find help**; internal handling stays in agent sections (4–5), not as commitments in the customer-facing body.
+
+---
+
+## 3. Fixed closing block (use exactly)
+
+Copy the following block **verbatim** at the end of every reply (after the body). Do not change wording or order.
+
+```
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz
+```
+
+---
+
+Apply this template in Section 5 (German reply) of the RE output and in any reply written to `temp_reply.txt` or the Sprinklr editor. **Never include "Fall #..." or case IDs in the salutation/thank-you line shown to customers.** For unverified customers, keep the security block (IBAN/Kundennummer) **between** body and this fixed closing block; the closing block itself stays unchanged.

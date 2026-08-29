@@ -27,7 +27,6 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 | Transfer Goal | Description |
 |---|---|
-| AS_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL | DSL cancellation 2nd level team |
 | ALDITALK_XF_SERVICE | ALDI TALK service |
 | AYYILDIZ_XF_POSTPAID | AY YILDIZ postpaid |
 | AYYILDIZ_XF_PREPAID | AY YILDIZ prepaid |
@@ -35,18 +34,17 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 | BLAU_E_XF_PREPAID | Blau prepaid |
 | BUSINESS-TEAM | Business customers (mobile) |
 | CBC_ENGLISCH | English-language care |
-| CBC_Kundendaten | Customer data / bank details team |
-| CBC_KUENDIGUNGEN_SME_SOHO | Cancellation team (SME/SOHO + specific mobile cases) |
+| CBC_XF_E_KUNDENDATEN | Customer data / bank details team |
 | CBC_Vertragsstillegung | Contract suspension team |
-| CBC_Widerruf | Revocation/withdrawal team |
-| CBC_XF_Collections | Collections / dunning / payment team |
+| CBC_XF_E_WIDERRUF | Revocation/withdrawal team |
+| collection_webform@cc.o2online.de | Collections / dunning / payment (forward to email) |
 | CS_E_XF_SELBSTSTAENDIGE | Self-employed (SOHO) service |
 | CS_Hardware | Hardware support team |
 | CS_Premium | Premium/VIP customer service |
 | CS_XF_AKTION1 | Retention - network availability cancellations |
-| CS_XF_AKTION2 | Retention - move abroad cancellations |
-| CS_XF_LOOP_Allgemein | o2 Prepaid/Loop service |
-| DM_HAENDLERBESCHWERDEN | Dealer complaints team |
+| CS_E_XF_AKTION2 | Retention - move abroad cancellations |
+| CS_XF_E_LOOP_ALLGEMEIN | o2 Prepaid/Loop service |
+| DM_XF_E_HAENDLERBESCHWERDEN | Dealer complaints team |
 | EKL_Onlineshop | Online shop revocation team |
 | KUENDIGUNG_RECHNUNG | Cancellation due to billing/service complaints |
 | NETTOKOM_XF_SERVICE | NettoKOM service |
@@ -83,13 +81,13 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 | 4 | Exklusiv-Kunden (nur Servicetyp "Premium TOP" und "VIP") | E-Mail | CS_Premium | Transfer in Sprinklr |
 | 5 | Geschaeftsfuehrung - Beschwerde | E-Mail | Kein Transfer | Handle per KB guidelines for executive complaints |
 | 6 | Haendleranfragen (Haendlerstornos, provisionsrelevante Aenderungen, etc.) | E-Mail | Kein Transfer | Handle per KB |
-| 7 | Haendlerbeschwerde - Kundenbeschwerden ueber Vertriebspartner (Haendlernr. 12/13/14/19) | E-Mail | DM_HAENDLERBESCHWERDEN | Transfer in Sprinklr |
+| 7 | Haendlerbeschwerde - Kundenbeschwerden ueber Vertriebspartner (Haendlernr. 12/13/14/19) | E-Mail | DM_XF_E_HAENDLERBESCHWERDEN | Transfer in Sprinklr |
 | 8 | Journalisten / Presse - Anfragen | E-Mail | WB_ANFRAGEN_PRESSESTELLE | Transfer in Sprinklr |
 | 9 | Mitarbeiter - Anfrage zum Vertrag | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** (employee service card policies apply - see KB for Dienstkarten rules) |
 | 10 | Rechtsanwalt - im Auftrag eines Kunden | E-Mail | Kein Transfer | Handle per KB and Authentifizierung rules; do NOT process via Backoffice if third-party request |
 | 11 | Rechtsanwalt - in eigener Sache | E-Mail | Kein Transfer | Handle per KB |
 | 12 | Selbststaendige (SOHO) - kaufmaennisch/technisch - alle sonstigen Anfragen | E-Mail | CS_E_XF_SELBSTSTAENDIGE | Transfer in Sprinklr |
-| 13 | Selbststaendige (SOHO) - Kuendigung | E-Mail - Mobile | CBC_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr |
+| 13 | Selbststaendige (SOHO) - Kuendigung | E-Mail - Mobile | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; process per KB (Themen-ID 590/1849 as applicable); customer paths: Mein o2 > Tarif & SIM > Kündigung / Kündigung vormerken |
 | 14 | Selbststaendige (SOHO) - Stammdaten-Aenderung per Brief/Fax/E-Mail | E-Mail | CS_E_XF_SELBSTSTAENDIGE | Transfer in Sprinklr |
 | 15 | SOHO | E-Mail | CS_E_XF_SELBSTSTAENDIGE | Transfer in Sprinklr |
 | 16 | Verbraucherschutz - Anfragen | E-Mail | Kein Transfer | Handle per KB |
@@ -111,7 +109,7 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 | 25 | Mobilka | E-Mail | WHITELABEL_XF_SERVICE | Transfer in Sprinklr |
 | 26 | NettoKOM | E-Mail | NETTOKOM_XF_SERVICE | Transfer in Sprinklr |
 | 27 | novamobil | E-Mail | Kein Transfer | Handle per KB |
-| 28 | o2 Prepaid/Loop | E-Mail | CS_XF_LOOP_Allgemein | Transfer in Sprinklr |
+| 28 | o2 Prepaid/Loop | E-Mail | CS_XF_E_LOOP_ALLGEMEIN | Transfer in Sprinklr |
 | 29 | simyo | E-Mail | Kein Transfer | Handle per KB |
 | 30 | Tchibo mobil | E-Mail | Kein Transfer | Refer customer to Tchibo MOBIL (040-605 90 00 95) |
 | 31 | WhatsApp SIM | E-Mail | WHATSAPPSIM_XF_SERVICE | Transfer in Sprinklr |
@@ -123,7 +121,7 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 33 | Inhouse Dunning - Englisch | E-Mail | CBC_XF_Collections | Transfer in Sprinklr |
+| 33 | Inhouse Dunning - Englisch | E-Mail | collection_webform@cc.o2online.de | Forward to email |
 | 34 | Vertragsthemen o2 Postpaid Care - Englisch | E-Mail | CBC_ENGLISCH | Transfer in Sprinklr |
 | 35 | Vertragsthemen o2 Postpaid Care - Tuerkisch | Hotline | Tuerkisch o2 Care | Refer customer to Turkish hotline |
 
@@ -260,28 +258,28 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 93 | Androhung, Fristen, Ablauf - fristgerecht & ausserordentlich | E-Mail - Festnetz | AS_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL | Transfer in Sprinklr |
+| 93 | Androhung, Fristen, Ablauf - fristgerecht & ausserordentlich | E-Mail - Festnetz | Kein Transfer | Former queue AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL no longer exists — handle per KB; do not transfer |
 | 94 | Androhung, Fristen, Ablauf - fristgerecht & ausserordentlich | E-Mail - Mobile | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 95 | Beschwerde ueber fehlende Kuendigungsbestaetigung / verzoegerte Deaktivierung | E-Mail - Festnetz | AS_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL | Transfer in Sprinklr |
-| 96 | Beschwerde ueber fehlende Kuendigungsbestaetigung / verzoegerte Deaktivierung | E-Mail - Mobile/FMS | CBC_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr |
+| 95 | Beschwerde ueber fehlende Kuendigungsbestaetigung / verzoegerte Deaktivierung | E-Mail - Festnetz | Kein Transfer | Former queue AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL no longer exists — handle per KB; do not transfer |
+| 96 | Beschwerde ueber fehlende Kuendigungsbestaetigung / verzoegerte Deaktivierung | E-Mail - Mobile/FMS | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; KB Themen-ID 1849; confirm deactivation date; Kündigungsbestätigung typically 16 days after deactivation (Mobile) |
 | 97 | eingehende Kuendigung - ausserordentlich (AOK) - DSL - sonstige Faelle | E-Mail | Kein Transfer | Handle per KB (AOK DSL procedures) |
-| 98 | eingehende Kuendigung - ausserordentlich (AOK) - DSL - specific cases | E-Mail | AS_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL | Transfer in Sprinklr |
-| 99 | eingehende Kuendigung - AOK - Mobile/FMS - Haft/Krankheit/Nutzertod | E-Mail | CBC_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr |
+| 98 | eingehende Kuendigung - ausserordentlich (AOK) - DSL - specific cases | E-Mail | Kein Transfer | Former queue AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL no longer exists — handle per KB; do not transfer |
+| 99 | eingehende Kuendigung - AOK - Mobile/FMS - Haft/Krankheit/Nutzertod | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; process AOK per KB; request proof if required; do not transfer |
 | 100 | eingehende Kuendigung - AOK - Mobile/FMS - Insolvenz | E-Mail | Kein Transfer | Handle per KB (insolvency procedures) |
 | 101 | eingehende Kuendigung - AOK - Mobile/FMS - Handydefekt | E-Mail | CS_Hardware | Transfer in Sprinklr |
-| 102 | eingehende Kuendigung - AOK - Mobile/FMS - Handyverlust | E-Mail | CBC_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr |
+| 102 | eingehende Kuendigung - AOK - Mobile/FMS - Handyverlust | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; process AOK per KB; do not transfer |
 | 103 | eingehende Kuendigung - AOK - Mobile/FMS - Netzverfuegbarkeit | E-Mail | CS_XF_AKTION1 | Transfer in Sprinklr |
 | 104 | eingehende Kuendigung - AOK - Mobile/FMS - Rechnungs-/Servicebeschwerde | E-Mail | KUENDIGUNG_RECHNUNG | Transfer in Sprinklr |
 | 105 | eingehende Kuendigung - AOK - Mobile/FMS - Todesfall Vertragsinhaber | E-Mail | Kein Transfer | Handle per KB (death of account holder procedures) |
-| 106 | eingehende Kuendigung - AOK - Mobile/FMS - Umzug ins Ausland | E-Mail | CS_XF_AKTION2 | Transfer in Sprinklr |
-| 107 | eingehende Kuendigung - fristgerecht - DSL | E-Mail - DSL | AS_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL | Transfer in Sprinklr |
+| 106 | eingehende Kuendigung - AOK - Mobile/FMS - Umzug ins Ausland | E-Mail | CS_E_XF_AKTION2 | Transfer in Sprinklr |
+| 107 | eingehende Kuendigung - fristgerecht - DSL | E-Mail - DSL | Kein Transfer | Former queue AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL no longer exists — handle per KB; do not transfer |
 | 108 | eingehende Kuendigung - fristgerecht - Mobile Handydefekt | E-Mail | CS_Hardware | Transfer in Sprinklr |
 | 109 | eingehende Kuendigung - fristgerecht - Mobile Rechnungs-/Servicebeschwerde | E-Mail | KUENDIGUNG_RECHNUNG | Transfer in Sprinklr |
 | 110 | eingehende Kuendigung - fristgerecht - Mobile/FMS Netzverfuegbarkeit | E-Mail | CS_XF_AKTION1 | Transfer in Sprinklr |
-| 118 | Kuendigungstermin falsch hinterlegt | E-Mail - Mobile/FMS | CBC_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr |
+| 118 | Kuendigungstermin falsch hinterlegt | E-Mail - Mobile/FMS | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; verify/correct termination date per KB; customer can check status in Mein o2 |
 | 119 | Reaktivierungswunsch durch Kunde | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 120 | Reklamation Kuendigungsruecknahme | E-Mail - DSL | AS_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL | Transfer in Sprinklr |
-| 121 | Reklamation Kuendigungsruecknahme | E-Mail - Mobile/FMS | CBC_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr |
+| 120 | Reklamation Kuendigungsruecknahme | E-Mail - DSL | Kein Transfer | Former queue AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL no longer exists — handle per KB; do not transfer |
+| 121 | Reklamation Kuendigungsruecknahme | E-Mail - Mobile/FMS | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; KB Themen-ID 590 (Kündigungsrücknahme); process in Backoffice E-Mail |
 
 ---
 
@@ -290,7 +288,7 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
 | 122 | Accountzusammenfuehren/-trennung | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 123 | Bankverbindung / SEPA / Einzugsermaechtigung aendern / erteilen / widerrufen | E-Mail | CBC_Kundendaten | Transfer in Sprinklr |
+| 123 | Bankverbindung / SEPA / Einzugsermaechtigung aendern / erteilen / widerrufen | E-Mail | CBC_XF_E_KUNDENDATEN | Transfer in Sprinklr |
 | 124 | Beauskunftung gemaess DSGVO (Datenschutz) | E-Mail | DS_Beauskunftung@telefonica.com | Forward to email |
 | 125 | Betreuung (Unterlagen zur gesetzlichen Betreuung von Kunden) | E-Mail | Kein Transfer | Handle per KB (guardianship documentation) |
 | 126 | Datenschutzanfragen allgemein | E-Mail | Kein Transfer | Handle per KB |
@@ -354,15 +352,15 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 | 160 | Neuvertrag - DSL | E-Mail - DSL | Kein Transfer | Handle per KB (DSL revocation procedure) |
 | 161 | Neuvertrag - eRetail | E-Mail | eretail-widerruf@telefonica.com | Forward to email |
 | 162 | Neuvertrag - Hotline/Online - nur Storno - Abschluss < 14 Tage | E-Mail - Festnetz | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 163 | Neuvertrag - Hotline/Online - nur Storno - Abschluss < 14 Tage | E-Mail - Homespot | CBC_Widerruf | Transfer in Sprinklr |
+| 163 | Neuvertrag - Hotline/Online - nur Storno - Abschluss < 14 Tage | E-Mail - Homespot | CBC_XF_E_WIDERRUF | Transfer in Sprinklr |
 | 164 | Neuvertrag - Hotline/Online - nur Storno - Abschluss < 14 Tage | E-Mail - Mobile | EKL_Onlineshop | Transfer in Sprinklr |
-| 165 | Neuvertrag - Hotline/Online - nur Storno - Abschluss > 14 Tage | E-Mail | CBC_Widerruf | Transfer in Sprinklr |
+| 165 | Neuvertrag - Hotline/Online - nur Storno - Abschluss > 14 Tage | E-Mail | CBC_XF_E_WIDERRUF | Transfer in Sprinklr |
 | 166 | Neuvertrag - Reklamation - Abschluss Hotline/Online | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 167 | Neuvertrag - Reklamation - Abschluss Shop | E-Mail | DM_HAENDLERBESCHWERDEN | Transfer in Sprinklr |
-| 168 | Neuvertrag - Shop - Storno | E-Mail | CBC_Widerruf | Transfer in Sprinklr |
+| 167 | Neuvertrag - Reklamation - Abschluss Shop | E-Mail | DM_XF_E_HAENDLERBESCHWERDEN | Transfer in Sprinklr |
+| 168 | Neuvertrag - Shop - Storno | E-Mail | CBC_XF_E_WIDERRUF | Transfer in Sprinklr |
 | 169 | Neuvertrag - Shop - Storno - DSL | E-Mail - DSL | Kein Transfer | Handle per KB |
-| 170 | Vertragsverlaengerung - Hotline/Online | E-Mail | CBC_Widerruf | Transfer in Sprinklr |
-| 171 | Widerruf - Tarifwechsel, Pack- und Optionsbuchung | E-Mail | CBC_Widerruf | Transfer in Sprinklr |
+| 170 | Vertragsverlaengerung - Hotline/Online | E-Mail | CBC_XF_E_WIDERRUF | Transfer in Sprinklr |
+| 171 | Widerruf - Tarifwechsel, Pack- und Optionsbuchung | E-Mail | CBC_XF_E_WIDERRUF | Transfer in Sprinklr |
 
 ---
 
@@ -373,29 +371,49 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 | 172 | Auszahlung | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
 | 173 | Highspend - NUR aktuelle Ticketeintraege und "wichtigen Hinweis" im Kundendatensatz beachten | E-Mail | HUR@telefonica.com | Forward to email |
 | 174 | Inkasso - Rueckfragen nach Abgabe | E-Mail | Kein Transfer | Handle per KB (post-collection inquiry procedures) |
-| 175 | Mahnung - Rueckfragen | E-Mail | CBC_XF_Collections | Transfer in Sprinklr |
-| 176 | Ratenzahlung | E-Mail | CBC_XF_Collections | Transfer in Sprinklr |
+| 175 | Mahnung - Rueckfragen | E-Mail | collection_webform@cc.o2online.de | Forward to email |
+| 176 | Ratenzahlung | E-Mail | collection_webform@cc.o2online.de | Forward to email |
 | 177 | Rechnungslauf aendern | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 178 | Ruecklastschrift - Ankuendigung | E-Mail | CBC_XF_Collections | Transfer in Sprinklr |
-| 179 | Ruecklastschrift - Rueckfragen | E-Mail | CBC_XF_Collections | Transfer in Sprinklr |
-| 180 | Sperrung - Rueckfragen | E-Mail | CBC_XF_Collections | Transfer in Sprinklr |
-| 181 | Umbuchung (Einzahlung unter falscher Kundennummer) | E-Mail | CBC_XF_Collections | Transfer in Sprinklr |
-| 182 | Verbleib einer Einzahlung / Ueberweisung | E-Mail | CBC_XF_Collections | Transfer in Sprinklr |
-| 183 | Zahlung - Zahlungsaufschub - CACS-Status "rof" | E-Mail | CBC_XF_Collections | Transfer in Sprinklr |
+| 178 | Ruecklastschrift - Ankuendigung | E-Mail | collection_webform@cc.o2online.de | Forward to email |
+| 179 | Ruecklastschrift - Rueckfragen | E-Mail | collection_webform@cc.o2online.de | Forward to email |
+| 180 | Sperrung - Rueckfragen | E-Mail | collection_webform@cc.o2online.de | Forward to email |
+| 181 | Umbuchung (Einzahlung unter falscher Kundennummer) | E-Mail | collection_webform@cc.o2online.de | Forward to email |
+| 182 | Verbleib einer Einzahlung / Ueberweisung | E-Mail | collection_webform@cc.o2online.de | Forward to email |
+| 183 | Zahlung - Zahlungsaufschub - CACS-Status "rof" | E-Mail | collection_webform@cc.o2online.de | Forward to email |
 
 ---
 
-## Transfer Goal Name Registry
+## Removed transfer goals — alternate handling (Backoffice E-Mail)
+
+When a registry goal is **Inactive (no longer exists)**, do **not** transfer to that queue or tell the customer the case was forwarded there.
+
+### CBC_KUENDIGUNGEN_SME_SOHO (removed 2026-07-27)
+
+**Alternate routing:** affected matrix rows now point to **CBC_CARE_ALLGEMEIN** — **HANDLE DIRECTLY** in Backoffice E-Mail.
+
+**Agent:** query KB for the specific Fall; use Themen-IDs where noted in matrix Action column (e.g. **590** Kündigungsrücknahme, **1849** fehlende Kündigungsbestätigung Mobile). Create/document tickets per KB; do not Sprinklr-transfer to removed queue.
+
+**Customer reply (section 6) — prefer self-service / status paths (no default hotline):**
+- **Kündigung / Vormerkung:** Mein o2 (App oder o2.de) → **Tarif & SIM** → **SIM & Vertrag** → **Kündigung vormerken** / Kündigung
+- **Status prüfen:** Vertrag und Kündigungstermin in Mein o2 unter Tarif & Vertrag
+- **Fehlende Kündigungsbestätigung (Mobile):** Hinweis Versanddauer (typ. 16 Tage nach Deaktivierung); Kunde kann Status in Mein o2 prüfen
+- **Kündigungsrücknahme:** Bearbeitung per KB Themen-ID 590 — keine Weiterleitung an entfernte Queue
+
+If KB is thin, web-search official o2 help for case-specific Mein o2 paths (see `.cursor/rules/reply-customer-solutions-qa.mdc`).
+
+---
 
 > **BACKDOOR FOR UPDATES**: Transfer goal names may be updated. When instructed to rename a transfer goal,
 > search this file for the old name and replace with the new name throughout.
+> When a transfer goal **no longer exists**, mark it Inactive in the registry, remove it from Quick Reference,
+> and repoint affected rows to **CBC_CARE_ALLGEMEIN** (handle directly) with KB/self-service alternate notes — or `Kein Transfer` when no direct handling applies.
 > Use the `update-transfer-goals` skill or manually grep and replace.
 
 Current transfer goal names and their last-known status:
 
 | Transfer Goal | Status | Last Updated |
 |---|---|---|
-| AS_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL | Active | 2026-03-02 |
+| AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL | Inactive (no longer exists) | 2026-07-24 |
 | ALDITALK_XF_SERVICE | Active | 2026-03-02 |
 | AYYILDIZ_XF_POSTPAID | Active | 2026-03-02 |
 | AYYILDIZ_XF_PREPAID | Active | 2026-03-02 |
@@ -404,18 +422,18 @@ Current transfer goal names and their last-known status:
 | BUSINESS-TEAM | Active | 2026-03-02 |
 | CBC_CARE_ALLGEMEIN | Active (US) | 2026-03-02 |
 | CBC_ENGLISCH | Active | 2026-03-02 |
-| CBC_Kundendaten | Active | 2026-03-02 |
-| CBC_KUENDIGUNGEN_SME_SOHO | Active | 2026-03-02 |
+| CBC_XF_E_KUNDENDATEN | Active | 2026-07-26 |
+| CBC_KUENDIGUNGEN_SME_SOHO | Inactive (no longer exists) | 2026-07-27 |
 | CBC_Vertragsstillegung | Active | 2026-03-02 |
-| CBC_Widerruf | Active | 2026-03-02 |
-| CBC_XF_Collections | Active | 2026-03-02 |
+| CBC_XF_E_WIDERRUF | Active | 2026-03-02 |
+| collection_webform@cc.o2online.de | Active | 2026-08-11 |
 | CS_E_XF_SELBSTSTAENDIGE | Active | 2026-03-02 |
 | CS_Hardware | Active | 2026-03-02 |
 | CS_Premium | Active | 2026-03-02 |
 | CS_XF_AKTION1 | Active | 2026-03-02 |
-| CS_XF_AKTION2 | Active | 2026-03-02 |
-| CS_XF_LOOP_Allgemein | Active | 2026-03-02 |
-| DM_HAENDLERBESCHWERDEN | Active | 2026-03-02 |
+| CS_E_XF_AKTION2 | Active | 2026-03-02 |
+| CS_XF_E_LOOP_ALLGEMEIN | Active | 2026-03-02 |
+| DM_XF_E_HAENDLERBESCHWERDEN | Active | 2026-03-02 |
 | EKL_Onlineshop | Active | 2026-03-02 |
 | KUENDIGUNG_RECHNUNG | Active | 2026-03-02 |
 | NETTOKOM_XF_SERVICE | Active | 2026-03-02 |

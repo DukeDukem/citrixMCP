@@ -9,6 +9,8 @@ import os
 import subprocess
 import sys
 import time
+import json
+import uuid
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -29,6 +31,26 @@ def find_repo_root() -> Path:
 
 
 REPO_ROOT = find_repo_root()
+DEBUG_LOG_PATH = REPO_ROOT / "debug-912f41.log"
+DEBUG_SESSION_ID = "912f41"
+
+
+def _agent_debug_log(hypothesis_id: str, location: str, message: str, data: dict):
+    try:
+        payload = {
+            "sessionId": DEBUG_SESSION_ID,
+            "id": f"log_{int(time.time() * 1000)}_{uuid.uuid4().hex[:8]}",
+            "timestamp": int(time.time() * 1000),
+            "runId": "login-debug-launcher",
+            "hypothesisId": hypothesis_id,
+            "location": location,
+            "message": message,
+            "data": data or {},
+        }
+        with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
 
 CHROME_PATHS = [
     Path(os.environ.get("LOCALAPPDATA", "")) / "Google" / "Chrome" / "Application" / "chrome.exe",
@@ -82,15 +104,47 @@ def launch_chrome() -> bool:
 
 
 def main() -> int:
+    # region agent log
+    _agent_debug_log(
+        "H12",
+        "run_sprinklr_email_automation.py:main:start",
+        "Launcher started",
+        {"argv": sys.argv[1:], "repo_root": str(REPO_ROOT)},
+    )
+    # endregion
     os.chdir(REPO_ROOT)
     if not is_cdp_listening():
+        # region agent log
+        _agent_debug_log(
+            "H13",
+            "run_sprinklr_email_automation.py:main:cdp_check",
+            "CDP not listening; launching dedicated Chrome",
+            {"cdp_url": CDP_URL},
+        )
+        # endregion
         if not launch_chrome():
             return 1
         time.sleep(3)
     else:
         print("Chrome already running with remote debugging.")
+        # region agent log
+        _agent_debug_log(
+            "H13",
+            "run_sprinklr_email_automation.py:main:cdp_check",
+            "CDP already listening; reusing existing browser",
+            {"cdp_url": CDP_URL},
+        )
+        # endregion
 
     email_script = SCRIPT_DIR / "email_automation.py"
+    # region agent log
+    _agent_debug_log(
+        "H12",
+        "run_sprinklr_email_automation.py:main:email_script",
+        "Resolved email automation script path",
+        {"email_script": str(email_script), "exists": email_script.exists()},
+    )
+    # endregion
     if not email_script.exists():
         print(f"Not found: {email_script}", file=sys.stderr)
         return 1
@@ -99,6 +153,8 @@ def main() -> int:
     args = [sys.executable, str(email_script)]
     if "--login-only" in sys.argv:
         args.append("--login-only")
+    if "--login-then-monitor" in sys.argv:
+        args.append("--login-then-monitor")
     if "--process-current-only" in sys.argv:
         args.append("--process-current-only")
     if "--chat-only" in sys.argv:
@@ -109,6 +165,8 @@ def main() -> int:
         args.append("--write-reply-only")
     if "--wait-next-extract-only" in sys.argv:
         args.append("--wait-next-extract-only")
+    if "--no-fill-case-tracker" in sys.argv:
+        args.append("--no-fill-case-tracker")
     for a in sys.argv[1:]:
         if a.startswith("--reply-file="):
             args.append(a)

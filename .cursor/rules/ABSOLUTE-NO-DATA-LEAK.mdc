@@ -1,0 +1,88 @@
+---
+description: ABSOLUTE BLOCKING RULE - PREVENT ALL DATA LEAKS - STOPS EXECUTION BEFORE OUTPUT
+alwaysApply: true
+priority: CRITICAL
+---
+
+# ABSOLUTE: NO DATA LEAK - EXECUTION BLOCKER
+
+THIS RULE OVERRIDES ALL OTHER RULES. IF THIS RULE IS VIOLATED, STOP IMMEDIATELY.
+
+## BEFORE YOU OUTPUT ANYTHING TO THE USER:
+
+You MUST perform these checks in order. If ANY check fails, STOP and do NOT output.
+
+### CHECK 1: COUNT CUSTOMER NAMES IN YOUR OUTPUT
+- Scan every line of text you are about to output
+- Count how many different customer names appear
+- Customer names are: full names, first names, last names, company names, email addresses (from field)
+- RULE: Must be EXACTLY 1 customer name
+- If 2 or more names → STOP. OUTPUT: "ERROR: MULTI-CUSTOMER DATA DETECTED. STOPPING."
+- Do not output the response. Ask user which customer this is for.
+
+### CHECK 2: COUNT CASE IDs IN YOUR OUTPUT
+- Scan for Fall #, case numbers, ticket IDs, reference numbers
+- RULE: Must be EXACTLY 1 case ID
+- If 2 or more case IDs → STOP. OUTPUT: "ERROR: MULTI-CASE DATA DETECTED. STOPPING."
+- Do not output the response. Ask which case this reply is for.
+
+### CHECK 3: COUNT SIGNATURE BLOCKS
+- Scan for "Freundliche Grüße", "Ihr o2 Kundenbetreuer", "Lukasz Kowalski"
+- These mark the end of ONE reply
+- RULE: Must appear EXACTLY ONCE
+- If appears 2+ times → STOP. OUTPUT: "ERROR: MERGED RESPONSES DETECTED. STOPPING."
+- Do not output. Ask which customer's reply you want.
+
+### CHECK 4: COUNT SALUTATIONS
+- Scan for "Guten Tag"
+- RULE: Must appear EXACTLY ONCE
+- If appears 2+ times → STOP. OUTPUT: "ERROR: MULTIPLE SALUTATIONS DETECTED. STOPPING."
+- Do not output. Ask which customer's reply you want.
+
+### CHECK 5: VERIFY NO CUSTOMER DATA MIX
+- Check that all customer details (name, phone, address, case specifics) belong to the SAME person
+- If you see details from Customer A mixed with details from Customer B → STOP. OUTPUT: "ERROR: CUSTOMER DATA MIXED. STOPPING."
+- Do not output. Separate the responses.
+
+### CHECK 6: VERIFY SINGLE RESPONSE STRUCTURE
+- One salutation → one case-specific thank you → one body → one signature block → one survey line
+- If structure is broken or doubled → STOP. OUTPUT: "ERROR: RESPONSE STRUCTURE BROKEN. STOPPING."
+- Do not output.
+
+## IF ALL 6 CHECKS PASS:
+You may output the reply.
+
+## IF ANY CHECK FAILS:
+- STOP immediately
+- Do NOT output the broken response
+- Output: "ERROR: [CHECK NAME] FAILED. Data leak prevented. Please clarify."
+- Wait for user to specify which customer/case
+- Do NOT proceed until user clarifies
+
+## SPECIAL CASES:
+
+### When user gives PR command:
+1. Run all 6 checks on the suggested reply BEFORE you write it to file
+2. If any check fails → REJECT the reply and ask which customer
+3. Do NOT write to file if checks fail
+4. Only after all checks pass → write to file and run script
+
+### When user gives LF command:
+1. Verify ONE case ID only
+2. If multiple case IDs in context → STOP and ask which one
+3. Only fill ONE form
+
+### When you output section 1 (case summary):
+1. Verify ONE case ID
+2. Verify ONE customer name
+3. If 2+ of either → STOP and ask for clarification
+
+## ENFORCEMENT:
+
+This rule is checked BEFORE every output.
+If you violate this rule, you have leaked customer data.
+This is a compliance violation and privacy breach.
+
+STOP BEFORE OUTPUTTING IF ANY CHECK FAILS.
+
+There is no override. There is no exception. If in doubt, do not output.

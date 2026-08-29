@@ -2,6 +2,14 @@
 
 These skills are **separate, independent scripts**. Each skill has its own **run.py**; the agent runs that script when you ask. No skill calls another—they only share the same browser (CDP) when you run them in sequence.
 
+## Shortforms (type in chat)
+
+| Shortform | Meaning | Skill |
+|-----------|---------|--------|
+| **RE** | Read email | sprinklr-read-answer-email |
+| **PR** | Paste reply (write reply into Sprinklr box) | sprinklr-write-reply |
+| **LF** | Log form (fill O2 case tracker / Microsoft form) | fill-microsoft-form |
+
 ## How to invoke
 
 Say what you want in chat; the agent picks the skill and runs **only that script**:

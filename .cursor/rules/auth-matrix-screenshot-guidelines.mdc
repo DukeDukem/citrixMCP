@@ -1,0 +1,67 @@
+---
+description: Enforce verification and channel handling from provided Authentifizierung matrix screenshots (3 Eckdaten + process-level channel rules).
+alwaysApply: true
+---
+
+# Authentifizierung Matrix (Screenshot-Based) - Mandatory
+
+Use the provided matrix screenshots as authoritative guidance for verification and allowed handling channels.
+
+## Global verification logic
+
+1. For E-Mail requests, initial mail should contain at least 3 Eckdaten unless matrix row says `keine Authentifizierung nötig`.
+2. If fewer than 3 Eckdaten:
+   - Follow matrix channel result first (Web/App/Hotline/Formular/Hotline).
+   - Use TBS fallback only where matrix and process allow.
+3. Third-party requests are not processed in Backoffice E-Mail; refer to channel/hotline per policy.
+4. Never ask for PKK by E-Mail.
+
+## Matrix semantics
+
+- `✓` = handling allowed in that channel.
+- `nur mit Kopie Ausweis/Pass` = only process when copy requirement is fulfilled.
+- `Web/App/Hotline`, `Hotline`, `Web`, `Formular` = do not process in Backoffice E-Mail; route accordingly.
+- `✗` = not allowed in that channel.
+
+## Mandatory process/channel highlights from screenshots
+
+- **Kundendaten (persönlich):**
+  - Name change -> Web/App + copy ID/pass.
+  - Date of birth change -> Schriftweg + copy ID/pass.
+  - Contact/rechnung address change (E-Mail) -> Web/App/Hotline.
+  - Contact email change -> Web/App/Hotline.
+  - Bank details change for third-party account holder -> Formular.
+
+- **Kundendaten (vertragsbezogen):**
+  - Account split/merge -> Hotline.
+  - Postpaid transfer -> Web.
+  - FSK change -> Hotline.
+  - PKK change -> Formular (+ copy ID/pass).
+  - PIN/PUK info (E-Mail) -> Web/App/Hotline.
+  - Access data/MAC handout (E-Mail) -> Hotline.
+
+- **Rechnung & Zahlung:**
+  - Questions requiring traffic-data mention in response (E-Mail) -> Web/App/Hotline.
+  - EVN setup/change -> Web/App.
+  - Invoice duplicate to different address -> Hotline.
+
+- **Vertrag:**
+  - Reactivation (E-Mail) -> Hotline.
+  - MNP import -> Web/App (matrix note for sub-brands/form).
+  - MNP export -> Hotline.
+  - Number swap -> Web/App/Hotline.
+  - Kündigung and Storno/Widerruf Neuvetrag oder VVL -> keine Authentifizierung nötig (per shown matrix row).
+
+- **Vermarktung:**
+  - Hardware order to different delivery address -> Web/App/Hotline.
+  - VVL + hardware to different delivery address -> Hotline.
+  - New-customer sales process -> keine Authentifizierung nötig.
+  - Existing-customer sales with shipment to different address -> Hotline.
+
+- **Prepaid:**
+  - Voucher top-up -> keine Authentifizierung nötig.
+  - Express top-up registration (E-Mail) -> Web.
+  - Prepaid transfer / reset registration data -> E-Mail allowed per shown matrix row.
+  - Prepaid top-up information (E-Mail) -> Web/App/Hotline.
+
+If any row interpretation is ambiguous, prefer routing to the safer matrix channel (do not over-process by E-Mail).

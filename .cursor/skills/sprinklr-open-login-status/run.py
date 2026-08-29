@@ -22,8 +22,9 @@ def main() -> int:
         return 1
     env = os.environ.copy()
     env["SPRINKLR_CDP_ENDPOINT"] = "http://127.0.0.1:9222"
+    # --login-then-monitor: login + set status, then start email monitoring (one command, stays active)
     return subprocess.call(
-        [sys.executable, str(runner), "--login-only"],
+        [sys.executable, str(runner), "--login-then-monitor"],
         cwd=str(_REPO_ROOT),
         env=env,
     )

@@ -1,0 +1,28 @@
+---
+description: In customer-facing email replies, never repeat full customer or phone numbers; use partial references only (e.g. "with 523 at the end").
+alwaysApply: true
+---
+
+# Repeating numbers to the customer (data protection)
+
+When drafting **customer-facing email replies** (e.g. in Sprinklr read-email / RE flow), if you need to repeat the **customer number** (Kundennummer), **phone number**, or similar identifiers back to the customer:
+
+- **Never write the full number** in the reply.
+- Use only a **partial reference**, e.g.:
+  - Customer number 6030029523 → *"mit 523 am Ende"* / "with 523 at the end"
+  - Phone number → *"mit … am Ende"* / "ending in …" or "with … at the end"
+
+Apply the same rule for the customer's personal phone number and any other long numeric identifier. This reduces the risk of misuse if the email is read by third parties.
+
+## Strict identifier integrity gate (mandatory)
+
+Before outputting or pasting any customer reply:
+
+1. Source all identifiers only from the **currently visible case** in Sprinklr.
+2. If the draft contains a customer number / phone number suffix that does not match the visible-case data, **STOP**.
+3. Never reuse number fragments from previous cases, cached drafts, temp files, or clipboard text.
+4. If identifier origin is unclear, **do not output/paste** and require fresh RE for the visible case.
+
+If mismatch is detected, output:
+
+`ERROR: IDENTIFIER MISMATCH DETECTED. DO NOT SEND.`

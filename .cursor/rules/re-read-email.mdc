@@ -1,0 +1,54 @@
+---
+description: When the user types RE, run the read-email flow (Sprinklr).
+alwaysApply: true
+---
+
+# RE = Read Email
+
+**Always stick to the processing form:** When handling RE (read email), you must ALWAYS use the full 7-step output structure and the verification/case-processing flow from **sprinklr-read-answer-email** SKILL.md. Do not skip, reorder, or merge sections. Stick to the given processing form at all times.
+
+**AI model (ABSOLUTE):** Model picker must stay **Auto**. **Grok is banned.** If this session is Grok or any named model, **STOP** — do not run the read-email script or draft replies. Output the ERROR from `.cursor/rules/ai-model-stay-auto.mdc` and wait for the user to set Auto and resend.
+
+When the user prompts with **RE**/**re** (and nothing else, or only "RE"/"re" as the main intent), treat it as **read email for the currently visible case** and do the following:
+
+1. **Ensure the correct case is visible in Sprinklr:**
+   - RE must always target the email/case that is **currently open and visible** in the Sprinklr console (the active thread in the email receptacle), **not** any previously processed case.
+   - Before running the script, make sure the agent has the intended case selected and visible in the UI; RE must never "reuse" or "re-open" the last case if a different one is now active.
+   - RE must **not** open new Sprinklr tabs or launch login navigation. It must read only from the already active, visible case tab.
+   - RE output must reference **only** this one visible case and **only** this case’s customer.
+   - If multiple customer identities or multiple case IDs appear in the extracted thread/context, STOP and ask the user to confirm the exact active case before drafting.
+   - Identifier integrity is mandatory: if customer number / phone suffix references are used, they must be derived from the currently visible case only; never inherit number fragments from prior cases.
+   - Salutation integrity is mandatory: the salutation name must map to the visible-case customer signature only; if uncertain, use `Guten Tag,` without name.
+
+2. **Run the read-email script:**
+   ```powershell
+   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
+   ```
+
+3. **Use the script output for the visible case only** (case ID, subject, from, body, full conversation thread) to produce the **full 7-step output** in chat:
+   - 1. Customer summary
+   - 2. Verification
+   - 3. Transfer eligibility (TransferMatrix)
+   - 4a. Backend / agent actions
+   - 4b. Instructions for the agent
+   - 5. German reply (mandatory email template from sprinklr-read-answer-email SKILL.md: salutation, body, survey line, signature block)
+   - 6. Short summary (EN)
+   - Never fuse text, facts, or names from previously processed cases.
+   - Never output a customer-number/phone suffix unless you can map it to the visible case data. If not certain, omit the number reference entirely.
+   - Never output a named salutation if the name cannot be verified from the visible case; use neutral salutation instead.
+
+**Language enforcement (mandatory):**
+- Agent-facing chat output must be **English only** for sections 1, 2, 3, 4a, 4b, and 6.
+- **German is allowed only for the customer reply block** (section 5 / "Your response to customer").
+- Never switch agent explanations or operational guidance to German.
+
+4. **Query KnowledgeBase** (TransferMatrix, then relevant KB) as needed for the case type. Apply skill exceptions (e.g. new offer → hotline when SKILL exception applies; English → transfer; Namensänderung → proof required). If KB guidance is thin or post-RE chat instructions lack substance, **web-search** for case-specific self-service/alternatives per `.cursor/rules/reply-customer-solutions-qa.mdc`. **Do not** default-include care hotline in section 6 unless KB/matrix/exception/chat user requires it.
+
+5. End by offering: if the user wants this reply in the Sprinklr reply box, they can say **"reply with this"** or **"write that reply in the box"**.
+
+6. PR sync rule:
+   - Store the exact section-5 customer reply generated in RE as the authoritative reply for that case.
+   - If user sends PR next without explicit rewrite instructions, PR must paste exactly that stored RE reply for the same visible case.
+   - If user sends explicit rewrite instructions after RE, PR may paste that user-directed replacement text, but only for the same visible case ID.
+
+Do not ask for confirmation when the user says "RE"/"re" — run the script and produce the 7-step output immediately.

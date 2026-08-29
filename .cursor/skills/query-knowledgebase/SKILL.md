@@ -71,6 +71,12 @@ The Transfer Matrix has 20 Thema (topic) sections with 150+ case routes.
 - **"Kein Transfer"** = follow the specific handling instructions noted in the Action column.
 - **Ticket instructions** = create the specified ticket (e.g., "Ticket Themen-ID 653 an NP-Desk").
 
+**Collections (email destination):**
+- Ziel-Kontakt for collections/dunning/payment cases is **`collection_webform@cc.o2online.de`**.
+- Action: **Forward to email** (not Sprinklr queue transfer).
+- In agent instructions and RE sections, state the destination as **`collection_webform@cc.o2online.de`**. Do not use the retired name `CBC_XF_Collections`.
+- Customer reply: do **not** paste this internal email address unless KB/chat user explicitly requires it; use customer-safe wording (e.g. responsible team) per `.cursor/rules/reply-no-internal-systems.mdc`.
+
 Only proceed to query the general KB articles (knowledgebase1-7.md) if the Transfer Matrix confirms the case stays with us.
 
 ## Output Rules (always follow these for agent responses)
@@ -98,4 +104,4 @@ Customer email: "Ich moechte meinen Vertrag kuendigen."
    - "Open SalCus -> Navigate to 'VERTRAGSDETAILS' -> Select ticket [ID] 'Kündigung'"
    - "Fill in: Kündigungsdatum = [date], Grund = [reason from email]"
    - "Confirm via 'Speichern'"
-5. Draft German reply confirming receipt and expected processing time
+5. Draft German reply (thank you + sympathy + only factual/routing content; **do not** promise processing timelines or follow-up messages unless the chat user instructs you to)

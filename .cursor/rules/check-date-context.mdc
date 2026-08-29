@@ -1,0 +1,24 @@
+---
+description: When analyzing customer cases, always include current date/time context and note dates mentioned in the case as past, present, or future.
+alwaysApply: true
+---
+
+# Check Date/Time Context in Customer Cases
+
+When reading and analyzing **customer case inquiries** (especially for RE / read-email), always:
+
+1. **State today's date** at the start of your analysis (e.g. "Today: Friday, 06.03.2026").
+
+2. **Flag all dates mentioned in the case** as **past, present, or future**:
+   - Example: "01.03. mentioned in the email is **in the past** (today: 06.03.2026)"
+   - Example: "14-day withdrawal period expires on 08.03. – that's **4 days from now**"
+   - Example: "Contract change effective 20.03. is **in the future**"
+
+3. **Consider the date context for case handling:**
+   - **14-day withdrawal periods** – Did it already expire?
+   - **Contract effective dates** – Is the change already in effect or still pending?
+   - **Billing dates** – Was the charge already made or is it scheduled?
+   - **Refund timelines** – How long has the customer been waiting?
+   - **Delivery/cancellation deadlines** – Can the action still be taken?
+
+This prevents overlooking expired deadlines or incorrectly stating "we can still process this" when the window has already closed.

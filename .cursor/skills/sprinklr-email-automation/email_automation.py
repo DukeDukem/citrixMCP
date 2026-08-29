@@ -7,11 +7,13 @@ and writes responses back to the email composition area.
 import re
 import time
 import json
+import hashlib
 import subprocess
 import logging
 import os
 import sys
 import requests
+import uuid
 from datetime import datetime
 from typing import Optional, Dict, List
 from pathlib import Path
@@ -51,6 +53,43 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+DEBUG_LOG_PATH = _repo_root / "debug-912f41.log"
+DEBUG_SESSION_ID = "912f41"
+LATEST_RE_REPLY_PATH = _repo_root / ".cursor" / "skills" / "sprinklr-write-reply" / "latest_re_reply.json"
+LATEST_USER_DIRECTED_REPLY_PATH = _repo_root / ".cursor" / "skills" / "sprinklr-write-reply" / "latest_user_directed_reply.json"
+
+
+def _agent_debug_log(hypothesis_id: str, location: str, message: str, data: Dict):
+    """Append one NDJSON debug line for runtime evidence collection."""
+    try:
+        payload = {
+            "sessionId": DEBUG_SESSION_ID,
+            "id": f"log_{int(time.time() * 1000)}_{uuid.uuid4().hex[:8]}",
+            "timestamp": int(time.time() * 1000),
+            "runId": "login-debug-1",
+            "hypothesisId": hypothesis_id,
+            "location": location,
+            "message": message,
+            "data": data or {},
+        }
+        with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+    except Exception as e:
+        try:
+            logger.error(f"DEBUG LOG WRITE FAILED at {location}: {e} (path={DEBUG_LOG_PATH})")
+        except Exception:
+            pass
+
+
+# region agent log
+_agent_debug_log(
+    "H0",
+    "email_automation.py:module_import",
+    "Instrumentation module loaded",
+    {"debug_log_path": str(DEBUG_LOG_PATH)},
+)
+# endregion
+
 
 class EmailAutomation:
     """Main class for email automation"""
@@ -85,9 +124,16 @@ class EmailAutomation:
         # Login credentials
         self.login_email = config.get('login_email', 'harun.husic.external@telefonica.com')
         self.login_password = config.get('login_password', 'Avalon!1_1')
-        self.login_url = config.get('login_url', 'https://telefonica-germany-app.sprinklr.com/ui/login')
+        self.login_url = config.get(
+            'login_url',
+            'https://telefonica-germany-app.sprinklr.com/ui/login?returnTo=%2Fui%2Fservice%2Flogin%3Fservice%3Dspr%26returnTo%3Dhttps%253A%252F%252Ftelefonica-germany.sprinklr.com%252Fapp%252Fconsole&service=spr'
+        )
+        self._stop_after_login = False
+        self._login_popup_seen = False
         # When True (e.g. --process-current-only / read-email): never navigate away from email content page
         self._leave_page_unchanged = False
+        # Hard anti-repaste guard: allow only one editor write per process run.
+        self._reply_write_invoked = False
 
     def _load_processed_case_ids(self) -> set:
         """Load previously processed case IDs from file"""
@@ -196,7 +242,7 @@ class EmailAutomation:
                     logger.debug(f"Could not load .cursorrules: {e}")
         return ""
     
-    def connect_to_browser(self, cdp_endpoint: Optional[str] = None, leave_page_unchanged: bool = False):
+    def connect_to_browser(self, cdp_endpoint: Optional[str] = None, leave_page_unchanged: bool = False, stop_after_login: bool = False):
         """
         Connect to an existing Chrome browser instance via CDP (Chrome DevTools Protocol)
 
@@ -207,6 +253,7 @@ class EmailAutomation:
                                  away from current page; ensure_console_page() will not leave email content.
         """
         self._leave_page_unchanged = leave_page_unchanged
+        self._stop_after_login = stop_after_login
         logger.info("Connecting to existing Chrome browser instance...")
         self.playwright = sync_playwright().start()
         
@@ -284,14 +331,124 @@ class EmailAutomation:
                     "Make sure Chrome is installed or run: playwright install chromium"
                 )
         
-        # Get the first available page - USE EXISTING PAGE, don't create new one
+        # Get the best available page across ALL contexts (not just contexts[0]).
+        # Root cause seen in runtime logs: first context/page can be chrome://new-tab-page
+        # or unrelated tabs (e.g. forms), which breaks login/read flow.
         contexts = self.browser.contexts
+        # region agent log
+        _agent_debug_log(
+            "H8",
+            "email_automation.py:connect_to_browser:contexts",
+            "Enumerating CDP contexts",
+            {"context_count": len(contexts) if contexts else 0},
+        )
+        # endregion
         if contexts and len(contexts) > 0:
-            context = contexts[0]
-            pages = context.pages
+            all_pages = []
+            for ctx in contexts:
+                try:
+                    for p in (ctx.pages or []):
+                        all_pages.append((ctx, p))
+                except Exception:
+                    continue
+
+            # region agent log
+            _agent_debug_log(
+                "H8",
+                "email_automation.py:connect_to_browser:all_pages",
+                "Collected pages across all contexts",
+                {
+                    "total_pages": len(all_pages),
+                    "urls": [((p.url or "")[:180]) for _, p in all_pages[:12]],
+                },
+            )
+            # endregion
+
+            pages = [p for _, p in all_pages]
+            # region agent log
+            _agent_debug_log(
+                "H8",
+                "email_automation.py:connect_to_browser:context0_pages",
+                "Legacy context0 page list (for comparison)",
+                {
+                    "page_count": len(pages) if pages else 0,
+                    "page_urls": [((p.url or "")[:180]) for p in (pages or [])[:10]],
+                },
+            )
+            # endregion
             if pages and len(pages) > 0:
-                # Use the first existing page (existing tab)
-                self.page = pages[0]
+                # Prefer an already-open case tab first, then any Sprinklr tab.
+                # This prevents RE from attaching to the console list tab when a case is open in another tab.
+                sprinklr_url_patterns = (
+                    "telefonica-germany.sprinklr.com",
+                    "telefonica-germany-app.sprinklr.com",
+                    "sprinklr.com",
+                )
+                chosen = None
+                case_tab_pattern = re.compile(r"/app/console/c/[a-z0-9]+")
+
+                for p in pages:
+                    try:
+                        u = (p.url or "").lower()
+                        if u.startswith("devtools://"):
+                            continue
+                        if any(host in u for host in sprinklr_url_patterns) and case_tab_pattern.search(u):
+                            chosen = p
+                            break
+                    except Exception:
+                        continue
+
+                if chosen is not None:
+                    logger.info("Selected open-case Sprinklr tab for process_current_only/read-email flow")
+
+                for p in pages:
+                    if chosen is not None:
+                        break
+                    try:
+                        u = (p.url or "").lower()
+                        if u.startswith("devtools://"):
+                            continue
+                        if any(host in u for host in sprinklr_url_patterns):
+                            chosen = p
+                            break
+                    except Exception:
+                        continue
+                # If still nothing Sprinklr-like, prefer first non-devtools/non-chrome:// tab.
+                if chosen is None:
+                    for p in pages:
+                        try:
+                            u = (p.url or "").lower()
+                            if u.startswith("devtools://") or u.startswith("chrome://"):
+                                continue
+                            chosen = p
+                            break
+                        except Exception:
+                            continue
+                if chosen is None:
+                    chosen = pages[0]
+                    if (chosen.url or "").lower().startswith("devtools://"):
+                        logger.warning("Active tab is DevTools; no Sprinklr tab found.")
+                        print("[ERROR] The active browser tab is DevTools (devtools://), not Sprinklr.")
+                        print("[INFO] The script only reads the Sprinklr tab and does not switch tabs automatically.")
+                        print("[INFO] Open or switch to the Sprinklr tab (Telefonica Germany / Console), then run again.")
+                        raise Exception(
+                            "No Sprinklr tab found. Current tab is DevTools. "
+                            "Open the Sprinklr Console tab (telefonica-germany.sprinklr.com) and run again."
+                        )
+                self.page = chosen
+                # region agent log
+                _agent_debug_log(
+                    "H9",
+                    "email_automation.py:connect_to_browser:chosen_page",
+                    "Chosen page in first-context strategy",
+                    {"chosen_url": ((self.page.url or "")[:220])},
+                )
+                # endregion
+                try:
+                    self.page.bring_to_front()
+                    logger.info("Brought chosen browser tab to front")
+                except Exception as e:
+                    logger.debug(f"Could not bring chosen tab to front: {e}")
                 logger.info("Connected to existing page/tab")
                 print(f"[INFO] Using existing page/tab: {self.page.url}")
             else:
@@ -379,8 +536,15 @@ class EmailAutomation:
         # Conditional popup/dialog resolution (per debugg (2).md): accept any JS/browser dialogs so they don't block
         try:
             def _on_dialog(dialog):
-                logger.info(f"Dialog appeared: {dialog.type} - {(dialog.message or '')[:80]}")
+                msg = (dialog.message or "")
+                logger.info(f"Dialog appeared: {dialog.type} - {msg[:80]}")
                 print(f"[POPUP] Accepting dialog: {dialog.type}")
+                # In login-only mode, treat post-submit popup (e.g. missing audio) as login completion signal.
+                if self._stop_after_login:
+                    lowered = msg.lower()
+                    if "audio" in lowered or "mikro" in lowered or "ton" in lowered or "missing" in lowered:
+                        self._login_popup_seen = True
+                        print("[LOGIN] Login popup signal detected; login-only flow will stop.")
                 dialog.accept()
             self.page.on("dialog", _on_dialog)
             logger.info("Dialog listener added: dialogs will be accepted automatically")
@@ -392,12 +556,28 @@ class EmailAutomation:
         print(f"[PAGE STATE] Current page state: {current_state}")
         logger.info(f"Detected page state: {current_state}")
         
-        # SMART LOGIN DETECTION - Only login if not already logged in
-        logger.info("Checking login status with smart detection...")
-        print("[INFO] Using smart detection to check if login is needed...")
-        self._check_and_login()
-        
+        # HARD LOGIN GATE - must be authenticated before any further actions.
+        # For read-email/write-reply modes (leave_page_unchanged), never trigger login navigation/new tabs.
+        logger.info("Running login verification gate...")
+        print("[INFO] Verifying authenticated login before proceeding...")
         if leave_page_unchanged:
+            # RE/PR modes must operate strictly on the current visible tab.
+            # Do not run login heuristics here because they can be overly strict and block valid open-case tabs.
+            if current_state in ['email_content', 'console']:
+                pass
+            else:
+                raise Exception(
+                    "Current tab is not a readable Sprinklr case/console page. "
+                    "RE/write mode does not open new tabs or run login automatically. "
+                    "Open the intended Sprinklr case tab and rerun."
+                )
+        else:
+            self._ensure_logged_in_or_fail()
+        
+        if stop_after_login:
+            logger.info("Stop-after-login mode enabled: skipping console/status/email checks")
+            print("[INFO] Login-only mode: stopping immediately after successful login.")
+        elif leave_page_unchanged:
             # Process-current-only / extract-only: do NOT navigate; leave email content page as-is
             logger.info("Leave-page-unchanged: skipping ensure_console_page and status/email checks")
             print("[INFO] Leaving current page unchanged (read-email skill will use it as-is).")
@@ -423,18 +603,32 @@ class EmailAutomation:
         try:
             current_url = self.page.url
             logger.info(f"Current URL: {current_url}")
+            current_url_lower = current_url.lower()
+            # region agent log
+            _agent_debug_log(
+                "H1",
+                "email_automation.py:_check_login_status:url",
+                "Checking login status URL",
+                {"current_url": current_url[:400]},
+            )
+            # endregion
             
             # Check if we're on login page
-            if 'login' in current_url.lower() or 'ui/login' in current_url:
+            if 'login' in current_url_lower or 'ui/login' in current_url_lower:
                 logger.info("On login page - not logged in")
                 print("[LOGIN CHECK] On login page - not logged in")
                 return False
             
+            # Must be on Sprinklr domain and not on login URL.
+            if 'sprinklr.com' not in current_url_lower:
+                logger.info("Not on Sprinklr domain - not logged in for this automation context")
+                print("[LOGIN CHECK] Not on Sprinklr domain")
+                return False
+
             # Check if we're already logged in by looking for common logged-in elements
             logged_in_indicators = [
                 '[data-testid*="case"]',
                 '[data-testid="collapsed-case-item"]',  # Email cases
-                'text="Console"',
                 '[aria-label*="Console"]',
                 'h2:has-text("Fall #")',  # Case header
                 '[data-testid="html-message-content"]',  # Email content
@@ -444,14 +638,68 @@ class EmailAutomation:
                 try:
                     elem = self.page.locator(indicator).first
                     if elem.is_visible(timeout=2000):
+                        # region agent log
+                        _agent_debug_log(
+                            "H2",
+                            "email_automation.py:_check_login_status:indicator",
+                            "Logged-in indicator visible",
+                            {"indicator": indicator},
+                        )
+                        # endregion
                         logger.info("Already logged in - found logged-in indicator")
                         print(f"[LOGIN CHECK] Already logged in (found: {indicator})")
                         return True
                 except:
                     continue
+
+            # Fallback authenticated-state heuristic:
+            # If we're on Sprinklr domain, not on login URL, and no visible login form fields,
+            # treat as logged in. This prevents false negatives on pages that are authenticated
+            # but don't render the case/console indicators yet.
+            login_form_selectors = [
+                'input[name="uid"]',
+                'input[name="username"]',
+                'input[autocomplete="username"]',
+                'input[type="email"]',
+                'input[name="pass"]',
+                'input[name="password"]',
+                'input[autocomplete="current-password"]',
+                'input[type="password"]',
+                'button[type="submit"]',
+                'input[type="submit"]',
+            ]
+            login_form_visible = False
+            for selector in login_form_selectors:
+                try:
+                    if self.page.locator(selector).first.is_visible(timeout=300):
+                        login_form_visible = True
+                        break
+                except Exception:
+                    continue
+
+            if not login_form_visible:
+                # region agent log
+                _agent_debug_log(
+                    "H3",
+                    "email_automation.py:_check_login_status:fallback_auth",
+                    "Auth inferred by fallback (no visible login form)",
+                    {"current_url": current_url[:400]},
+                )
+                # endregion
+                logger.info("No login form visible on Sprinklr non-login URL; treating session as authenticated")
+                print("[LOGIN CHECK] Authenticated session inferred (non-login Sprinklr page, no login form)")
+                return True
             
             logger.info("Could not find logged-in indicators")
             print("[LOGIN CHECK] Could not determine login status")
+            # region agent log
+            _agent_debug_log(
+                "H4",
+                "email_automation.py:_check_login_status:unverified",
+                "Login status unresolved",
+                {"current_url": current_url[:400], "login_form_visible": login_form_visible},
+            )
+            # endregion
             return False
             
         except Exception as e:
@@ -473,13 +721,18 @@ class EmailAutomation:
             # Check current URL
             current_url = self.page.url
             logger.info(f"Current URL: {current_url}")
+            current_url_lower = current_url.lower()
             
-            # Navigate to login page if not already there
-            if 'login' not in current_url.lower() and 'ui/login' not in current_url:
+            # Navigate to login page if not already there OR current tab is not Sprinklr.
+            if ('login' not in current_url_lower and 'ui/login' not in current_url_lower) or ('sprinklr.com' not in current_url_lower):
                 logger.info("Not on login page, navigating...")
                 print("[LOGIN] Navigating to login page...")
-                self.page.goto(self.login_url, wait_until='networkidle')
-                time.sleep(1)
+                self.page.goto(self.login_url, wait_until='domcontentloaded', timeout=15000)
+                try:
+                    self.page.bring_to_front()
+                except Exception:
+                    pass
+                time.sleep(0.2)
             
             logger.info("Attempting to login...")
             print("[LOGIN] Attempting to login...")
@@ -498,19 +751,23 @@ class EmailAutomation:
             # Wait for email input field
             email_selectors = [
                 'input[name="uid"]',
+                'input[name="username"]',
+                'input[autocomplete="username"]',
+                'input[aria-label*="Enter Email"]',
+                'input[aria-label*="Email"]',
                 'input[type="email"][aria-label*="Email"]',
                 'input[placeholder*="Email"]',
+                'input[type="email"]',
             ]
             
             email_filled = False
             for selector in email_selectors:
                 try:
                     email_input = self.page.locator(selector).first
-                    if email_input.is_visible(timeout=3000):
+                    if email_input.is_visible(timeout=1200):
                         email_input.click()
-                        time.sleep(0.5)
                         email_input.fill('')  # Clear existing value
-                        email_input.type(self.login_email, delay=50)
+                        email_input.fill(self.login_email)
                         email_filled = True
                         logger.info("Email filled")
                         break
@@ -518,27 +775,72 @@ class EmailAutomation:
                     continue
             
             if not email_filled:
-                logger.error("Could not find email input field")
-                return False
-            
-            time.sleep(0.5)
+                logger.warning("Could not find email input field on current tab. Trying fresh login tab fallback...")
+                print("[LOGIN] Email field not found. Opening fresh login tab...")
+                # region agent log
+                _agent_debug_log(
+                    "H5",
+                    "email_automation.py:_perform_login:email_not_found",
+                    "Email field not found on current tab",
+                    {"current_url": (self.page.url or "")[:400]},
+                )
+                # endregion
+                try:
+                    fresh_page = self.page.context.new_page()
+                    fresh_page.goto(self.login_url, wait_until='domcontentloaded', timeout=15000)
+                    self.page = fresh_page
+                    try:
+                        self.page.bring_to_front()
+                    except Exception:
+                        pass
+                except Exception as e:
+                    logger.error(f"Fresh login tab fallback failed: {e}")
+                    return False
+
+                for selector in email_selectors:
+                    try:
+                        email_input = self.page.locator(selector).first
+                        if email_input.is_visible(timeout=1800):
+                            email_input.click()
+                            email_input.fill('')
+                            email_input.fill(self.login_email)
+                            email_filled = True
+                            logger.info("Email filled (fresh tab fallback)")
+                            break
+                    except Exception:
+                        continue
+
+                if not email_filled:
+                    logger.error(f"Could not find email input field. Current URL: {self.page.url}")
+                    # region agent log
+                    _agent_debug_log(
+                        "H5",
+                        "email_automation.py:_perform_login:email_not_found_fallback",
+                        "Email field not found even after fresh tab fallback",
+                        {"current_url": (self.page.url or "")[:400]},
+                    )
+                    # endregion
+                    return False
             
             # Fill password
             password_selectors = [
                 'input[name="pass"]',
+                'input[name="password"]',
+                'input[autocomplete="current-password"]',
+                'input[aria-label*="Enter Password"]',
                 'input[type="password"][aria-label*="Password"]',
                 'input[placeholder*="Password"]',
+                'input[type="password"]',
             ]
             
             password_filled = False
             for selector in password_selectors:
                 try:
                     password_input = self.page.locator(selector).first
-                    if password_input.is_visible(timeout=2000):
+                    if password_input.is_visible(timeout=1200):
                         password_input.click()
-                        time.sleep(0.5)
                         password_input.fill('')
-                        password_input.type(self.login_password, delay=50)
+                        password_input.fill(self.login_password)
                         password_filled = True
                         logger.info("Password filled")
                         break
@@ -547,9 +849,15 @@ class EmailAutomation:
             
             if not password_filled:
                 logger.error("Could not find password input field")
+                # region agent log
+                _agent_debug_log(
+                    "H6",
+                    "email_automation.py:_perform_login:password_not_found",
+                    "Password field not found",
+                    {"current_url": (self.page.url or "")[:400]},
+                )
+                # endregion
                 return False
-            
-            time.sleep(1)
             
             # Submit the form
             submit_selectors = [
@@ -559,41 +867,60 @@ class EmailAutomation:
                 'button:has-text("Anmelden")',
             ]
             
+            submitted = False
             for selector in submit_selectors:
                 try:
                     submit_button = self.page.locator(selector).first
-                    if submit_button.is_visible(timeout=2000):
+                    if submit_button.is_visible(timeout=1200):
                         submit_button.click()
                         logger.info("Login form submitted")
+                        submitted = True
                         break
                 except:
                     continue
+            if not submitted:
+                # Fast fallback: press Enter in password field.
+                try:
+                    self.page.keyboard.press("Enter")
+                    submitted = True
+                    logger.info("Login submitted via Enter key fallback")
+                except Exception:
+                    pass
             
             # Wait for navigation after login
             logger.info("Waiting for login to complete...")
             # Wait for URL to change or for login to complete
-            max_wait = 15
+            max_wait = 8
             waited = 0
             while waited < max_wait:
                 current_url = self.page.url
                 if 'login' not in current_url.lower() and 'sprinklr.com' in current_url:
                     logger.info("Login appears to have completed")
                     break
-                time.sleep(1)
-                waited += 1
+                time.sleep(0.5)
+                waited += 0.5
             
-            time.sleep(1)  # Brief wait for page to stabilize
-            
+            if self._stop_after_login:
+                logger.info("Stop-after-login mode: ending login flow immediately after submit.")
+                # region agent log
+                _agent_debug_log(
+                    "H7",
+                    "email_automation.py:_perform_login:stop_after_login",
+                    "Stop-after-login branch taken",
+                    {"current_url": (self.page.url or "")[:400], "popup_seen": bool(self._login_popup_seen)},
+                )
+                # endregion
+                return True
+
             # Navigate to console URL if needed
             if self.url not in self.page.url:
                 logger.info(f"Navigating to console URL: {self.url}")
                 try:
-                    self.page.goto(self.url, wait_until='domcontentloaded', timeout=60000)
-                    time.sleep(1.5)
+                    self.page.goto(self.url, wait_until='domcontentloaded', timeout=15000)
+                    time.sleep(0.4)
                 except Exception as e:
                     logger.warning(f"Navigation timeout, but continuing: {e}")
-                    # Try to wait a bit more and check if we're on the right page
-                    time.sleep(1)
+                    time.sleep(0.3)
             
             logger.info("Login process completed")
             return True
@@ -601,6 +928,37 @@ class EmailAutomation:
         except Exception as e:
             logger.error(f"Error during login: {e}")
             return False
+
+    def _ensure_logged_in_or_fail(self):
+        """
+        Hard login gate: verify authenticated state before proceeding.
+        Retries login once, then fails fast if still not authenticated.
+        """
+        if self._check_login_status():
+            return True
+
+        print("[LOGIN] Login not verified. Starting login flow...")
+        first_attempt = self._check_and_login()
+        time.sleep(0.3)
+        if self._stop_after_login and first_attempt:
+            # Login-only strict stop: once submit flow completes (or popup signal appears), stop immediately.
+            print("[LOGIN] Login-only mode: login submit flow completed. Stopping without further retries.")
+            return True
+        if first_attempt and self._check_login_status():
+            print("[LOGIN] Login verified after first attempt.")
+            return True
+
+        print("[LOGIN] First login attempt failed/unverified. Retrying once...")
+        second_attempt = self._check_and_login()
+        time.sleep(0.3)
+        if self._stop_after_login and second_attempt:
+            print("[LOGIN] Login-only mode: stopping after retry submit flow.")
+            return True
+        if second_attempt and self._check_login_status():
+            print("[LOGIN] Login verified after retry.")
+            return True
+
+        raise Exception("ERROR: LOGIN NOT VERIFIED. STOPPING AUTOMATION.")
     
     def _close_popups(self):
         """Popup handling disabled - user has resolved popup issue"""
@@ -815,8 +1173,11 @@ class EmailAutomation:
             current_url = self.page.url.lower()
             url_has_console = '/console' in current_url or '/app/console' in current_url
             url_has_email = '/case/' in current_url or '/email/' in current_url or 'fall' in current_url
-            # Case-open page (e.g. .../app/console/c/699d1e46...) = email content view; don't treat as console list
-            url_is_case_page = '/console/c/' in current_url or bool(re.search(r'/app/console/c/[a-z0-9]+', current_url))
+            # Console list = .../app/console/c (no case id). Case page = .../app/console/c/<id> (e.g. 699d1e46...).
+            # So: only treat as "case page" when there is a non-empty id segment after /c/.
+            url_is_case_page = bool(re.search(r'/app/console/c/[a-z0-9]+', current_url)) or (
+                '/console/c/' in current_url and re.search(r'/console/c/[a-z0-9]+', current_url)
+            )
             
             # Check for email content page indicators (highest priority)
             email_content_indicators = [
@@ -914,7 +1275,115 @@ class EmailAutomation:
             logger.error(f"Error detecting page state: {e}")
             print(f"[PAGE DETECTION] Error: {e}")
             return 'unknown'
-    
+
+    def _is_console_list_url(self) -> bool:
+        """True when URL is the console list (e.g. .../app/console/c) with no case id after /c."""
+        try:
+            u = (self.page.url or "").lower().split("?")[0].rstrip("/")
+            # Must end with /app/console/c (no id segment after c; /c/699d... would not match)
+            return u.endswith("/app/console/c")
+        except Exception:
+            return False
+
+    def _has_collapsed_case_item(self) -> bool:
+        """True when at least one collapsed-case-item is visible (new case ready to be read)."""
+        try:
+            loc = self.page.locator("[data-testid=\"collapsed-case-item\"]").first
+            return loc.is_visible(timeout=800)
+        except Exception:
+            return False
+
+    # In-page script: runs inside Chrome to watch for new cases on console/c and open the first one.
+    _AUTO_OPEN_NEW_CASE_SCRIPT = r"""
+    (function() {
+      var pathname = window.location.pathname || '';
+      if (!/\/app\/console\/c$/.test(pathname.replace(/\/$/, ''))) return;
+      if (window.__sprinklrAutoOpenActive) return;
+      window.__sprinklrAutoOpenActive = true;
+      var root = document.querySelector('[data-entityid="CollapsedPreviewsList"]') || document.body;
+      function clickFirstCollapsed() {
+        var items = document.querySelectorAll('[data-testid="collapsed-case-item"]');
+        for (var i = 0; i < items.length; i++) {
+          var el = items[i];
+          if (el.offsetParent !== null && el.getBoundingClientRect().width > 0) {
+            el.click();
+            if (window.__sprinklrAutoOpenObserver) {
+              window.__sprinklrAutoOpenObserver.disconnect();
+              window.__sprinklrAutoOpenObserver = null;
+            }
+            window.__sprinklrAutoOpenActive = false;
+            return true;
+          }
+        }
+        return false;
+      }
+      var observer = new MutationObserver(function() {
+        if (window.location.pathname && !/\/app\/console\/c$/.test(window.location.pathname.replace(/\/$/, ''))) return;
+        if (clickFirstCollapsed()) return;
+      });
+      observer.observe(root, { childList: true, subtree: true });
+      window.__sprinklrAutoOpenObserver = observer;
+      setTimeout(function() { clickFirstCollapsed(); }, 800);
+      return true;
+    })();
+    """
+
+    def _inject_auto_open_new_case_script(self) -> bool:
+        """
+        Inject script into the page so Chrome itself watches for new cases on console/c
+        and opens the first one. Only runs when we're on the list URL.
+        """
+        if not self._is_console_list_url():
+            return False
+        try:
+            self.page.evaluate(self._AUTO_OPEN_NEW_CASE_SCRIPT)
+            logger.info("Injected in-page auto-open script (Chrome will open first new case on list)")
+            return True
+        except Exception as e:
+            logger.debug("Could not inject auto-open script: %s", e)
+            return False
+
+    def _ensure_console_list_url(self) -> bool:
+        """
+        When we need to monitor and open new emails, we must be on the list URL (console/c), NOT console/c/<id>.
+        If we're on console but URL is not .../app/console/c, navigate to the list URL so new cases are visible.
+        When on list URL, injects in-page script so Chrome itself auto-opens the first new case.
+        """
+        if self._is_console_list_url():
+            self._inject_auto_open_new_case_script()
+            return True
+        try:
+            current_url = (self.page.url or "").lower()
+            # Only navigate if we're on some console path but not the list (e.g. /app/console without /c)
+            if "/console" not in current_url and "/app/console" not in current_url:
+                return False
+            if re.search(r'/app/console/c/[a-z0-9]+', current_url):
+                # We're on a case page (console/c/<id>), not the list - go to list
+                list_url = self.url.rstrip("/")
+                if not list_url.endswith("/c"):
+                    list_url = list_url + "/c"
+                logger.info("Navigating to console list URL (console/c) to monitor for new emails")
+                print("[INFO] Navigating to console list (console/c) to monitor and open new email...")
+                self.page.goto(list_url, wait_until="domcontentloaded", timeout=30000)
+                time.sleep(2)
+                if self._is_console_list_url():
+                    self._inject_auto_open_new_case_script()
+                    return True
+                return False
+            # We're on /app/console without /c - go to /app/console/c
+            list_url = self.url.rstrip("/") + ("/c" if not self.url.rstrip("/").endswith("/c") else "")
+            logger.info("Navigating to console list URL (console/c) to monitor for new emails")
+            print("[INFO] Navigating to console list (console/c) to monitor and open new email...")
+            self.page.goto(list_url, wait_until="domcontentloaded", timeout=30000)
+            time.sleep(2)
+            if self._is_console_list_url():
+                self._inject_auto_open_new_case_script()
+                return True
+            return False
+        except Exception as e:
+            logger.warning(f"Could not ensure console list URL: {e}")
+            return False
+
     def ensure_console_page(self):
         """Ensure we're on the console page, navigate if needed - AVOID UNNECESSARY RELOADS"""
         current_state = self._detect_page_state()
@@ -1003,6 +1472,16 @@ class EmailAutomation:
         if current_state == 'email_content':
             logger.debug("Already on email content page")
             return True
+
+        # Fallback for mis-detection: if reply editor is visible, treat page as email content.
+        try:
+            editor_section = self.page.locator('section[aria-label="Nachricht verfassen"]').first
+            if editor_section.count() > 0 and editor_section.is_visible(timeout=1200):
+                logger.info("Email content fallback: reply editor is visible, proceeding.")
+                print("[INFO] Email-content fallback active: reply editor detected.")
+                return True
+        except Exception:
+            pass
         
         logger.warning("Not on email content page - cannot extract email content")
         return False
@@ -1053,13 +1532,37 @@ class EmailAutomation:
             case_id = f"#{match.group(1)}"
             return case_id
         return None
+
+    # Canonical case ID element: <h2>Fall <span data-testid="box" ...>#36556980</span></h2> (always use this, never body/URL)
+    _CASE_ID_HEADER_SELECTOR = "h2:has-text('Fall') span:has-text('#'), h1:has-text('Fall') span:has-text('#')"
+    _CASE_ID_HEADER_FALLBACK = "h2:has-text('Fall'), h1:has-text('Fall')"
+
+    def _get_case_id_from_page_header(self) -> Optional[str]:
+        """
+        Get the case ID from the canonical page element only:
+        <h2>Fall <span data-testid="box" ...>#36556980</span></h2>
+        This is the only source for case ID; do not use page body or URL to avoid Kundennummer etc.
+        """
+        try:
+            # First: span inside h2 that contains # (the exact element the user specified)
+            span = self.page.locator(self._CASE_ID_HEADER_SELECTOR).first
+            if span.count() and span.is_visible(timeout=1200):
+                text = span.inner_text()
+                cid = self.extract_case_id(text.strip())
+                if cid:
+                    return cid
+            # Fallback: full h2 text if span not found
+            header = self.page.locator(self._CASE_ID_HEADER_FALLBACK).first
+            if header.is_visible(timeout=500):
+                return self.extract_case_id(header.inner_text())
+        except Exception:
+            pass
+        return None
     
     def get_new_emails(self) -> List[Dict]:
         """
-        Get list of new emails from the Console tab
-        
-        Returns:
-            List of email dictionaries with case_id, content, etc.
+        Get list of new emails from the Console tab.
+        ALWAYS when the user is on console/c (list URL, NOT console/c/<id>), we monitor and open the new email.
         """
         new_emails = []
         
@@ -1069,14 +1572,29 @@ class EmailAutomation:
             print("[EMAIL DETECTION] Cannot get emails - not on console page")
             return new_emails
         
+        # ALWAYS when monitoring for new emails we must be on the list URL (console/c), never console/c/<id>
+        if not self._ensure_console_list_url():
+            logger.warning("Could not ensure console list URL (console/c)")
+            print("[EMAIL DETECTION] Could not reach console list (console/c).")
+            return new_emails
+        
+        # New case ready to be read = BOTH: console list URL (/app/console/c) AND collapsed-case-item present
+        on_list_url = self._is_console_list_url()
+        has_item = self._has_collapsed_case_item()
+        if not on_list_url or not has_item:
+            logger.info("New case requires both: console list URL and collapsed-case-item. URL=%s, item=%s", on_list_url, has_item)
+            print("[EMAIL DETECTION] New case requires both: URL = .../app/console/c (list) and item = collapsed-case-item visible.")
+            return new_emails
+        
         try:
-            print("[EMAIL DETECTION] Scanning for new emails...")
-            # Find all email entries in the Console
-            # Priority 1: collapsed preview buttons in the sidebar (newest emails)
-            # Priority 2: case list cards in the console stream
+            print("[EMAIL DETECTION] Console list URL + collapsed-case-item present - scanning for new case(s)...")
+            # On /app/console/c (list page, not /c/<id>), presence of collapsed-case-item = new case ready to be read
+            # Find collapsed-case-item entries (both URL and item conditions already satisfied above)
             email_selectors = [
-                '[data-entityid="CollapsedPreviewsList"] button[data-testid="collapsed-case-item"]',  # Collapsed preview for new emails
-                '[data-testid="case-item-root"] div.cardItem',  # Console stream case cards (including SLA, name, subject, preview)
+                'button[data-testid="collapsed-case-item"]',  # Case stream: new case ready to be read on /app/console/c
+                '[data-testid="collapsed-case-item"]',  # Same without tag (in case structure varies)
+                '[data-entityid="CollapsedPreviewsList"] button[data-testid="collapsed-case-item"]',  # Collapsed preview in sidebar
+                '[data-testid="case-item-root"] div.cardItem',  # Console stream case cards (SLA, name, subject, preview)
             ] + self.selectors.get('email_item', [
                 '[data-testid*="email"]',
                 '[data-testid*="message"]',
@@ -1225,35 +1743,16 @@ class EmailAutomation:
                     logger.error("Failed to navigate to email content page")
                     return {'case_id': email_data['case_id'], 'subject': '', 'from': '', 'body': '', 'attachments': []}
             
-            # Always try to extract the real case ID from multiple sources
-            real_case_id = None
-            
-            # Method 1: Try to extract from page content
-            page_content = self.page.content()
-            real_case_id = self.extract_case_id(page_content)
-            
-            # Method 2: Try to extract from URL
+            # Case ID is always from the canonical element (h2 > span #36556980); never from page body
+            real_case_id = self._get_case_id_from_page_header()
             if not real_case_id:
-                current_url = self.page.url
-                real_case_id = self.extract_case_id(current_url)
-            
-            # Method 3: Try to extract from page title
+                real_case_id = self.extract_case_id(self.page.url)
             if not real_case_id:
                 try:
-                    page_title = self.page.title()
-                    real_case_id = self.extract_case_id(page_title)
-                except:
+                    real_case_id = self.extract_case_id(self.page.title())
+                except Exception:
                     pass
-            
-            # Method 4: Try to extract from page header (Fall #30091006 format)
-            if not real_case_id:
-                try:
-                    case_header = self.page.locator('h2:has-text("Fall #"), h1:has-text("Fall #"), [data-testid*="case"]:has-text("#")').first
-                    if case_header.is_visible(timeout=1200):
-                        header_text = case_header.inner_text()
-                        real_case_id = self.extract_case_id(header_text)
-                except:
-                    pass
+            page_content = self.page.content()  # keep for ConversationId fallback below
             
             # Method 5: Try to extract from ConversationId in email content (as fallback identifier)
             if not real_case_id:
@@ -1287,18 +1786,12 @@ class EmailAutomation:
                 'attachments': []
             }
             
-            # Try to extract case ID from the page header one more time (Fall #30091006 format)
+            # If we still have a temp/conv id, try page header again for the real case ID
             if email_content['case_id'].startswith('#TEMP') or email_content['case_id'].startswith('#CONV'):
-                try:
-                    case_header = self.page.locator('h2:has-text("Fall #"), h1:has-text("Fall #"), [data-testid*="case"]:has-text("#")').first
-                    if case_header.is_visible(timeout=1200):
-                        header_text = case_header.inner_text()
-                        extracted_case_id = self.extract_case_id(header_text)
-                        if extracted_case_id:
-                            email_content['case_id'] = extracted_case_id
-                            logger.info(f"Updated case ID from header: {extracted_case_id}")
-                except:
-                    pass
+                extracted_case_id = self._get_case_id_from_page_header()
+                if extracted_case_id:
+                    email_content['case_id'] = extracted_case_id
+                    logger.info(f"Updated case ID from header: {extracted_case_id}")
             
             # Extract subject/from/body from the NEWEST inbound message (last in DOM = most recent)
             subject_extracted = False
@@ -1870,7 +2363,7 @@ Body Structure:
      * "vielen Dank für Ihre E-Mail bezüglich Ihrer Anfrage zu den Vertragsverlängerungen und der Vertragsübernahme"
      * "vielen Dank für Ihre E-Mail bezüglich Ihrer Anfrage zur Zahlungsaufschub"
 
-2. Apologise and show specific sympathy for the customer's case and circumstance. Reference their specific situation (e.g., if they mention a problem with a contract extension, acknowledge that specific problem).
+2. Show specific sympathy for the customer's case and circumstance. Add an apology only when contextually necessary (clear inconvenience, error, delay, or misinformation caused by us). If context does not warrant an apology, do not include one.
 
 3. Address the customer's concern directly and provide clear information or next steps. This MUST be specific to what they asked about. If they asked about a billing issue, address the billing issue. If they asked about missing documents, address the missing documents. DO NOT use generic text like "wir werden Ihre Anfrage bearbeiten" - be specific about what you will do or what information you are providing.
 
@@ -2605,6 +3098,22 @@ Use cursor-agent's file reading capabilities to read these files before generati
             customer_response = re.sub(r'\n{3,}', '\n\n', customer_response)
             # Remove leading/trailing whitespace
             customer_response = customer_response.strip()
+
+            # Hard anti-fusion sanitizer: keep only one bounded customer reply block.
+            customer_response = self._sanitize_single_customer_reply_block(customer_response)
+
+            # Final hard block for merged responses.
+            sal_count = len(re.findall(r'(?im)^\s*guten tag\b', customer_response))
+            sig_count = len(re.findall(r'(?im)^\s*freundliche grüße\b', customer_response))
+            survey_count = len(re.findall(r'(?i)zur verbesserung unseres kundenservices', customer_response))
+            if sal_count > 1 or sig_count > 1 or survey_count > 1:
+                logger.error(
+                    "CRITICAL: Parsed customer response still appears merged "
+                    f"(salutations={sal_count}, signatures={sig_count}, survey={survey_count}). Blocking paste content."
+                )
+                parsed['customer_response'] = ''
+                return parsed
+
             parsed['customer_response'] = customer_response
             logger.info(f"Extracted customer response ({len(customer_response)} chars)")
             print(f"[PARSING] Extracted customer email response ({len(customer_response)} characters)")
@@ -2647,6 +3156,39 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 parsed['suggested_transfer_goal'] = ''
         
         return parsed
+
+    def _sanitize_single_customer_reply_block(self, text: str) -> str:
+        """
+        Reduce parsed text to one customer reply block to prevent merged multi-case output.
+        """
+        t = (text or "").strip()
+        if not t:
+            return t
+
+        # Start at first salutation if present.
+        sal_matches = list(re.finditer(r'(?im)^\s*guten tag\b', t))
+        if sal_matches:
+            t = t[sal_matches[0].start():].strip()
+            sal_matches = list(re.finditer(r'(?im)^\s*guten tag\b', t))
+            if len(sal_matches) > 1:
+                t = t[:sal_matches[1].start()].strip()
+
+        # Keep only first survey block occurrence.
+        survey_matches = list(re.finditer(r'(?i)zur verbesserung unseres kundenservices', t))
+        if len(survey_matches) > 1:
+            t = t[:survey_matches[1].start()].strip()
+
+        # Keep only first signature block occurrence.
+        sig_matches = list(re.finditer(r'(?im)^\s*freundliche grüße\b', t))
+        if len(sig_matches) > 1:
+            t = t[:sig_matches[1].start()].strip()
+
+        # If fixed footer exists, cut at first footer end to avoid trailing appended blocks.
+        foot = re.search(r'(?i)\* gemäß tarif für anrufe in das dt\. fest- bzw\. mobilfunknetz', t)
+        if foot:
+            t = t[:foot.end()].strip()
+
+        return t
     
     def _generate_placeholder_analysis(self, email_content: Dict) -> Dict:
         """Generate placeholder analysis when Cursor is not available"""
@@ -2668,6 +3210,46 @@ Use cursor-agent's file reading capabilities to read these files before generati
         logger.error("CRITICAL: _generate_placeholder_response() was called - this should NEVER happen!")
         logger.error("All responses must be case-specific from cursor-agent. No placeholders allowed.")
         raise Exception("Placeholder responses are not allowed. cursor-agent must generate case-specific responses.")
+
+    def _write_latest_re_reply_record(self, case_id: str, customer_response: str) -> None:
+        """
+        Persist the exact response shown in RE so PR can paste the same text for the same case.
+        """
+        try:
+            text = (customer_response or "").strip()
+            if not text:
+                return
+            payload = {
+                "case_id": (case_id or "").strip(),
+                "response_text": text,
+                "saved_at": int(time.time()),
+            }
+            LATEST_RE_REPLY_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(LATEST_RE_REPLY_PATH, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
+            logger.info(f"Saved latest RE reply record for case {case_id} at {LATEST_RE_REPLY_PATH}")
+        except Exception as e:
+            logger.warning(f"Could not save latest RE reply record: {e}")
+
+    def _write_latest_user_directed_reply_record(self, case_id: str, customer_response: str) -> None:
+        """
+        Persist explicit user-directed override reply for the same visible case.
+        """
+        try:
+            text = (customer_response or "").strip()
+            if not text:
+                return
+            payload = {
+                "case_id": (case_id or "").strip(),
+                "response_text": text,
+                "saved_at": int(time.time()),
+            }
+            LATEST_USER_DIRECTED_REPLY_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(LATEST_USER_DIRECTED_REPLY_PATH, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
+            logger.info(f"Saved latest user-directed reply record for case {case_id} at {LATEST_USER_DIRECTED_REPLY_PATH}")
+        except Exception as e:
+            logger.warning(f"Could not save latest user-directed reply record: {e}")
     
     def create_output_file(self, case_id: str, cursor_response: Dict):
         """
@@ -2928,8 +3510,341 @@ Use cursor-agent's file reading capabilities to read these files before generati
         while rebuilt and rebuilt[-1].strip() == '':
             rebuilt.pop()
         return '\n'.join(rebuilt)
+
+    def _normalize_text(self, text: str) -> str:
+        """Normalize text for reliable comparisons."""
+        if not text:
+            return ""
+        out = text.replace('\r\n', '\n').replace('\r', '\n')
+        out = re.sub(r'[ \t]+', ' ', out)
+        out = re.sub(r'\n{3,}', '\n\n', out)
+        return out.strip()
+
+    def _validate_single_reply_text(self, text: str) -> List[str]:
+        """
+        Validate that reply text is a single response block and not merged.
+        Returns a list of validation errors (empty if valid).
+        """
+        errors: List[str] = []
+        raw = text or ""
+        lowered = raw.lower()
+        salutation_count = len(re.findall(r'(?im)^\s*guten tag\b', raw))
+        survey_count = lowered.count("zur verbesserung unseres kundenservices")
+        signature_count = lowered.count("freundliche grüße")
+        agent_name_count = lowered.count("ihr o2 kundenbetreuer")
+
+        if salutation_count != 1:
+            errors.append(f"Expected exactly 1 salutation, found {salutation_count}")
+        if survey_count != 1:
+            errors.append(f"Expected exactly 1 survey line, found {survey_count}")
+        if signature_count != 1:
+            errors.append(f"Expected exactly 1 signature header, found {signature_count}")
+        if agent_name_count != 1:
+            errors.append(f"Expected exactly 1 agent signature marker, found {agent_name_count}")
+
+        # Detect duplicated paragraph blocks (very common when previous case reply is concatenated)
+        paragraphs = [p.strip() for p in re.split(r'\n\s*\n', raw) if p.strip()]
+        seen = set()
+        for p in paragraphs:
+            key = re.sub(r'\s+', ' ', p.lower())
+            if len(key) < 30:
+                continue
+            if key in seen:
+                errors.append("Detected duplicated paragraph block")
+                break
+            seen.add(key)
+        return errors
+
+    def _get_editor_plain_text(self) -> str:
+        """Read current TinyMCE editor text from the visible reply section (same editor as write)."""
+        try:
+            text = self.page.evaluate(
+                """() => {
+                    const section = document.querySelector('section[aria-label="Nachricht verfassen"]');
+                    if (!section) return '';
+                    const base = section.querySelector('[data-testid="baseEditorContainer"]') || section;
+                    const iframe = base.querySelector('iframe[id$="_ifr"]')
+                        || base.querySelector('iframe')
+                        || section.querySelector('iframe[id$="_ifr"]')
+                        || section.querySelector('iframe');
+
+                    // Prefer the TinyMCE instance bound to the reply iframe (never editors[0]).
+                    try {
+                        if (window.tinymce && iframe) {
+                            const rawId = (iframe.id || '').replace(/_ifr$/, '');
+                            let editor = (rawId && window.tinymce.get) ? window.tinymce.get(rawId) : null;
+                            if (!editor && window.tinymce.editors) {
+                                for (const ed of window.tinymce.editors) {
+                                    try {
+                                        const el = ed.getElement && ed.getElement();
+                                        const edIframe = ed.iframeElement || (el && el.querySelector && el.querySelector('iframe'));
+                                        if (edIframe === iframe || (ed.id && iframe.id && iframe.id.indexOf(ed.id) === 0)) {
+                                            editor = ed;
+                                            break;
+                                        }
+                                    } catch (e) {}
+                                }
+                            }
+                            if (editor) {
+                                return (editor.getContent({ format: 'text' }) || '').trim();
+                            }
+                        }
+                    } catch (e) {}
+
+                    if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
+                        return (iframe.contentDocument.body.innerText || '').trim();
+                    }
+                    return '';
+                }"""
+            )
+            return self._normalize_text(text or "")
+        except Exception:
+            return ""
+
+    def _get_visible_sender_text(self) -> str:
+        """Read visible sender text ('Von:') from current open case."""
+        try:
+            txt = self.page.evaluate(
+                """() => {
+                    const inbound = document.querySelector('[data-testid="inboundChatConversationItemFanMessage"]:last-child')
+                        || document.querySelector('[data-testid="inboundChatConversationItemFanMessage"]');
+                    if (!inbound) return '';
+                    const labels = inbound.querySelectorAll('span[data-testid="label"]');
+                    let vonParent = null;
+                    for (const l of labels) {
+                        const t = (l.innerText || '').trim().toLowerCase();
+                        if (t === 'von:' || t === 'von') { vonParent = l.parentElement; break; }
+                    }
+                    if (!vonParent) return '';
+                    const value = vonParent.querySelector('span[data-spaceweb="typography-l2"]');
+                    return value ? (value.innerText || '').trim() : '';
+                }"""
+            )
+            return (txt or "").strip()
+        except Exception:
+            return ""
+
+    def _has_verifiable_visible_customer_name(self) -> bool:
+        """
+        Conservative check: only return True when a plausible person name is visible.
+        If uncertain, returns False (fail-safe).
+        """
+        sender = self._get_visible_sender_text()
+        if not sender:
+            return False
+        s = re.sub(r'<[^>]*>', ' ', sender).strip()
+        if '@' in s:
+            return False
+        if re.search(r'\d', s):
+            return False
+        tokens = [t for t in re.split(r'[\s,;:/]+', s) if t]
+        alpha_tokens = [t for t in tokens if re.search(r'[A-Za-zÄÖÜäöüß]', t)]
+        return len(alpha_tokens) >= 2
+
+    def _force_neutral_salutation_if_name_unverified(self, text: str) -> str:
+        """
+        If visible case does not show a verifiable customer name, force 'Guten Tag,'.
+        Prevents leaking stale names from prior cases.
+        """
+        if self._has_verifiable_visible_customer_name():
+            return text
+        normalized = text or ""
+        out = re.sub(r'(?im)^\s*Guten Tag\s+[^,\n]+,\s*$', 'Guten Tag,', normalized, count=1)
+        if out != normalized:
+            logger.warning("Named salutation replaced with neutral salutation (no visible customer name).")
+            print("[EDITOR] WARNING: No visible customer name verified. Forced salutation to 'Guten Tag,'.")
+        return out
+
+    def _clear_editor_hard(self) -> None:
+        """Hard-clear TinyMCE/editor content using multiple DOM paths."""
+        self.page.evaluate(
+            """() => {
+                try {
+                    if (window.tinymce && window.tinymce.editors) {
+                        for (const ed of window.tinymce.editors) {
+                            try { ed.setContent(''); ed.fire('input'); ed.fire('change'); } catch (e) {}
+                        }
+                    }
+                } catch (e) {}
+                const section = document.querySelector('section[aria-label="Nachricht verfassen"]');
+                if (section) {
+                    const base = section.querySelector('[data-testid="baseEditorContainer"]') || section;
+                    const iframe = base.querySelector('iframe[id$="_ifr"]') || base.querySelector('iframe') || section.querySelector('iframe[id$="_ifr"]') || section.querySelector('iframe');
+                    if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
+                        iframe.contentDocument.body.innerHTML = '';
+                        iframe.contentDocument.body.innerText = '';
+                    }
+                }
+            }"""
+        )
+
+    def _editor_is_effectively_empty(self) -> bool:
+        """Treat whitespace-only editor as empty."""
+        actual = self._normalize_text(self._get_editor_plain_text() or "")
+        return len(actual.strip()) == 0
+
+    def _check_and_record_pr_write_lock(self, case_id: str, response_text: str) -> bool:
+        """
+        Cross-process guard: prevent near-immediate duplicate write invocations
+        that can stack content from repeated PR triggers.
+        """
+        try:
+            lock_dir = Path(".cursor") / "tmp"
+            lock_dir.mkdir(parents=True, exist_ok=True)
+            lock_file = lock_dir / "last_pr_write_lock.json"
+            digest = hashlib.sha256((response_text or "").encode("utf-8", errors="replace")).hexdigest()
+            now = time.time()
+            payload = {
+                "case_id": (case_id or "").strip(),
+                "digest": digest,
+                "ts": now,
+            }
+            if lock_file.exists():
+                prev = json.loads(lock_file.read_text(encoding="utf-8"))
+                prev_case = str(prev.get("case_id", "")).strip()
+                prev_digest = str(prev.get("digest", "")).strip()
+                prev_ts = float(prev.get("ts", 0) or 0)
+                if prev_case == payload["case_id"] and prev_digest == digest and (now - prev_ts) < 60:
+                    logger.error("Cross-process duplicate PR write blocked by lock file")
+                    print("[EDITOR] ERROR: Duplicate PR invocation blocked (same case/reply in <60s).")
+                    return False
+            lock_file.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+            return True
+        except Exception as e:
+            logger.warning(f"PR write lock check failed open: {e}")
+            return True
+
+    def _assert_editor_content(self, expected_text: str) -> bool:
+        """
+        Post-write guard:
+        - ensure editor has a single reply structure
+        - ensure expected body (not just salutation) made it into the visible reply editor
+        - reject Sprinklr placeholder stubs like [Antwort]
+        """
+        actual = self._get_editor_plain_text()
+        expected = self._normalize_text(expected_text)
+        if not actual:
+            logger.error("Editor readback is empty after write")
+            return False
+
+        actual_l = actual.lower()
+        expected_lines = [ln.strip() for ln in expected.split("\n") if ln.strip()]
+        # Prefer a distinctive body line (skip salutation / short lines).
+        body_probes = [
+            ln for ln in expected_lines
+            if len(ln) >= 40 and not ln.lower().startswith("guten tag")
+        ]
+        probes = body_probes[:3] if body_probes else expected_lines[:2]
+        if not probes:
+            logger.error("No expected probe lines available for editor readback")
+            return False
+        matched = sum(1 for p in probes if p in actual)
+
+        # Stub check: only fail when placeholder remains AND expected body is missing.
+        # (Avoid treating legitimate German word "Antwort" or partial UI chrome as a hard fail
+        # when the drafted reply body is clearly present.)
+        has_stub = ("[antwort]" in actual_l) or ("%%[author_user_name" in actual_l)
+        if has_stub and matched < 1:
+            logger.error("Editor still contains placeholder stub ([Antwort] / author template)")
+            print("[EDITOR] ERROR: Editor still shows [Antwort] stub — write targeted wrong/empty editor.")
+            return False
+
+        validation_errors = self._validate_single_reply_text(actual)
+        if validation_errors:
+            logger.error(f"Editor content validation failed: {validation_errors}")
+            return False
+
+        if matched < 1:
+            logger.error("Editor readback does not include expected body content")
+            print("[EDITOR] ERROR: Visible editor content does not match drafted reply body.")
+            return False
+
+        # Length sanity: stub replies are ~800 chars; real replies are usually longer.
+        if len(expected) > 900 and len(actual) < max(500, int(len(expected) * 0.45)):
+            logger.error(
+                f"Editor readback too short ({len(actual)} chars) vs expected ({len(expected)} chars)"
+            )
+            print("[EDITOR] ERROR: Editor content length mismatch after paste.")
+            return False
+        return True
+
+    def _write_via_reply_section_tinymce(self, html_content: str) -> dict:
+        """
+        Write HTML into the TinyMCE instance bound to section 'Nachricht verfassen'.
+        Avoids tinymce.editors[0], which can be a hidden/non-reply editor.
+        """
+        return self.page.evaluate(
+            """(content) => {
+                const section = document.querySelector('section[aria-label="Nachricht verfassen"]');
+                if (!section) return { success: false, error: 'reply section not found' };
+                const base = section.querySelector('[data-testid="baseEditorContainer"]') || section;
+                const iframe = base.querySelector('iframe[id$="_ifr"]')
+                    || base.querySelector('iframe')
+                    || section.querySelector('iframe[id$="_ifr"]')
+                    || section.querySelector('iframe');
+                if (!iframe) return { success: false, error: 'reply iframe not found' };
+
+                let editor = null;
+                try {
+                    if (window.tinymce) {
+                        const rawId = (iframe.id || '').replace(/_ifr$/, '');
+                        if (rawId && window.tinymce.get) editor = window.tinymce.get(rawId);
+                        if (!editor && window.tinymce.editors) {
+                            for (const ed of window.tinymce.editors) {
+                                try {
+                                    const el = ed.getElement && ed.getElement();
+                                    const edIframe = ed.iframeElement || (el && el.querySelector && el.querySelector('iframe'));
+                                    if (edIframe === iframe || (ed.id && iframe.id && iframe.id.indexOf(ed.id) === 0)) {
+                                        editor = ed;
+                                        break;
+                                    }
+                                } catch (e) {}
+                            }
+                        }
+                    }
+                } catch (e) {}
+
+                try {
+                    if (editor) {
+                        editor.focus();
+                        editor.setContent('');
+                        editor.setContent(content);
+                        try { editor.undoManager && editor.undoManager.clear && editor.undoManager.clear(); } catch (e) {}
+                        try { editor.fire('input'); editor.fire('change'); editor.fire('keyup'); } catch (e) {}
+                        // Keep iframe DOM in sync for readback paths that use contentDocument.
+                        try {
+                            const doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+                            if (doc && doc.body) {
+                                doc.body.innerHTML = editor.getContent({ format: 'html' }) || content;
+                            }
+                        } catch (e) {}
+                        const text = (editor.getContent({ format: 'text' }) || '').trim();
+                        if (!text || text.length < 20 || /\\[Antwort\\]/i.test(text)) {
+                            return { success: false, error: 'tinymce setContent did not stick (stub/empty)' };
+                        }
+                        return { success: true, method: 'tinymce_reply_section', editorId: editor.id || '', textLen: text.length, textProbe: text.slice(0, 80) };
+                    }
+                } catch (e) {
+                    return { success: false, error: 'tinymce setContent failed: ' + e.message };
+                }
+
+                // Fallback: write directly into iframe body and sync if possible
+                try {
+                    const doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+                    if (!doc || !doc.body) return { success: false, error: 'iframe document unavailable' };
+                    doc.body.innerHTML = content;
+                    doc.body.dispatchEvent(new Event('input', { bubbles: true }));
+                    doc.body.dispatchEvent(new Event('change', { bubbles: true }));
+                    const text = (doc.body.innerText || '').trim();
+                    return { success: true, method: 'iframe_body_fallback', editorId: iframe.id || '', textLen: text.length, textProbe: text.slice(0, 80) };
+                } catch (e) {
+                    return { success: false, error: 'iframe body write failed: ' + e.message };
+                }
+            }""",
+            html_content,
+        )
     
-    def write_response_to_editor(self, response_text: str):
+    def write_response_to_editor(self, response_text: str, expected_case_id: str = ""):
         """
         Write the response text to the TinyMCE email composition editor
         Clears existing content before writing new content
@@ -2939,6 +3854,13 @@ Use cursor-agent's file reading capabilities to read these files before generati
         """
         logger.info("Writing response to email editor...")
         print("[EDITOR] Writing response to TinyMCE editor...")
+
+        # Absolute one-shot guard against duplicate pastes within same script execution.
+        if self._reply_write_invoked:
+            logger.error("Second write attempt blocked by one-shot guard.")
+            print("[EDITOR] ERROR: Second paste attempt blocked. Script is single-shot and will not repaste.")
+            return
+        self._reply_write_invoked = True
         
         # Preformat: normalize line endings, trim lines, consistent paragraph spacing
         response_text = self._preformat_reply(response_text)
@@ -2972,6 +3894,29 @@ Use cursor-agent's file reading capabilities to read these files before generati
         
         # Use cleaned text
         response_text = cleaned_text
+
+        # Sanitize here as well (write path may receive contaminated multi-reply text from file/chat).
+        sanitized = self._sanitize_single_customer_reply_block(response_text)
+        if sanitized != response_text:
+            logger.warning(
+                f"Write-time sanitizer trimmed reply from {len(response_text)} to {len(sanitized)} chars"
+            )
+            print("[EDITOR] WARNING: Detected merged content in draft; auto-trimmed to first single reply block.")
+        response_text = sanitized
+        response_text = self._force_neutral_salutation_if_name_unverified(response_text)
+
+        # Pre-write validation: fail closed on any multi-reply/merged signal.
+        pre_write_errors = self._validate_single_reply_text(response_text)
+        if pre_write_errors:
+            logger.error(f"Single-response validation failed before write: {pre_write_errors}")
+            print("[EDITOR] ERROR: Reply failed strict single-response checks. Paste blocked to prevent data leak.")
+            for err in pre_write_errors:
+                print(f"[EDITOR] - {err}")
+            return
+
+        # Cross-process duplicate invocation guard (same case + same body in short window).
+        if not self._check_and_record_pr_write_lock(expected_case_id, response_text):
+            return
         
         logger.info(f"Writing cleaned response to editor ({len(response_text)} chars)")
         print(f"[EDITOR] Writing cleaned German email body ({len(response_text)} characters) to editor...")
@@ -2981,105 +3926,66 @@ Use cursor-agent's file reading capabilities to read these files before generati
             logger.error("Cannot write response - not on email content page")
             print("[EDITOR] ERROR: Not on email content page")
             return
+
+        # Hard pre-clear and verify editor is truly empty before writing.
+        try:
+            self._clear_editor_hard()
+            time.sleep(0.25)
+            if not self._editor_is_effectively_empty():
+                self._clear_editor_hard()
+                time.sleep(0.25)
+                if not self._editor_is_effectively_empty():
+                    logger.error("Editor is not empty after hard clear. Blocking write to prevent fusion.")
+                    print("[EDITOR] ERROR: Editor clear failed (content remains). Blocking paste to prevent data fusion.")
+                    return
+        except Exception as e:
+            logger.debug(f"Pre-clear before write failed: {e}")
         
         # Wait for the reply section and editor to be in DOM (TinyMCE may have visibility:hidden initially)
         time.sleep(1)
         
         try:
             editor_found = False
-            
-            # Method 0: Scope to section "Nachricht verfassen" and find iframe inside baseEditorContainer (Sprinklr structure)
+            html_content = self._text_to_html(response_text)
+
+            # Make reply TinyMCE visible if Sprinklr hid it
             try:
-                logger.info("Attempting to find editor in section Nachricht verfassen...")
-                section = self.page.locator('section[aria-label="Nachricht verfassen"]').first
-                section.wait_for(state='attached', timeout=2500)
-                base_container = section.locator('[data-testid="baseEditorContainer"]').first
-                base_container.wait_for(state='attached', timeout=2500)
-                iframe = base_container.locator('iframe[id$="_ifr"]').first
-                if iframe.count() == 0:
-                    iframe = base_container.locator('iframe').first
-                iframe.wait_for(state='attached', timeout=2500)
-                frame = iframe.content_frame()
-                if frame:
-                    body = frame.locator('body#tinymce').first
-                    body.wait_for(state='attached', timeout=2500)
-                    # TinyMCE wrapper can be visibility:hidden; make it visible so focus/setContent work
-                    self.page.evaluate('''() => {
-                        const section = document.querySelector('section[aria-label="Nachricht verfassen"]');
-                        if (section) {
-                            const tox = section.querySelector('.tox-tinymce');
-                            if (tox && tox.style) tox.style.visibility = 'visible';
-                        }
-                    }''')
-                    time.sleep(0.5)
-                    html_content = self._text_to_html(response_text)
-                    body.evaluate('el => { el.innerHTML = ""; el.innerText = ""; }')
-                    time.sleep(0.2)
-                    body.evaluate(f'el => {{ el.innerHTML = {json.dumps(html_content)}; }}')
-                    time.sleep(0.2)
-                    body.evaluate('''
-                        el => {
-                            el.dispatchEvent(new Event("input", { bubbles: true }));
-                            el.dispatchEvent(new Event("change", { bubbles: true }));
-                            if (window.parent && window.parent.tinymce && window.parent.tinymce.editors && window.parent.tinymce.editors.length > 0) {
-                                try { window.parent.tinymce.editors[0].fire("input"); window.parent.tinymce.editors[0].fire("change"); } catch (e) {}
-                            }
-                        }
-                    ''')
-                    editor_found = True
-                    logger.info("Response written to editor (Nachricht verfassen + baseEditorContainer)")
-                    print("[EDITOR] Successfully wrote response (reply section)")
-            except Exception as e:
-                logger.debug(f"Nachricht verfassen method failed: {e}")
-                print(f"[EDITOR] Reply section method: {e}")
-            
-            # Method 1: Use TinyMCE API via parent window (most reliable)
-            try:
-                logger.info("Attempting to use TinyMCE API...")
-                result = self.page.evaluate('''
-                    () => {
-                        try {
-                            // Check if TinyMCE is available
-                            if (window.tinymce && window.tinymce.editors && window.tinymce.editors.length > 0) {
-                                const editor = window.tinymce.editors[0];
-                                return { success: true, editorId: editor.id, method: 'tinymce_api' };
-                            }
-                            return { success: false, error: 'TinyMCE not found' };
-                        } catch (e) {
-                            return { success: false, error: e.message };
+                self.page.evaluate('''() => {
+                    const section = document.querySelector('section[aria-label="Nachricht verfassen"]');
+                    if (section) {
+                        const tox = section.querySelector('.tox-tinymce');
+                        if (tox && tox.style) tox.style.visibility = 'visible';
+                        try { section.scrollIntoView({ block: 'center' }); } catch (e) {}
+                        const base = section.querySelector('[data-testid="baseEditorContainer"]') || section;
+                        const iframe = base.querySelector('iframe[id$="_ifr"]') || base.querySelector('iframe');
+                        if (iframe) {
+                            try { iframe.click(); } catch (e) {}
                         }
                     }
-                ''')
-                
-                if result.get('success'):
-                    editor_id = result.get('editorId')
-                    logger.info(f"Found TinyMCE editor with ID: {editor_id}")
-                    
-                    # Convert text to HTML format
-                    html_content = self._text_to_html(response_text)
-                    
-                    # Clear existing content first, then set new content (Skill 2: editor must start empty)
-                    set_content_result = self.page.evaluate(f'''
-                        (content) => {{
-                            try {{
-                                const editor = window.tinymce.editors[0];
-                                editor.setContent('');
-                                editor.setContent(content);
-                                editor.fire('input');
-                                editor.fire('change');
-                                return {{ success: true }};
-                            }} catch (e) {{
-                                return {{ success: false, error: e.message }};
-                            }}
-                        }}
-                    ''', html_content)
-                    
-                    if set_content_result.get('success'):
-                        editor_found = True
-                        logger.info("Response written to TinyMCE editor via API")
-                        print("[EDITOR] Successfully wrote response using TinyMCE API")
+                }''')
+                time.sleep(0.3)
+            except Exception:
+                pass
+
+            # Method 0 (preferred): TinyMCE bound to section "Nachricht verfassen" — never editors[0]
+            try:
+                logger.info("Attempting reply-section TinyMCE write...")
+                result = self._write_via_reply_section_tinymce(html_content)
+                if result and result.get("success"):
+                    editor_found = True
+                    logger.info(
+                        f"Response written via {result.get('method')} id={result.get('editorId')} len={result.get('textLen')}"
+                    )
+                    print(
+                        f"[EDITOR] Successfully wrote response (reply-section TinyMCE / {result.get('method')})"
+                    )
+                else:
+                    err = (result or {}).get("error", "unknown")
+                    logger.warning(f"Reply-section TinyMCE write failed: {err}")
+                    print(f"[EDITOR] Reply-section TinyMCE write failed: {err}")
             except Exception as e:
-                logger.debug(f"TinyMCE API method failed: {e}")
+                logger.debug(f"Reply-section TinyMCE method failed: {e}")
+                print(f"[EDITOR] Reply section method: {e}")
             
             # Method 2: Find iframe and write directly to body#tinymce (container may have visibility:hidden)
             if not editor_found:
@@ -3202,13 +4108,89 @@ Use cursor-agent's file reading capabilities to read these files before generati
             if not editor_found:
                 logger.error("Could not find email editor. Please check selectors.")
                 print("[EDITOR] ERROR: Could not find email editor")
+                return
+
+            # Post-write readback assertion to prevent silent wrong-editor / stub paste.
+            time.sleep(0.5)
+            if not self._assert_editor_content(response_text):
+                logger.error("Post-write verification failed after single paste. Blocking further automation.")
+                print("[EDITOR] ERROR: Verification failed after single paste. No auto-repaste will be attempted.")
+                try:
+                    self._clear_editor_hard()
+                    print("[EDITOR] Editor cleared after failed verification.")
+                except Exception as clear_err:
+                    logger.warning(f"Post-fail clear failed: {clear_err}")
+                return
                 
         except Exception as e:
             logger.error(f"Error writing response to editor: {e}")
             print(f"[EDITOR] ERROR: {e}")
             import traceback
             traceback.print_exc()
-    
+
+    def _case_tracker_module(self):
+        """Lazy-load Roberta Case Tracker helpers from fill-microsoft-form skill."""
+        import importlib.util
+        path = _script_dir.parent / "fill-microsoft-form" / "fill_case_tracker.py"
+        spec = importlib.util.spec_from_file_location("fill_case_tracker", path)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Cannot load Case Tracker module from {path}")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def open_case_tracker_tab(self) -> None:
+        """
+        Open Roberta Case Tracker in a new tab from the current Sprinklr context.
+        Reuses an existing tracker tab when present. Returns focus to Sprinklr.
+        """
+        ct = self._case_tracker_module()
+        ctx = self.page.context
+        tracker = ct.open_or_reuse_case_tracker_tab(
+            ctx, self.config, bring_sprinklr_back=self.page
+        )
+        logger.info(f"Case Tracker tab ready: {tracker.url}")
+        print(f"[CASE TRACKER] Tab ready: {tracker.url}")
+
+    def fill_case_tracker_form(self, case_id: str, attachments: int = 0) -> None:
+        """
+        Open Roberta Case Tracker, fill Case # + E-Mail Care + defaults,
+        and leave Speichern to the agent unless auto-submit is added later.
+        """
+        try:
+            ct = self._case_tracker_module()
+            ctx = self.page.context
+            salcus = ""
+            transfer_flag = None
+            transfer_target = None
+            try:
+                salcus = ct.extract_salcus_from_sprinklr(self.page)
+                case_info = ct.extract_case_info_from_sprinklr(self.page)
+                transfer_flag, transfer_target = ct.resolve_transfer(case_info)
+            except Exception as e:
+                logger.debug(f"Case tracker field extraction skipped: {e}")
+            tracker = ct.open_or_reuse_case_tracker_tab(
+                ctx, self.config, bring_sprinklr_back=None
+            )
+            ct.fill_case_tracker_fields(
+                tracker,
+                case_id,
+                attachments,
+                salcus=salcus,
+                transfer=transfer_flag,
+                transfer_target=transfer_target,
+                submit=False,
+            )
+            try:
+                self.page.bring_to_front()
+            except Exception:
+                pass
+            logger.info("Case tracker form filled (not submitted)")
+            print("[FORM] Case tracker filled in Roberta tab. Click Speichern after sending the email.")
+        except Exception as e:
+            logger.warning(f"Case tracker form fill failed: {e}")
+            print(f"[FORM] Could not fill case tracker form: {e}", file=sys.stderr)
+
     def process_new_email(self, email_data: Dict, chat_only: bool = False):
         """
         Process a single new email: extract content, query Cursor AI, create output file, optionally write response.
@@ -3319,6 +4301,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 print("NOT APPLICABLE - Case is transferable; no customer email will be sent.")
             else:
                 print(cursor_response.get('customer_response', ''))
+                self._write_latest_re_reply_record(case_id, cursor_response.get('customer_response', ''))
             print("="*80 + "\n")
             print("[INFO] Chat-only mode: reply was NOT written to the browser. Use the 'sprinklr-write-reply' skill to write it when you say 'reply with ...'.")
             return
@@ -3434,6 +4417,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 print("PROPOSED EMAIL REPLY (also shown in chat):")
                 print("="*80)
                 print(cursor_response['customer_response'])
+                self._write_latest_re_reply_record(case_id, cursor_response['customer_response'])
                 print("="*80 + "\n")
                 print("WRITING RESPONSE TO EDITOR...")
                 print("="*80 + "\n")
@@ -3447,7 +4431,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
                     print("[WARNING] Had to navigate back to email content page")
                     time.sleep(1)  # Wait after navigation
                 
-                self.write_response_to_editor(cursor_response['customer_response'])
+                self.write_response_to_editor(cursor_response['customer_response'], expected_case_id=case_id)
                 print("\n[INFO] Response written to editor. Please review before sending.")
                 print("[INFO] Waiting for you to click 'Send' in the console...")
                 
@@ -3464,37 +4448,109 @@ Use cursor-agent's file reading capabilities to read these files before generati
         print(f"EMAIL PROCESSING COMPLETE - Case ID: {case_id}")
         print("="*80 + "\n")
     
+    # Selectors for "Case abschließen" + "Anwenden" flow (close case → trigger next-email detection)
+    _SELECTOR_CASE_ABSCHLIESSEN = 'button[data-entityid="@sprinklr/action/ApplyMacroWithId"]:has-text("Case abschließen"), button:has-text("Case abschließen")'
+    _SELECTOR_ANWENDEN = 'button[data-action-id="validateMacro"]:has-text("Anwenden"), button[data-action-id="validateMacro"], button:has-text("Anwenden")'
+    # Externer Transfer -> Weiterleiten (transfer case → user taken to console/c)
+    _SELECTOR_EXTERNER_TRANSFER = 'button[data-entityid="@sprinklr/action/GuidedAction"]:has-text("Externer Transfer"), button:has-text("Externer Transfer")'
+    _SELECTOR_WEITERLEITEN = 'button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]:has-text("Weiterleiten"), button:has-text("Weiterleiten")'
+    # Internal Transfer -> Weiterleiten -> Weiteleiten (second confirm; typo in UI) → user taken to console/c
+    _SELECTOR_WEITELEITEN = 'button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]:has-text("Weiteleiten"), button:has-text("Weiteleiten")'
+
+    def _anwenden_button_visible(self) -> bool:
+        """True if the 'Anwenden' button (macro apply) is visible (user has opened Case abschließen dialog)."""
+        try:
+            btn = self.page.locator(self._SELECTOR_ANWENDEN).first
+            return btn.is_visible(timeout=500)
+        except Exception:
+            return False
+
+    def _case_abschliessen_button_visible(self) -> bool:
+        """True if the 'Case abschließen' button is visible."""
+        try:
+            btn = self.page.locator(self._SELECTOR_CASE_ABSCHLIESSEN).first
+            return btn.is_visible(timeout=500)
+        except Exception:
+            return False
+
+    def _weiterleiten_button_visible(self) -> bool:
+        """True if the 'Weiterleiten' button (transfer confirm) is visible (Externer Transfer or internal Transfer flow)."""
+        try:
+            btn = self.page.locator(self._SELECTOR_WEITERLEITEN).first
+            return btn.is_visible(timeout=500)
+        except Exception:
+            return False
+
+    def _weiteleiten_button_visible(self) -> bool:
+        """True if the 'Weiteleiten' button (second confirm in internal Transfer flow) is visible."""
+        try:
+            btn = self.page.locator(self._SELECTOR_WEITELEITEN).first
+            return btn.is_visible(timeout=500)
+        except Exception:
+            return False
+
     def wait_for_email_sent(self, case_id: str, max_wait_time: int = 300):
         """
-        Wait for the user to send the email by monitoring if we return to console page
-        or if the email disappears from the list
+        Wait for the user to send the email or finish the case by monitoring:
+        - return to console page (console/c), or
+        - page state change away from email content, or
+        - user clicks "Case abschließen" then "Anwenden" (close case), or
+        - user clicks "Externer Transfer" then "Weiterleiten" (external transfer → console/c), or
+        - user clicks "Transfer" then "Weiterleiten" then "Weiteleiten" (internal transfer → console/c).
         
         Args:
             case_id: The case ID of the email being sent
             max_wait_time: Maximum time to wait in seconds (default 5 minutes)
         """
         logger.info(f"Waiting for user to send email with case ID: {case_id}")
-        print(f"\n[WAITING] Monitoring for email send... (will wait up to {max_wait_time} seconds)")
+        print(f"\n[WAITING] Monitoring for email send / case done... (will wait up to {max_wait_time} seconds)")
+        print("[WAITING] Detects: return to console, 'Case abschließen' + 'Anwenden', 'Externer Transfer' + 'Weiterleiten', or 'Transfer' + 'Weiterleiten' + 'Weiteleiten'.")
         
         start_time = time.time()
         check_interval = 2  # Check every 2 seconds
+        saw_anwenden_visible = False  # User opened macro dialog (Anwenden was visible)
+        saw_weiterleiten_visible = False  # User opened transfer flow (Weiterleiten was visible)
+        saw_weiteleiten_visible = False  # User in internal transfer flow (Weiteleiten second confirm)
         
         while time.time() - start_time < max_wait_time:
             try:
                 current_state = self._detect_page_state()
                 
-                # If we're back on console page, the email was likely sent
+                # If we're back on console page, the email was sent or case was transferred
                 if current_state == 'console':
-                    logger.info("Detected return to console page - email likely sent")
-                    print("[INFO] Detected return to console page - email sent!")
+                    logger.info("Detected return to console page - email sent or case transferred")
+                    print("[INFO] Detected return to console page - email sent or case done!")
                     time.sleep(1)  # Give it a moment to ensure we're really on console
                     return True
                 
                 # Also check if we can still see the email content page
-                # If it's gone or changed, email might have been sent
                 if current_state != 'email_content':
-                    logger.info(f"Page state changed to: {current_state} - email likely sent")
-                    print(f"[INFO] Page state changed - email sent!")
+                    logger.info(f"Page state changed to: {current_state} - email sent or case done")
+                    print(f"[INFO] Page state changed - email sent or case done!")
+                    time.sleep(1)
+                    return True
+                
+                # Detect "Case abschließen" -> "Anwenden" flow: once Anwenden was visible and then disappears, case is closed
+                anwenden_now = self._anwenden_button_visible()
+                if anwenden_now:
+                    saw_anwenden_visible = True
+                if saw_anwenden_visible and not anwenden_now:
+                    logger.info("Detected 'Case abschließen' + 'Anwenden' - case closed, triggering next-email detection")
+                    print("[INFO] Detected 'Case abschließen' + 'Anwenden' - case closed!")
+                    time.sleep(1)
+                    return True
+                
+                # Detect transfer flows: Externer Transfer -> Weiterleiten, or Transfer -> Weiterleiten -> Weiteleiten
+                # Once any transfer confirm (Weiterleiten or Weiteleiten) was visible and both are now gone, case was transferred
+                weiterleiten_now = self._weiterleiten_button_visible()
+                weiteleiten_now = self._weiteleiten_button_visible()
+                if weiterleiten_now:
+                    saw_weiterleiten_visible = True
+                if weiteleiten_now:
+                    saw_weiteleiten_visible = True
+                if (saw_weiterleiten_visible or saw_weiteleiten_visible) and not weiterleiten_now and not weiteleiten_now:
+                    logger.info("Detected transfer flow (Externer or internal Transfer + Weiterleiten/Weiteleiten) - case transferred")
+                    print("[INFO] Detected transfer (Externer or Transfer + Weiterleiten/Weiteleiten) - case transferred!")
                     time.sleep(1)
                     return True
                 
@@ -3526,19 +4582,21 @@ Use cursor-agent's file reading capabilities to read these files before generati
         current_state = self._detect_page_state()
         logger.info(f"Current page state: {current_state}")
         print(f"[INFO] Current page state: {current_state}")
+        # Fallback: if state detection is wrong but a case header is visible, treat as email content.
+        try:
+            visible_case_id = self._get_case_id_from_page_header()
+            if visible_case_id and current_state != 'email_content':
+                logger.info(f"Case header detected ({visible_case_id}) despite state={current_state}; forcing email_content mode.")
+                print(f"[INFO] Visible case header detected ({visible_case_id}) — proceeding as open case.")
+                current_state = 'email_content'
+        except Exception:
+            pass
         if current_state == 'email_content':
             try:
-                page_content = self.page.content()
-                case_id = self.extract_case_id(page_content)
+                # Case ID is always from the canonical element: h2 > span with #36556980 (never from body/URL)
+                case_id = self._get_case_id_from_page_header()
                 if not case_id:
                     case_id = self.extract_case_id(self.page.url)
-                if not case_id:
-                    try:
-                        case_header = self.page.locator('h2:has-text("Fall #"), h1:has-text("Fall #")').first
-                        if case_header.is_visible(timeout=1200):
-                            case_id = self.extract_case_id(case_header.inner_text())
-                    except Exception:
-                        pass
                 if not case_id:
                     print("[WARN] Could not extract case ID from page. Ensure the case (Fall #...) is open.")
                     return False
@@ -3583,25 +4641,11 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 return True
             print("[INFO] On console but no unprocessed email in list. Open a case (Fall #...) then run again.")
             return False
-        # Extract-only on console: if there is a (new) email in the list, open it and then read it
+        # Extract-only on console: strict no-navigation mode.
+        # Do NOT open/click any case from the list; require user-visible open case tab.
         if extract_only and current_state == 'console':
-            new_emails = self.get_new_emails()
-            if new_emails:
-                logger.info("Extract-only on console: opening first available case, then reading email")
-                print("[INFO] On console with case(s) in list — opening first case and reading email...")
-                email_data = new_emails[0]
-                try:
-                    email_content = self.click_email_and_extract_content(email_data)
-                    case_id = email_content.get('case_id', email_data.get('case_id', ''))
-                    if not case_id:
-                        case_id = email_data.get('case_id', '')
-                    self._print_customer_email_and_exit(case_id, email_content)
-                    return True
-                except Exception as e:
-                    logger.error(f"Error opening case and extracting: {e}")
-                    print(f"[ERROR] Failed to open case and read email: {e}")
-                    return False
-            print("[INFO] Extract-only requires an open email. Please open a case (Fall #...) in the browser, then run this skill again.")
+            print("[INFO] RE extract-only does not open cases from console list.")
+            print("[INFO] Open the intended case (Fall #...) so it is visible, then run RE again.")
             return False
         print("[INFO] Please open an email case (Fall #...) in the browser, then run this skill again.")
         return False
@@ -3621,20 +4665,27 @@ Use cursor-agent's file reading capabilities to read these files before generati
         print("CUSTOMER EMAIL (for Cursor to read — then query KnowledgeBase and write suggested reply in chat):")
         print("="*80)
         print("Case ID:", display_case_id)
-        print("Subject:", email_content.get('subject', 'N/A'))
-        print("From:", email_content.get('from', 'N/A'))
+        enc = getattr(sys.stdout, 'encoding', None) or 'utf-8'
+        def _safe_print(s: str) -> str:
+            if not isinstance(s, str):
+                s = str(s)
+            try:
+                s.encode(enc)
+                return s
+            except UnicodeEncodeError:
+                return s.encode(enc, errors='replace').decode(enc)
+        print("Subject:", _safe_print(email_content.get('subject', 'N/A')))
+        print("From:", _safe_print(email_content.get('from', 'N/A')))
         print("-"*40)
         print("Body:")
         body_text = email_content.get('body', '') or ''
         if not isinstance(body_text, str):
             body_text = str(body_text)
         body_text = body_text.strip()
-        # Avoid UnicodeEncodeError on Windows (e.g. \u202f) when printing to console
         try:
             print(body_text)
         except UnicodeEncodeError:
-            enc = getattr(sys.stdout, 'encoding', None) or 'utf-8'
-            print(body_text.encode(enc, errors='replace').decode(enc))
+            print(_safe_print(body_text))
         print("="*80)
         print("[INFO] Script finished. Cursor: query KnowledgeBase and write the suggested reply in the chat window.")
         print("="*80 + "\n")
@@ -3663,6 +4714,8 @@ Use cursor-agent's file reading capabilities to read these files before generati
                         time.sleep(check_interval)
                         continue
 
+                # ALWAYS when on console/c (list URL, not console/c/<id>): monitor and open the new email
+                self._ensure_console_list_url()
                 # Look for new/unprocessed emails using the same detection logic as get_new_emails
                 new_emails = self.get_new_emails()
                 if not new_emails:
@@ -3731,14 +4784,8 @@ Use cursor-agent's file reading capabilities to read these files before generati
                         logger.debug("On email content page, checking if case needs processing...")
                         print("  -> On email content page, checking for unprocessed case...")
                         try:
-                            # Try to extract case ID from current page
-                            page_content = self.page.content()
-                            case_id = self.extract_case_id(page_content)
-                            
-                            # Also try URL
-                            if not case_id:
-                                current_url = self.page.url
-                                case_id = self.extract_case_id(current_url)
+                            # Case ID only from canonical header (h2 > span #36556980)
+                            case_id = self._get_case_id_from_page_header() or self.extract_case_id(self.page.url)
                             
                             # If we found a case ID and it's not processed, process it
                             if case_id and case_id not in self.processed_case_ids:
@@ -3784,8 +4831,10 @@ Use cursor-agent's file reading capabilities to read these files before generati
                             print(f"[{datetime.now().strftime('%H:%M:%S')}] Could not navigate to console page")
                             time.sleep(check_interval)
                             continue
-                    
-                    # Get new emails (we're already on console page)
+
+                    # ALWAYS when on console/c (list URL, NOT console/c/<id>): monitor and open the new email
+                    self._ensure_console_list_url()
+                    # Get new emails (we're on console list page)
                     new_emails = self.get_new_emails()
                     
                     if new_emails:
@@ -3893,11 +4942,15 @@ def _get_arg_value(flag: str) -> Optional[str]:
 def main():
     """Main entry point"""
     login_only = '--login-only' in sys.argv
+    login_then_monitor = '--login-then-monitor' in sys.argv
+    if login_then_monitor:
+        login_only = True  # do login/status, then fall through to monitor
     process_current_only = '--process-current-only' in sys.argv
     chat_only = '--chat-only' in sys.argv
     extract_only = '--extract-only' in sys.argv
     write_reply_only = '--write-reply-only' in sys.argv
     wait_next_extract_only = '--wait-next-extract-only' in sys.argv
+    no_fill_case_tracker = '--no-fill-case-tracker' in sys.argv
     reply_file = _get_arg_value('--reply-file')
     # Load configuration
     config = load_config()
@@ -3913,7 +4966,12 @@ def main():
     
     try:
         # Connect without navigating: Skill 2 (read email) and write-reply must not reload or change URL
-        automation.connect_to_browser(CDP_ENDPOINT, leave_page_unchanged=(process_current_only or write_reply_only))
+        stop_after_login = bool(login_only and not login_then_monitor)
+        automation.connect_to_browser(
+            CDP_ENDPOINT,
+            leave_page_unchanged=(process_current_only or write_reply_only),
+            stop_after_login=stop_after_login
+        )
         
         # Verify connection and page state
         logger.info("Browser connected successfully")
@@ -3928,31 +4986,114 @@ def main():
                 automation.cleanup()
                 sys.exit(1)
             automation.ensure_email_content_page()
-            # Best-effort extraction of current case ID (for nicer logging in wait_for_email_sent)
-            current_case_id = ''
-            try:
-                page_content = automation.page.content()
-                current_case_id = automation.extract_case_id(page_content) or automation.extract_case_id(automation.page.url) or ''
-            except Exception:
-                current_case_id = ''
+            # Case ID only from canonical header element (h2 > span #36556980)
+            current_case_id = automation._get_case_id_from_page_header() or automation.extract_case_id(automation.page.url) or ''
             with open(reply_file, 'r', encoding='utf-8') as f:
                 reply_text = f.read()
-            automation.write_response_to_editor(reply_text)
+
+            # Authoritative RE->PR sync (hard gate):
+            # PR may paste ONLY the exact latest RE response for the currently visible case.
+            try:
+                if not current_case_id:
+                    print("[ERROR] Could not determine currently visible case ID. PR blocked.", file=sys.stderr)
+                    automation.cleanup()
+                    sys.exit(1)
+                if not LATEST_RE_REPLY_PATH.exists():
+                    print("[ERROR] No latest RE reply record found. Run RE for the visible case, then PR.", file=sys.stderr)
+                    automation.cleanup()
+                    sys.exit(1)
+
+                with open(LATEST_RE_REPLY_PATH, "r", encoding="utf-8") as rf:
+                    rec = json.load(rf)
+                rec_case_id = str(rec.get("case_id", "")).strip()
+                rec_text = str(rec.get("response_text", "")).strip()
+
+                if not rec_case_id or not rec_text:
+                    print("[ERROR] Latest RE reply record is incomplete. Run RE again for the visible case.", file=sys.stderr)
+                    automation.cleanup()
+                    sys.exit(1)
+
+                # Allowed PR payload sources for current visible case:
+                # 1) exact latest RE 7-step reply, OR
+                # 2) explicit user-directed override already recorded for same case.
+                file_text = (reply_text or "").strip()
+                user_override_ok = False
+                if LATEST_USER_DIRECTED_REPLY_PATH.exists():
+                    try:
+                        with open(LATEST_USER_DIRECTED_REPLY_PATH, "r", encoding="utf-8") as uf:
+                            urec = json.load(uf)
+                        u_case_id = str(urec.get("case_id", "")).strip()
+                        u_text = str(urec.get("response_text", "")).strip()
+                        user_override_ok = (
+                            u_case_id == current_case_id and bool(u_text) and file_text == u_text
+                        )
+                    except Exception:
+                        user_override_ok = False
+
+                if rec_case_id != current_case_id and not user_override_ok:
+                    print(
+                        f"[ERROR] CASE ID MISMATCH: visible case {current_case_id} vs latest RE case {rec_case_id}. "
+                        "PR blocked. Run RE for the currently visible case, then PR.",
+                        file=sys.stderr,
+                    )
+                    automation.cleanup()
+                    sys.exit(1)
+                if file_text == rec_text:
+                    print("[INFO] PR source: exact latest RE response for current visible case.")
+                    reply_text = rec_text
+                elif file_text:
+                    # Differing payload is only allowed if it matches a previously recorded
+                    # user-directed override for this exact case.
+                    try:
+                        if not LATEST_USER_DIRECTED_REPLY_PATH.exists():
+                            print(
+                                "[ERROR] Reply differs from latest RE response and no recorded user-directed override exists for this case. "
+                                "PR blocked.",
+                                file=sys.stderr,
+                            )
+                            automation.cleanup()
+                            sys.exit(1)
+                        with open(LATEST_USER_DIRECTED_REPLY_PATH, "r", encoding="utf-8") as uf:
+                            urec = json.load(uf)
+                        u_case_id = str(urec.get("case_id", "")).strip()
+                        u_text = str(urec.get("response_text", "")).strip()
+                        if u_case_id != current_case_id or not u_text or file_text != u_text:
+                            print(
+                                "[ERROR] Reply differs from latest RE response and does not match the recorded user-directed override "
+                                "for the visible case. PR blocked.",
+                                file=sys.stderr,
+                            )
+                            automation.cleanup()
+                            sys.exit(1)
+                        print("[INFO] PR source: recorded user-directed override for current visible case.")
+                        reply_text = u_text
+                    except SystemExit:
+                        raise
+                    except Exception as ue:
+                        print(f"[ERROR] Could not validate user-directed override: {ue}", file=sys.stderr)
+                        automation.cleanup()
+                        sys.exit(1)
+                else:
+                    print("[ERROR] Empty reply payload. PR blocked.", file=sys.stderr)
+                    automation.cleanup()
+                    sys.exit(1)
+            except Exception as e:
+                logger.warning(f"Could not apply latest RE->PR sync record: {e}")
+                print(f"[ERROR] Could not apply RE->PR sync: {e}", file=sys.stderr)
+                automation.cleanup()
+                sys.exit(1)
+
+            automation.write_response_to_editor(reply_text, expected_case_id=current_case_id)
             print("[INFO] Reply written to editor.")
 
-            # Optional: after writing, wait for send and then auto-read the next incoming email (extract-only)
-            if wait_next_extract_only:
-                try:
-                    # Wait until the user sends this email (return to console or page change)
-                    automation.wait_for_email_sent(current_case_id or '')
-                    # After send, ensure console page and monitor for the next new email once (extract-only)
-                    automation.ensure_console_page()
-                    automation.monitor_next_email_extract_only(check_interval=CHECK_INTERVAL)
-                finally:
-                    automation.cleanup()
-                return
+            # NOTE: Do NOT auto-fill the case tracker form or auto-monitor for next email.
+            # The user must explicitly request those actions (LF for form, RE for next email).
+            # This prevents unwanted automation loops.
 
-            print("[INFO] Reply written to editor. Execution stopped.")
+            print("[INFO] Reply written to editor. You can now:")
+            print("  - Send the email manually in Sprinklr")
+            print("  - When ready, use 'LF' to fill the case tracker form")
+            print("  - Use 'RE' to read the next email when it arrives")
             automation.cleanup()
             return
 
@@ -3975,14 +5116,26 @@ def main():
         
         # Ensure we start on console page (login + set status to Verfügbar)
         automation.ensure_console_page()
+        # Go to console list (console/c) and inject in-page script so Chrome auto-opens new cases
+        automation._ensure_console_list_url()
         
-        if login_only:
+        login_then_monitor = '--login-then-monitor' in sys.argv
+        if login_only and not login_then_monitor:
             logger.info("Login-only mode: exiting after login and status set.")
             print("[INFO] Login and status complete. Exiting (--login-only).")
+            try:
+                automation.open_case_tracker_tab()
+                print("[INFO] Roberta Case Tracker opened in a new tab (Sprinklr tab remains active).")
+            except Exception as e:
+                logger.warning(f"Could not open Case Tracker tab after login: {e}")
+                print(f"[WARN] Case Tracker tab not opened: {e}")
+            print("[INFO] Browser is on the console list; in-page script will auto-open new emails when they appear.")
             automation.cleanup()
             return
         
-        # Start monitoring
+        if login_then_monitor:
+            print("[INFO] Login and status complete. Starting email monitoring (Ctrl+C to stop)...")
+        # Start monitoring (runs until Ctrl+C)
         automation.monitor_emails(check_interval=CHECK_INTERVAL)
         
     except KeyboardInterrupt:

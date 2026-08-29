@@ -1,0 +1,53 @@
+---
+description: After pasting reply with PR command, ALWAYS run data leak verification script.
+alwaysApply: true
+---
+
+# POST-PASTE DATA LEAK VERIFICATION
+
+After every PR (paste reply) command, run a data leak verification scan.
+
+## AFTER PR completes:
+
+1. The reply has been written to the Sprinklr reply box
+2. Immediately run the verification script:
+   python .cursor/skills/sprinklr-write-reply/verify_no_data_leak.py
+
+## The script checks for:
+
+- Only ONE "Guten Tag" salutation
+- Only ONE signature block ("Freundliche Grüße")
+- Only ONE agent name ("Ihr o2 Kundenbetreuer")
+- Only ONE survey line
+- No "Fall #" case number exposed to customer
+- Only ONE customer name
+
+## If script returns CLEAN:
+
+- Reply is safe to send
+- User can manually send the email in Sprinklr
+- Then say "LF" to fill the form
+
+## If script returns DATA LEAK DETECTED:
+
+- DO NOT SEND
+- Output the leak details to the user
+- Block sending immediately (no automatic second paste attempt)
+- Output: ERROR: POST-PASTE VERIFICATION FAILED. MANUAL CLEANUP REQUIRED
+- Agent must clear the Sprinklr reply box immediately (automatic clear action) before any next step
+- Agent must verify editor is empty after clear; if not empty, block all paste attempts until manual cleanup
+- Enforce current-case lock: verify only the currently visible case remains active context
+- Then require fresh RE for current visible case, then PR
+- Mark current draft as contaminated and discard it (do not reuse any part)
+- Require a brand-new reply build from current case only before any further PR attempt
+
+## After any detected leak (even if recovered):
+
+- Treat previous draft text as untrusted/contaminated.
+- Do not reuse previous reply text, temp files, or clipboard content.
+- If there is any doubt about cross-case contamination, force a fresh RE for the visible case and regenerate from scratch.
+
+## MANDATORY:
+
+This verification runs after EVERY PR command without exception. It is a safety gate before any reply can be considered ready to send.
+

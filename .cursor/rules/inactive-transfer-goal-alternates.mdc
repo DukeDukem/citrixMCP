@@ -1,0 +1,29 @@
+---
+description: When a transfer goal no longer exists — direct handling and customer self-service alternates.
+alwaysApply: true
+---
+
+# Inactive transfer goals — alternate handling
+
+When **TransferMatrix** registry shows a goal as **Inactive (no longer exists)**:
+
+1. **Do not** transfer in Sprinklr to that queue.
+2. **Do not** tell the customer their case was forwarded to a removed team/queue.
+3. Follow the matrix row’s **current** Ziel-Kontakt and Action (usually **CBC_CARE_ALLGEMEIN — HANDLE DIRECTLY**).
+4. Check **Removed transfer goals — alternate handling** in `KnowledgeBase/TransferMatrix.md` for case-type-specific KB Themen-IDs and Mein o2 paths.
+
+## RE / customer reply impact
+
+- **Transfer eligible: No** when matrix says HANDLE DIRECTLY.
+- Section 6: give **actionable self-service** (Mein o2, o2.de, status checks) per `.cursor/rules/reply-customer-solutions-qa.mdc`.
+- **No default hotline** unless KB explicitly requires it for that Fall.
+- Agent sections (4–5): KB ticket/Themen-ID steps; no Sprinklr transfer to inactive goals.
+
+## Known inactive goals (see TransferMatrix for full list)
+
+| Former goal | Alternate |
+|---|---|
+| AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL | Kein Transfer — handle per KB (DSL Festnetz Kündigung) |
+| CBC_KUENDIGUNGEN_SME_SOHO | **CBC_CARE_ALLGEMEIN** — handle directly; KB 590 / 1849; Mein o2 Kündigung paths |
+
+When updating rules for a newly removed goal, always add its alternate block to TransferMatrix and this table.

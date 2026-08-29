@@ -1,139 +1,520 @@
 """
-O2 Case Tracker Form Filler
-Opens the O2 case tracker Microsoft Form in a NEW browser tab, fills all fields,
-submits, then reloads the blank form (ready for the next case).
+Roberta / Yoummday O2 Case Tracker filler.
+
+Opens https://roberta.yoummday.com/casetracker/ in a NEW browser tab (Sprinklr stays open),
+optionally logs in, fills Case # + channel + defaults, leaves save to the user unless --submit.
 
 Usage:
-    python fill_case_tracker.py --case-id "#646469" --attachments 0
-    python fill_case_tracker.py --case-id "646469" --attachments 2
-
-Fixed values (always the same):
-    Q1 - NQ:        NQ10061547
-    Q3 - Kanal:     E-Mail Care
-
-Variable values (per case):
-    Q2 - Fall ID:   --case-id  (prepends # if missing)
-    Q4 - Anhaenge:  --attachments  (0 / 1 / 2 / 3 / mehr als 3)
+    uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#36698255"
+    uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "36698255" --attachments 2 --submit
+    uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --open-only
 """
+from __future__ import annotations
+
 import argparse
+import json
 import sys
-import time
 from pathlib import Path
 
 try:
     from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 except ImportError:
-    print("ERROR: Run  python -m pip install playwright  then  playwright install chromium")
+    print("ERROR: Run  uv sync  and  uv run playwright install chromium")
     sys.exit(1)
 
-FORM_URL = (
-    "https://forms.office.com/pages/responsepage.aspx"
-    "?id=U9hZg7dlBkOg9q1YALTAaNxfaEmV1w5Et9ekas02iq1URTA4VlY5ME1WNTlFNE1JUzRLVUlJS1RXNC4u"
-    "&route=shorturl"
-)
+CASE_TRACKER_URL = "https://roberta.yoummday.com/casetracker/"
 CDP_ENDPOINT = "http://127.0.0.1:9222"
-NQ_VALUE = "NQ10061547"
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
-def parse_attachment_value(n: int) -> str:
-    """Convert integer to the radio option label used in the form."""
-    if n >= 4:
-        return "mehr als 3"
-    return str(n)
+def _load_config() -> dict:
+    cfg_path = REPO_ROOT / "config.json"
+    if not cfg_path.exists():
+        return {}
+    try:
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _normalise_case_id(case_id: str) -> str:
+    case_id = (case_id or "").strip()
+    if case_id.startswith("#"):
+        case_id = case_id[1:]
+    digits = "".join(ch for ch in case_id if ch.isdigit())
+    return digits or case_id
+
+
+_SALCUS_UNSET = frozenset(
+    {
+        "",
+        "—",
+        "-",
+        "nicht festgelegt",
+        "not set",
+        "n/a",
+        "na",
+    }
+)
+
+
+def _normalise_salcus_value(raw: str | None) -> str:
+    """Return Salcus ID for tracker fill, or empty when unset / placeholder."""
+    value = (raw or "").replace("\u200f", "").replace("\u200e", "").strip()
+    value = " ".join(value.split())
+    if value.lower() in _SALCUS_UNSET:
+        return ""
+    # Salcus IDs are numeric; reject obvious labels/URLs
+    digits = "".join(ch for ch in value if ch.isdigit())
+    if not digits:
+        return ""
+    if "http" in value.lower() or "@" in value:
+        return ""
+    return digits[:20]
+
+
+_EXTRACT_SALCUS_JS = """
+() => {
+  const unset = new Set(['', '—', '-', 'nicht festgelegt', 'not set', 'n/a', 'na']);
+  const norm = (s) => (s || '').replace(/[\\u200f\\u200e]/g, '').replace(/\\u00a0/g, ' ').replace(/\\s+/g, ' ').trim();
+  const isUnset = (v) => unset.has(norm(v).toLowerCase());
+  const isLabel = (v) => /^(Kundennummer|Salcus|Customer ID)$/i.test(norm(v));
+
+  const readKundennummerField = (field) => {
+    if (!field) return '';
+    const prefer = field.querySelector('[data-testid="htmlText"]');
+    if (prefer) {
+      const v = norm(prefer.textContent);
+      if (v && !isUnset(v) && !isLabel(v)) return v;
+    }
+    for (const sel of [
+      '[data-testid="linkifiedText"] [data-testid="htmlText"]',
+      '[data-testid="linkifiedText"] span',
+      'span.spr-text-03',
+      'span[class*="spr-text-03"]',
+      '.font-500 span',
+    ]) {
+      for (const el of field.querySelectorAll(sel)) {
+        const v = norm(el.textContent);
+        if (v && !isUnset(v) && !isLabel(v)) return v;
+      }
+    }
+    return '';
+  };
+
+  // Primary: Sprinklr sidebar "Kundennummer" = Salcus ID for Roberta tracker
+  const knFields = document.querySelectorAll('[data-entityid="Kundennummer"]');
+  for (const field of knFields) {
+    const v = readKundennummerField(field);
+    if (v) return v;
+  }
+
+  // Fallback: aria-label on presentation field
+  for (const field of document.querySelectorAll('[aria-label="Kundennummer"]')) {
+    const v = readKundennummerField(field);
+    if (v) return v;
+  }
+
+  const readValueFromBox = (box) => {
+    if (!box) return '';
+    const htmlText = box.querySelector('[data-testid="htmlText"]');
+    if (htmlText) {
+      const v = norm(htmlText.textContent);
+      if (v && !isUnset(v) && !isLabel(v)) return v;
+    }
+    const span = box.querySelector('span.spr-text-03, span[class*="spr-text-03"]');
+    const v = norm(span ? span.textContent : box.textContent);
+    return v && !isLabel(v) ? v : '';
+  };
+
+  // Legacy fallback: explicit "Salcus" label row
+  const boxes = Array.from(document.querySelectorAll('[data-testid="box"]'));
+  for (let i = 0; i < boxes.length; i++) {
+    const label = norm(boxes[i].textContent);
+    if (label === 'Salcus' || /^Salcus\\b/i.test(label)) {
+      let value = readValueFromBox(boxes[i + 1]);
+      if ((!value || isUnset(value)) && boxes[i].parentElement) {
+        value = readValueFromBox(boxes[i].parentElement);
+      }
+      if (value && !isUnset(value) && !/^Salcus/i.test(value)) return value;
+    }
+  }
+
+  // Label/value pair walk for "Kundennummer" text label (no data-entityid)
+  for (let i = 0; i < boxes.length; i++) {
+    const label = norm(boxes[i].textContent);
+    if (label === 'Kundennummer') {
+      const value = readValueFromBox(boxes[i + 1]) || readValueFromBox(boxes[i].parentElement);
+      if (value && !isUnset(value) && !isLabel(value)) return value;
+    }
+  }
+
+  return '';
+}
+"""
+
+
+def extract_salcus_from_sprinklr(page) -> str:
+    """Read Salcus ID from Sprinklr Kundennummer sidebar field; empty if unset."""
+    if page is None:
+        return ""
+    try:
+        raw = page.evaluate(_EXTRACT_SALCUS_JS)
+    except Exception:
+        return ""
+    salcus = _normalise_salcus_value(raw if isinstance(raw, str) else "")
+    if salcus:
+        print(f"[CASE TRACKER] Salcus from Sprinklr Kundennummer: {salcus}")
+    else:
+        print("[CASE TRACKER] Kundennummer/Salcus: not set on Sprinklr — leaving empty")
+    return salcus
+
+
+def find_sprinklr_console_page(ctx):
+    """Best-effort: active Sprinklr email/console tab in CDP context."""
+    for pg in ctx.pages:
+        u = (pg.url or "").lower()
+        if "sprinklr.com" in u and "/app/console" in u:
+            return pg
+    return ctx.pages[0] if ctx.pages else None
+
+
+_HANDLE_DIRECTLY_ZIELS = frozenset(
+    {
+        "CBC_E_CARE_ALLGEMEIN",
+        "CBC_CARE_ALLGEMEIN",
+    }
+)
+
+_EXTRACT_CASE_INFO_JS = r"""
+() => {
+  const norm = (s) => (s || '').replace(/[\u200f\u200e]/g, '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+  const readField = (field) => {
+    const html = field?.querySelector('[data-testid="htmlText"]');
+    return html ? norm(html.textContent) : norm(field?.textContent || '');
+  };
+
+  const info = {};
+  const fallField = document.querySelector('[data-entityid="Fallnummer"]');
+  let section = fallField;
+  for (let i = 0; i < 10 && section; i++) {
+    section = section.parentElement;
+    if (section?.querySelector('[data-entityid="Ziel"]') && section?.querySelector('[data-entityid="Quelle"]')) break;
+  }
+  if (section) {
+    for (const id of ['Fallnummer', 'Quelle', 'Ziel', 'Sprache']) {
+      const f = section.querySelector(`[data-entityid="${id}"]`);
+      if (f) info[id] = readField(f);
+    }
+  }
+
+  let subject = '';
+  const h = document.querySelector('h1, h2, [data-testid="subject"], [data-entityid="Subject"]');
+  if (h) subject = norm(h.textContent);
+  if (!subject) {
+    const subjLabel = [...document.querySelectorAll('span[data-testid="label"]')].find(
+      (el) => norm(el.textContent).startsWith('Betreff')
+    );
+    if (subjLabel) {
+      const row = subjLabel.closest('[data-testid="box"]')?.parentElement;
+      subject = row ? norm(row.textContent).replace(/^Betreff:?/i, '').trim() : '';
+    }
+  }
+  info.Subject = subject;
+  return info;
+}
+"""
+
+
+def extract_case_info_from_sprinklr(page) -> dict:
+    """Read Case Informationen fields from Sprinklr sidebar."""
+    if page is None:
+        return {}
+    try:
+        raw = page.evaluate(_EXTRACT_CASE_INFO_JS)
+        return raw if isinstance(raw, dict) else {}
+    except Exception:
+        return {}
+
+
+def resolve_transfer(case_info: dict | None) -> tuple[str, str]:
+    """Return (transfer flag '0'|'1', target queue/email)."""
+    case_info = case_info or {}
+    quelle = (case_info.get("Quelle") or "").lower()
+    ziel = (case_info.get("Ziel") or "").strip()
+    subject = (case_info.get("Subject") or "").lower()
+
+    # Widerruf cases → transfer to Widerruf queue (workspace routing rule)
+    if "widerruf" in quelle or "widerruf" in subject:
+        return "1", "CBC_XF_E_WIDERRUF"
+
+    if not ziel or ziel.lower() in _SALCUS_UNSET:
+        return "0", ""
+
+    if ziel in _HANDLE_DIRECTLY_ZIELS:
+        return "0", ""
+
+    if "_" in ziel or "@" in ziel:
+        return "1", ziel
+
+    return "0", ""
+
+
+def _is_tracker_app_ready(page) -> bool:
+    try:
+        return page.locator('input[name="sikas"]').first.is_visible(timeout=800)
+    except Exception:
+        return False
+
+
+def _is_tracker_login_gate(page) -> bool:
+    try:
+        if _is_tracker_app_ready(page):
+            return False
+        return page.locator("#btnPass").first.is_visible(timeout=800)
+    except Exception:
+        return False
+
+
+def ensure_case_tracker_logged_in(page, config: dict | None = None) -> None:
+    """Log in to Roberta Case Tracker if the password gate is shown."""
+    config = config or _load_config()
+    if _is_tracker_app_ready(page):
+        return
+    if not _is_tracker_login_gate(page):
+        page.wait_for_timeout(1500)
+        if _is_tracker_app_ready(page):
+            return
+        raise RuntimeError("Case Tracker login gate not detected and app form not visible.")
+
+    password = (config.get("case_tracker_password") or config.get("case_tracker_passwort") or "").strip()
+    if not password:
+        raise RuntimeError(
+            "Case Tracker password gate visible but case_tracker_password is not set in config.json."
+        )
+
+    # Login page: NQ (text) + Passwort (password) + submit #btnPass
+    nq = (config.get("case_tracker_nq") or config.get("case_tracker_nq_id") or "NQ10061547").strip()
+    try:
+        text_inputs = page.locator('input[type="text"]:visible')
+        if text_inputs.count() > 0:
+            text_inputs.first.fill(nq)
+    except Exception:
+        pass
+    try:
+        pw = page.locator('input[type="password"]:visible').first
+        pw.wait_for(state="visible", timeout=5000)
+        pw.fill(password)
+    except Exception as e:
+        raise RuntimeError(f"Could not fill Case Tracker password field: {e}") from e
+    try:
+        page.locator("#btnPass").first.click()
+    except Exception:
+        page.locator('input[type="submit"][value="Passwort"]').first.click()
+    page.wait_for_timeout(2000)
+    if not _is_tracker_app_ready(page):
+        raise RuntimeError("Case Tracker login failed — main form (Case #) not visible after Passwort submit.")
+
+
+def open_or_reuse_case_tracker_tab(ctx, config: dict | None = None, *, bring_sprinklr_back=None):
+    """Open Roberta Case Tracker in a new tab or reuse an existing one."""
+    config = config or _load_config()
+    url = (config.get("case_tracker_url") or CASE_TRACKER_URL).strip()
+
+    for p in ctx.pages:
+        if "roberta.yoummday.com/casetracker" in (p.url or "").lower():
+            p.bring_to_front()
+            ensure_case_tracker_logged_in(p, config)
+            if bring_sprinklr_back:
+                try:
+                    bring_sprinklr_back.bring_to_front()
+                except Exception:
+                    pass
+            return p
+
+    page = ctx.new_page()
+    page.goto(url, wait_until="domcontentloaded", timeout=30000)
+    page.wait_for_timeout(1500)
+    ensure_case_tracker_logged_in(page, config)
+    if bring_sprinklr_back:
+        try:
+            bring_sprinklr_back.bring_to_front()
+        except Exception:
+            pass
+    return page
+
+
+def fill_case_tracker_fields(
+    page,
+    case_id: str,
+    attachments: int = 0,
+    *,
+    salcus: str | None = None,
+    channel: str = "em_care",
+    transfer: str | None = None,
+    transfer_target: str | None = None,
+    tstate: str | None = None,
+    submit: bool = False,
+) -> None:
+    """Fill Roberta Case Tracker fields.
+
+    Ticketstatus Salcus (tstate) defaults:
+    - Transfer Ja → 3-Bot dokumentiert nicht in Salcus (#tstate3) always
+    - Transfer Nein + Salcus provided → 1-Erfolgreich (#tstate1)
+    - Transfer Nein + Salcus empty → 3-Bot dokumentiert nicht in Salcus (#tstate3)
+    """
+    ensure_case_tracker_logged_in(page)
+    page.bring_to_front()
+    page.wait_for_timeout(500)
+
+    sikas_value = _normalise_case_id(case_id)
+    print(f"[CASE TRACKER] Case # (sikas): {sikas_value}")
+
+    sikas = page.locator('input[name="sikas"]')
+    sikas.wait_for(state="visible", timeout=10000)
+    sikas.fill(sikas_value)
+
+    salcus_value = _normalise_salcus_value(salcus)
+    salcus_input = page.locator('input[name="salcus"]')
+    salcus_input.wait_for(state="visible", timeout=10000)
+    if salcus_value:
+        salcus_input.fill(salcus_value)
+        print(f"[CASE TRACKER] Salcus (salcus): {salcus_value}")
+    else:
+        salcus_input.fill("")
+        print("[CASE TRACKER] Salcus (salcus): left empty")
+
+    if transfer is None:
+        transfer = "1" if transfer_target else "0"
+    transfer_flag = "1" if str(transfer) == "1" else "0"
+
+    if tstate is None:
+        if transfer_flag == "1":
+            tstate = "3"
+        else:
+            tstate = "1" if salcus_value else "3"
+    tstate_labels = {
+        "1": "1-Erfolgreich",
+        "2": "2-Nicht Erfolgreich",
+        "3": "3-Bot dokumentiert nicht in Salcus",
+    }
+    print(f"[CASE TRACKER] Ticketstatus Salcus: {tstate_labels.get(str(tstate), tstate)}")
+
+    channel_map = {
+        "em_care": "#channel_em_care",
+        "E-Mail Care": "#channel_em_care",
+        "email_care": "#channel_em_care",
+    }
+    channel_sel = channel_map.get(channel, "#channel_em_care")
+    page.locator(channel_sel).click(force=True)
+
+    transfer_sel = "#transfer1" if transfer_flag == "1" else "#transfer0"
+    page.locator(transfer_sel).click(force=True)
+    if transfer_flag == "1" and transfer_target:
+        page.locator('input[name="target"]').fill(transfer_target.strip())
+        print(f"[CASE TRACKER] Transfer: Ja -> {transfer_target.strip()}")
+    elif transfer_flag == "1":
+        print("[CASE TRACKER] Transfer: Ja (no target)")
+    else:
+        print("[CASE TRACKER] Transfer: Nein")
+
+    tstate_map = {"1": "#tstate1", "2": "#tstate2", "3": "#tstate3"}
+    page.locator(tstate_map.get(str(tstate), "#tstate1")).click(force=True)
+
+    if attachments > 0:
+        att_note = f"Anhänge: {attachments}" if attachments < 4 else "Anhänge: mehr als 3"
+        try:
+            page.locator('input[name="note"]').fill(att_note)
+        except Exception:
+            pass
+
+    page.wait_for_timeout(400)
+
+    if submit:
+        page.locator('input[type="submit"][value="Speichern"]').first.click()
+        page.wait_for_timeout(1500)
+        print("[CASE TRACKER] Speichern clicked.")
+    else:
+        print("[CASE TRACKER] Fields filled — click Speichern manually when ready.")
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Fill the O2 Case Tracker form")
-    ap.add_argument("--case-id", required=True, help='Case ID, e.g. "#646469" or "646469"')
-    ap.add_argument("--attachments", type=int, default=0, help="Number of attachments (0-3, or 4+ = mehr als 3)")
+    ap = argparse.ArgumentParser(description="Open/fill Roberta O2 Case Tracker")
+    ap.add_argument("--case-id", help='Sprinklr Case ID, e.g. "#36698255"')
+    ap.add_argument("--salcus", help="Salcus ID (optional; auto-read from Sprinklr when omitted)")
+    ap.add_argument("--transfer", choices=["0", "1"], help="Transfer Nein/Ja override")
+    ap.add_argument("--target", help="Transfer target queue/email override")
+    ap.add_argument("--attachments", type=int, default=0)
     ap.add_argument("--cdp", default=CDP_ENDPOINT)
+    ap.add_argument("--open-only", action="store_true", help="Only open/reuse Case Tracker tab (login if needed)")
+    ap.add_argument("--submit", action="store_true", help="Click Speichern after fill")
+    ap.add_argument("--close-tab", action="store_true", help="Close tracker tab after fill (default: leave open)")
     args = ap.parse_args()
 
-    # Normalise case ID - ensure it starts with #
-    case_id = args.case_id.strip()
-    if not case_id.startswith("#"):
-        case_id = "#" + case_id
+    if not args.open_only and not args.case_id:
+        ap.error("--case-id is required unless --open-only is set")
 
-    attachment_value = parse_attachment_value(args.attachments)
-
-    print(f"[FORM] Case ID: {case_id}")
-    print(f"[FORM] NQ: {NQ_VALUE}")
-    print(f"[FORM] Kanal: E-Mail Care")
-    print(f"[FORM] Attachments: {attachment_value}")
+    config = _load_config()
 
     with sync_playwright() as p:
-        # Connect to existing Chrome via CDP
         try:
             browser = p.chromium.connect_over_cdp(args.cdp)
         except Exception as e:
-            print(f"ERROR: Cannot connect to Chrome at {args.cdp}. Run Skill 1 first.", file=sys.stderr)
+            print(f"ERROR: Cannot connect to Chrome at {args.cdp}. Run login first.", file=sys.stderr)
             print(str(e), file=sys.stderr)
             return 1
 
         ctx = browser.contexts[0] if browser.contexts else browser.new_context()
+        sprinklr = find_sprinklr_console_page(ctx)
 
-        # Open form in a NEW tab so Sprinklr tab stays intact
-        print("[FORM] Opening form in new tab...")
-        form_page = ctx.new_page()
-        form_page.goto(FORM_URL, wait_until="domcontentloaded", timeout=30000)
-        form_page.wait_for_timeout(3000)
+        tracker = open_or_reuse_case_tracker_tab(ctx, config, bring_sprinklr_back=sprinklr)
+        print(f"[CASE TRACKER] Tab ready: {tracker.url}")
 
-        # ── Q1: NQ (text input) ──────────────────────────────────────────────
-        print(f"[FORM] Filling Q1 (NQ): {NQ_VALUE}")
-        try:
-            q1 = form_page.locator('[data-automation-id="textInput"]').first
-            q1.wait_for(state="visible", timeout=10000)
-            q1.click()
-            q1.fill(NQ_VALUE)
-        except Exception as e:
-            print(f"[WARN] Q1 fill failed: {e}", file=sys.stderr)
+        if args.open_only:
+            if sprinklr:
+                sprinklr.bring_to_front()
+            return 0
 
-        form_page.wait_for_timeout(500)
+        salcus_value = _normalise_salcus_value(args.salcus) if args.salcus else ""
+        transfer_flag = args.transfer
+        transfer_target = (args.target or "").strip()
+        case_info: dict = {}
 
-        # ── Q2: Case ID (second text input) ──────────────────────────────────
-        print(f"[FORM] Filling Q2 (Fall ID): {case_id}")
-        try:
-            q2 = form_page.locator('[data-automation-id="textInput"]').nth(1)
-            q2.click()
-            q2.fill(case_id)
-        except Exception as e:
-            print(f"[WARN] Q2 fill failed: {e}", file=sys.stderr)
-
-        form_page.wait_for_timeout(500)
-
-        # ── Q3: Kanal = E-Mail Care (radio) ──────────────────────────────────
-        print("[FORM] Selecting Q3 (Kanal): E-Mail Care")
-        try:
-            radio_email = form_page.locator('input[type="radio"][value="E-Mail Care"]')
-            radio_email.wait_for(state="visible", timeout=10000)
-            radio_email.click(force=True)
-        except Exception as e:
-            # fallback: click by label text
+        if sprinklr:
             try:
-                form_page.get_by_role("radio", name="E-Mail Care").first.click()
-            except Exception as e2:
-                print(f"[WARN] Q3 radio failed: {e} / {e2}", file=sys.stderr)
+                sprinklr.bring_to_front()
+                sprinklr.wait_for_timeout(400)
+                if not salcus_value:
+                    salcus_value = extract_salcus_from_sprinklr(sprinklr)
+                case_info = extract_case_info_from_sprinklr(sprinklr)
+            except Exception:
+                case_info = {}
 
-        form_page.wait_for_timeout(500)
+        if transfer_flag is None and not transfer_target:
+            transfer_flag, transfer_target = resolve_transfer(case_info)
+        elif transfer_flag is None:
+            transfer_flag = "1" if transfer_target else "0"
 
-        # ── Q4: Anzahl Anhaenge (radio) ───────────────────────────────────────
-        print(f"[FORM] Selecting Q4 (Anhaenge): {attachment_value}")
-        try:
-            radio_att = form_page.locator(f'input[type="radio"][value="{attachment_value}"]')
-            radio_att.wait_for(state="visible", timeout=10000)
-            radio_att.click(force=True)
-        except Exception as e:
+        fill_case_tracker_fields(
+            tracker,
+            args.case_id,
+            args.attachments,
+            salcus=salcus_value,
+            transfer=transfer_flag,
+            transfer_target=transfer_target or None,
+            submit=args.submit,
+        )
+
+        if sprinklr:
+            sprinklr.bring_to_front()
+
+        if args.close_tab:
             try:
-                form_page.get_by_role("radio", name=attachment_value).first.click()
-            except Exception as e2:
-                print(f"[WARN] Q4 radio failed: {e} / {e2}", file=sys.stderr)
-
-        form_page.wait_for_timeout(1000)
-
-        # Form is filled - leave it open for the user to review and submit manually
-        print("[FORM] All fields filled. Form is ready for review - please submit manually.")
-
-        print(f"[FORM] Done. Case {case_id} logged.")
+                tracker.close()
+            except Exception:
+                pass
 
     return 0
 

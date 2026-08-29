@@ -1,40 +1,76 @@
 ---
 name: sprinklr-read-answer-email
-description: Reads the current email in Sprinklr Console and prints it to output; then Cursor summarizes the entire email conversation in the chat, queries the knowledge base, writes the suggested reply, provides the response logic explaining the reasoning, and lists detailed agent instructions for required backend actions (tickets, forms, forwarding). Does not write to the browser. Use sprinklr-write-reply when the user says "reply with ...". Requires sprinklr-open-login-status first.
+description: Reads the current email in Sprinklr Console and prints it to output; then Cursor summarizes the entire email conversation in the chat, queries the knowledge base, and writes the suggested reply. Does not write to the browser. Use sprinklr-write-reply when the user says "reply with ...". Requires sprinklr-open-login-status first.
 ---
 
 # Sprinklr: Read Email (script prints email, Cursor writes reply in chat)
 
-The **script** only reads the current email and **prints it to stdout, then terminates**. It does **not** query the knowledge base or generate the reply. **You (Cursor)** must then **summarize the entire email conversation** in the Cursor chat, query the KnowledgeBase, **write the suggested reply** in the chat window, followed by the **Response Logic Segment** (explaining why you drafted this specific reply) and the **Agent Instruction Section** (listing precise backend actions the agent must take).
+**Shorthand:** The user may type **RE** instead of "read email". Treat **RE** the same as "read email" and run this skill (invoke the script and then follow all agent instructions below).
+
+---
+
+## CRITICAL: Always stick to the processing form
+
+**You must ALWAYS, AT ALL TIMES, stick to the given processing form in the chat with the user.** Do not skip sections. Do not reorder sections. Do not merge sections or substitute a different structure. Follow the mandatory output structure (sections 1–7), verification rules, and case-processing flow defined in this skill exactly. Any reply to the user when handling a read-email case must use this form—no exceptions.
+
+## CRITICAL: AI model stays on Auto (Grok banned)
+
+**ABSOLUTE:** Cursor model picker must stay **Auto**. Never switch to **Grok** or any named model.
+
+**If this session is Grok / named model:** Do **not** run the read-email script. Do **not** draft section 1–7. Output:
+
+`ERROR: MODEL NOT AUTO (GROK/NAMED MODEL DETECTED). Set the Cursor model picker to Auto, then resend your command.`
+
+See `.cursor/rules/ai-model-stay-auto.mdc`.
+
+---
+
+The **script** only reads the current email and **prints it to stdout, then terminates**. It does **not** query the knowledge base or generate the reply. **You (Cursor)** must then follow the **mandatory output structure** below and **write the suggested reply** in the chat window.
+
+---
+
+## Mandatory output structure (follow exactly, in order)
+
+You **must** output the following sections in this order. Do not occlude or merge sections. (Steps 5 and 6 are combined: one "Instructions on handling case" section.)
+
+| # | Section | Content |
+|---|---------|--------|
+| **1** | **Customer case summary** | **Target: 35–50 words, hard max 60.** Ultra-easy to scan: Fall # + name, **one concrete problem** (no vague “issue”), **what they want now**. Optional: **one** short clause on prior o2/brand only if it changes understanding; optional one-line date/deadline if it matters. **No** thread chronology, filler, emotions, or process narration. One paragraph, no bullets. Follow `.cursor/rules/case-summary-format.mdc`. |
+| **2** | **Verification** | **Customer verified: Yes**, **Customer verified: No**, or **Awaiting manual verification by user**. If Yes, list verified key data. If Awaiting manual verification, list the 2 identifiers found (and state that neither is the Von: email). Never ask for PKK. |
+| **3** | **Transfer eligibility** | **If verified:** Query **KnowledgeBase/TransferMatrix.md** (unless an explicit exception overrides this). Identify Thema and Fall; state Ziel-Kontakt. **Transfer eligible: Yes** (case goes to another team/queue/email) or **Transfer eligible: No** (we handle directly or Kein Transfer). |
+| **4a** | **Transfer goal (if transferable)** | If Transfer eligible = Yes: state **Transfer goal** (queue/team name or email) and action (e.g. "Transfer in Sprinklr" or "Forward to email"). **Once a case is clearly transfer-eligible with a definitive transfer goal, you may treat the routing decision as final and keep the remaining sections extremely short (no further KB queries or detailed handling beyond confirming the transfer).** |
+| **4b** | **If not transferable** | If Transfer eligible = No: **query the KnowledgeBase** (grep/search; never read entire files) for relevant handling. Skip 4a. |
+| **5** | **Instructions on handling case** | KB-based + agent steps in one section: which path, ticket type/Themen-ID, inbox, Buchungsgrund, or "direct customer to X"; what to do in Sprinklr/systems (create ticket, transfer, write reply, no promise of Y). Cite KB where relevant. Numbered or bulleted. **If the case is transfer-eligible with a definitive transfer goal, this section can be reduced to a single, clear instruction (e.g. "Transfer case in Sprinklr to \<Queue\> and do not process further").** |
+| **6** | **Your response to customer** | **Full** suggested email reply in **German**, copyable block: salutation, body (template), survey line, signature block. Do not truncate. **If the case is transfer-eligible with a definitive transfer goal, the body can be minimal and only inform the customer that their concern has been forwarded to the responsible team, without additional substantive processing.** |
+| **7** | **Summary of response** | One short paragraph in English: what the reply says and what the agent/customer should do next. **For transfer-eligible cases with a definitive transfer goal, this can be a one-sentence note that the case was routed to \<Queue\> and no further Backoffice handling is performed.** |
+
+If customer is **not verified**: do steps 1, 2, then skip transfer matrix; use unverified template only (security block + Mein o2 tip); output section 5 briefly (no KB query for substantive case), then 6 (full template) and 7. If **awaiting manual verification** (2-of-3 exception): do steps 1–7 as if verified, but set verification status to "Awaiting manual verification by user" and add the follow-up instruction (see below).
+
+---
 
 ## Agent instructions (required when you run this skill)
 
-1. **Run the skill.** The script connects to the browser (CDP 9222), extracts the customer email and **full conversation thread** from the current case, and prints **"CUSTOMER EMAIL"** plus **"COMPLETE CONVERSATION THREAD"**. Then the script exits.
-2. **Summarize the entire email conversation in the Cursor chat (in English).** First provide a clear **summary of the full conversation** in **English**: who wrote what, in what order (customer vs. brand/agent), main points and requests, and current status. Use the script output as the source.
-3. **Verify the customer (in English).** Check whether the email/thread contains **at least 3 key identifiers** (name, Kundennummer, Geburtsdatum, bill/invoice number, last 4 IBAN, home address, or third party with Vollmacht). **Never ask for PKK.** Output in **English**: **Customer verified: Yes** or **Customer verified: No**, and list only the verified key data found.
-4. **If NOT verified:** Use **only** the premade template for unverified customers (case-specific thank you + sympathy + the fixed security text asking for last 4 IBAN and Kundennummer + tip Mein o2). Do **not** query the KnowledgeBase. Skip to step 6.
-5. **If verified:** Check **Exceptions – do NOT query Knowledge Base** (name change, bill clarification, closing/thank-you email, new offer/contract/extension). If the case falls under an exception, handle as described there (e.g. hotline template for offers/contracts) and skip KB query. Otherwise: **query the KnowledgeBase** (grep/search only; never read entire files) for relevant articles and solution; advise the agent on documentation/tickets; apply the **Authentifizierung matrix** (E-Mail column, 3 Eckdaten) where relevant. Draft a **fitting reply** (e.g. confirm ticket created, case forwarded, refund initiated) based on KB and handling actions.
-6. **Write the suggested reply in the chat (German customer email).** Show the **suggested email reply** text in the chat, written **in German** and following the **mandatory email reply template** (salutation mirroring contact / "Guten Tag" or "Guten Tag [Vorname Nachname],", case-specific thank you + sympathy, survey line, fixed signature block). Use this German template for unverified, verified, or exception replies.
-7. **Response Logic Segment (in English, after the reply).** Immediately after the suggested German reply, add a clearly labeled section **"--- Response Logic ---"** explaining in short detail:
-   - **Why** this specific reply was chosen (e.g. "Customer is unverified -- used security template", "Customer verified with 3 Eckdaten -- queried KB for refund process", "Exception: contract extension request -- referred to hotline per policy").
-   - **Which KnowledgeBase articles or rules** were applied and how they informed the reply content (cite specific article titles, section names, or search terms that matched).
-   - **Which Authentifizierung matrix rules** were applied (e.g. "E-Mail column, process type: Rechnung & Zahlung -- zulassig with 3 Eckdaten").
-   - **Why specific phrasing or actions** were included in the reply (e.g. "Confirmed refund initiation because KB article states refunds under 50 EUR can be processed directly via E-Mail").
-   - Keep this concise -- 3 to 6 bullet points maximum.
-8. **Agent Instruction Section (in English, after the Logic Segment).** Add a clearly labeled section **"--- Agent Actions Required ---"** with **detailed, precise, actionable instructions** for the human agent on what backend steps must be taken. These instructions must be:
-   - **Specific**, not broad -- state the exact action (e.g. "Create a Stoerungsticket in BSS with category 'Netzproblem > Kein Empfang > Outdoor'" rather than "create a ticket").
-   - **Derived from the KnowledgeBase** -- only instruct actions that are supported by KB articles or documented processes found during the search.
-   - **Sequenced** -- list steps in the order they should be performed.
-   - Include where applicable: **ticket creation** (which system, which category/type, what to fill in), **form fulfillment** (which form, which fields, link if known), **case forwarding** (to which department, via which channel), **documentation** (what to note in the case, where), **follow-up actions** (callback scheduling, deadline for customer response, escalation path).
-   - If **no backend action is needed** (e.g. unverified customer template, closing/thank-you email), explicitly state: "No backend action required -- response-only case."
-   - If the case **cannot be handled via E-Mail** per Authentifizierung matrix, instruct the agent on the correct channel referral and any internal documentation needed.
-9. **Trigger phrases -- always run sprinklr-write-reply automatically:** Any of the following user messages (exact or approximate) must immediately trigger saving the reply to a temp file and running the **sprinklr-write-reply** skill without asking for confirmation:
-   - "write the email", "write the response", "write the reply"
-   - "send it", "put it in", "write that in sprinklr", "write it in sprinklr"
-   - "create response", "create the reply"
-   - any variation where the user is clearly asking you to place the reply into the Sprinklr editor
-   - **When in doubt, assume the user wants the reply written to Sprinklr.**
-   Save the German reply text (without the Logic Segment or Agent Instructions) to `scratchspace/reply_<case_id>.txt`, then run: `python .cursor/skills/sprinklr-write-reply/run.py scratchspace/reply_<case_id>.txt`
+**Always stick to the processing form:** When you run this skill or respond to the user about a read-email case, you must use the mandatory output structure (sections 1–7) and the verification/case-processing flow defined here. Do not deviate, skip, or reorder. **Do not show or require any "accept", "approve", or similar confirmation pop-ups during the RE output flow; all steps must be executed automatically unless the user explicitly interrupts or overrides them.**
+
+1. **Run the skill.** The script connects to the browser (CDP 9222), extracts the customer email and **full conversation thread** from the **currently visible case only**, and prints **"CUSTOMER EMAIL"** plus **"COMPLETE CONVERSATION THREAD"**. Then the script exits.
+2. **Output sections 1–7 in order** (see Mandatory output structure above; steps 5 and 6 are combined). Use the script output as the source for section 1. **Include date/time context in section 1:** note today's date (e.g. "Today: Friday, 06.03.2026") and flag any dates in the case as past/present/future (e.g. "01.03. mentioned in the email is in the past"; "Deadline 14.03. is in the future"). This is critical for determining if deadlines (withdrawal period, contract changes, refund timelines) have already expired or are still pending.
+3. **Verification (section 2):** At least 3 key identifiers (name, Kundennummer, Geburtsdatum, bill/invoice number, last 4 IBAN, home address, or third party with Vollmacht). **Never ask for PKK.** Apply the **2-of-3 exception** (see below) when exactly 2 identifiers are present and neither is the Von: (From:) email address.
+4. **If NOT verified:** Use **only** the premade template for unverified customers (case-specific thank you + sympathy + the fixed security text asking for last 4 IBAN and Kundennummer + tip Mein o2). Do **not** query the KnowledgeBase for substantive handling. Output section 5 briefly, then 6 (full template) and 7.
+5. **If verified** or **Awaiting manual verification:** Query **TransferMatrix.md** (section 3). If **Transfer eligible: Yes** → section 4a (transfer goal and action). If **Transfer eligible: No** → section 4b (query KB for handling). Then **Exceptions** and **Standard premade** as usual. Fill 5 (instructions), draft **case-specific** reply (6), summary (7). For **Awaiting manual verification**, state in section 2 and in section 7 that the user must manually verify; if they confirm verified, use the drafted reply; if they say unverified, reply with the **standard verification inquiry email** (unverified template with security block + Mein o2).
+6. **Section 6** must always show the **full** suggested email reply in German (complete, copyable block). **Section 7** must summarize in English what the reply does and next steps.
+7. **When the user says "reply with …" or "write that reply in the box"**: run the **sprinklr-write-reply** skill with a file containing the reply text.
+
+8. **Monitoring vs. processing new cases:**  
+   - The automation may **monitor Sprinklr for new incoming emails and changed cases in the background**, but it must **not open, process, or reply to any individual case on its own**.  
+   - Actual case handling only starts when the user explicitly issues **RE** (or "read email") for the current case.  
+   - On every RE invocation, the script must **re-read the Fall # (case ID) from the currently visible email page** and treat that as the **authoritative, current case**, ignoring any previously cached or earlier Fall #.  
+   - **If the newly read Fall # differs from the Fall # used in the previous RE run, you must treat this RE as a completely new case:**  
+     - Discard any prior case-specific processing context from the previous Fall # (summaries, KB lookups, transfer decisions, reply drafts).  
+     - Run the full 1–7 flow **fresh** for the new Fall # (new summary, new verification, new transfer eligibility, new reply).  
+     - Under no circumstances may you **repeat or reuse** the previous RE output for the old Fall # on the new case.
+
+**Iterations and case specificity:** Any and all suggested responses (including unverified template, exception replies, and standard premade responses such as the router/Schadensersatz reply) may be **iterated or adapted** based on case specificity. Treat premade responses as a **base**; adapt them when the case or explicit user instruction requires it.  
+By default, during the RE output flow you must **apply all required processing and draft the full customer response autonomously, without waiting for the user to manually "accept", "approve" or "allow" individual processing steps or wording changes**. Only pause or modify this flow if the user explicitly corrects or overrides the drafted handling or reply.
 
 **No reload or navigation:** The script must **not** reload the page or navigate to any URL. It only reads from the **current tab** (email content page). Run **sprinklr-open-login-status** first. The script processes the current page once (extract-only), prints the email, then exits. It does **not** write to the editor.
 
@@ -48,29 +84,46 @@ Each customer **must be verified** in our system before proceeding with case pro
 
 A customer is **verified** only if the email (or thread) contains **at least 3** of the following, clearly visible/mentioned:
 
-- **Name** (Vorname + Nachname, or abbreviated e.g. "M. Mustername")
+- **Name** – **full name** required: Vorname + Nachname (or abbreviated e.g. "M. Mustername"). First name only or last name only does **not** count as a valid identifier.
 - **Customer number** (Kundennummer)
 - **Date of birth** (Geburtsdatum)
 - **Bill/invoice number** (Rechnungsnummer) or last invoice/charge details
 - **Last 4 digits of IBAN**
 - **Home address** (Kontaktadresse – can be partial but recognizable)
+- **Phone number** (**MSISDN / Rufnummer / Telefonnummer**, mobile or landline)
 - **Third party with power of attorney (Vollmacht)** – legal guardian, representative, etc., clearly mentioned and authorized to act for the customer (in that case the third party is the verified contact)
 
 **Never ask for PKK** (Persönliche Kundenkennzahl).
+
+### Alternative: Sender email matches account in Marquez
+
+The customer can **also** be considered **verified** if the **sender email address matches the customer account in the Marquez program** (even when fewer than 3 key identifiers appear in the email text). The agent currently has **no access** to Marquez; permissions may be granted in the near future so the agent can perform this check. Until then, if the **user or an internal process confirms** that the sender email matches the account in Marquez, treat the customer as **verified** and proceed with case processing (query KnowledgeBase if applicable, draft substantive reply). When documenting verification in chat, you may state: **Customer verified: Yes** (e.g. "Name, Kundennummer; sender email confirmed as matching account in Marquez").
+
+### Exception: 2 of 3 identifiers (awaiting manual verification by user)
+
+If the customer has **exactly 2** of the key identifiers listed above (name, Kundennummer, Geburtsdatum, bill/invoice number, last 4 IBAN, home address, mobile/landline phone number, Vollmacht), **and neither of those 2 is the email address shown in the "Von:" (From:) field** of the email you read:
+
+- Set verification status to: **Awaiting manual verification by user**. This signals that **you** (the user) must manually verify the customer (e.g. in Marquez or your systems).
+- **Proceed with case and email processing as if the customer were verified**: query TransferMatrix, query KnowledgeBase, determine transfer eligibility, draft the **case-specific reply** (section 6), and fill sections 3–5 and 7 as usual.
+- In section 2, output: **Awaiting manual verification by user.** List the 2 identifiers found and state that neither is the Von: email.
+- In section 7 (summary), add: **You must manually verify this customer.** If you confirm they are verified, use the case-specific reply above (or say "reply with this"). If you find them unverified, instruct the agent to **reply with the standard verification inquiry email** (the same unverified-customer template: case-specific thank you + sympathy, then the security block asking for last 4 IBAN and Kundennummer, then Mein o2 tip, survey line, signature).
+
+So: with **Awaiting manual verification**, the agent always produces a **case-specific draft reply**. You then either approve it (reply with this) or reject verification and ask for the **standard verification inquiry** (unverified template).
 
 ### Output in chat
 
 All agent-facing output in the Cursor chat (summaries, explanations, verification result) must be written **in English**, even if the customer email is in German.
 
-- Provide a clear **Yes/No** answer in English: **Customer verified: Yes** or **Customer verified: No**.
-- List **only the key verified data** you found (e.g. "Name, Kundennummer, last 4 IBAN"), still described in **English**.
+- Provide a clear status in English: **Customer verified: Yes**, **Customer verified: No**, or **Awaiting manual verification by user**.
+- If Yes: list the key verified data you found (e.g. "Name, Kundennummer, last 4 IBAN"), in **English**.
+- If Awaiting manual verification: list the **2** identifiers found and state that neither is the Von: (From:) email address.
 
 ### If customer is NOT VERIFIED
 
 Do **not** process the case. Use **only** the following premade template. The reply must still follow the **mandatory email reply template** (salutation, then body, then security block, then survey line, then signature block).
 
 - **Salutation:** Per template (Guten Tag [Vorname Nachname], or "Guten Tag," if no/full name not given).
-- **Body:** Issue a **case-specific thank you** to the customer, mentioning the case in the thank you; apologise and show **specific sympathy** for the customer's case and circumstances; be friendly.
+- **Body:** Issue a **case-specific thank you** to the customer, mentioning the case in the thank you; show **specific sympathy** for the customer's case and circumstances; be friendly. Add an apology only if contextually necessary (clear inconvenience/error/delay caused by us).
 - Then include **exactly** this security block:
 
 > Um zu verhindern, dass unbefugte Dritte Ihre Kundendaten ändern oder Informationen aus Ihrem Vertrag erhalten, bearbeiten wir E-Mail-Anfragen zu Vertragsinhalten nur dann, wenn im Vorfeld bestimmte Angaben vom Anfragesteller gemacht werden.
@@ -94,9 +147,16 @@ Do **not** process the case. Use **only** the following premade template. The re
 
 Proceed with **case processing** (see below). Also apply the **Authentifizierung matrix** (E-Mail column, 3-Eckdaten rule) on a case-by-case basis to decide whether the request may be handled per E-Mail or must be referred to Web/App/Hotline/Formular.
 
+### If customer is AWAITING MANUAL VERIFICATION (2-of-3 exception)
+
+Proceed with **case processing exactly as if the customer were verified**: query TransferMatrix, query KnowledgeBase, fill sections 3–5, and draft the **full case-specific reply** (section 6) and summary (section 7). In addition:
+
+- In section 2, output **Awaiting manual verification by user** and list the 2 identifiers (and that neither is the Von: email).
+- In section 7, add: **Manual verification required.** If you confirm the customer is verified, use the case-specific reply above (e.g. "reply with this"). If you find the customer unverified, instruct the agent to **reply with the standard verification inquiry email** (unverified template: case-specific thank you + sympathy, then the fixed security block asking for last 4 IBAN and Kundennummer, Mein o2 tip, survey line, signature).
+
 ---
 
-## Authentifizierung – Backoffice E-Mail (gültig seit 04.07.2023, Stand 14.11.2025)
+## Authentifizierung – Backoffice E-Mail (gültig seit 04.07.2023, matrix-basierter Stand aus bereitgestellten Screenshots)
 
 Applies **only** to requests received by **E-Mail, Brief or Fax** and answered in writing. For **E-Mail**, the initial email must contain **at least 3 of these Eckdaten**:
 
@@ -120,6 +180,73 @@ Applies **only** to requests received by **E-Mail, Brief or Fax** and answered i
 
 (Full matrix tables: see KnowledgeBase or internal Authentifizierung document for process-by-process E-Mail/Brief-Fax columns.)
 
+### Matrix-first enforcement (from provided screenshots)
+
+Treat the provided Authentifizierung matrix screenshots as authoritative process guidance. Apply them in this order:
+
+1. Check if process is **keine Authentifizierung nötig** for the relevant channel.
+2. Otherwise apply **3-Eckdaten rule** for E-Mail.
+3. Then apply exact channel/result from matrix row:
+   - `✓` = handling allowed in that channel
+   - `nur mit Kopie Ausweis/Pass` = only allowed with ID/pass copy
+   - `Web/App/Hotline` or `Hotline` or `Web` or `Formular` = do not process in Backoffice E-Mail; route customer accordingly
+   - `✗` = not allowed; route to allowed channel
+
+### Process-specific matrix snapshot (from screenshots)
+
+- **1. Kundendaten (persönlich):**
+  - Änderung Name -> Web/App (mit Kopie Ausweis/Pass)
+  - Änderung Geburtsdatum -> Schriftweg (mit Kopie Ausweis/Pass)
+  - Änderung Kontakt-/Rechnungsadresse -> E-Mail: Web/App/Hotline
+  - Änderung Kontakt-E-Mail-Adresse -> Web/App/Hotline
+  - Bankverbindung auf Dritte ändern -> Formular
+  - Kundeneinwilligung einrichten/ändern -> E-Mail: Web/App/Hotline
+  - Kundeneinwilligung löschen -> E-Mail: ✓
+  - Telefonbucheintrag anlegen/ändern/auf Dritte ändern/Inverssuche freischalten -> Formular
+  - Telefonbucheintrag löschen / Inverssuche widersprechen -> E-Mail: ✓
+
+- **2. Kundendaten (vertragsbezogen):**
+  - Accounttrennung/-zusammenlegung -> Hotline
+  - Vertragsübernahme Postpaid -> Web
+  - FSK-Einstellungen ändern -> Hotline
+  - PKK-Änderung -> Formular (mit Kopie Ausweis/Pass)
+  - PKK-Versand per Ticket -> keine Authentifizierung nötig
+  - PIN/PUK-Auskunft -> E-Mail: Web/App/Hotline
+  - Herausgabe Festnetz-Zugangsdaten oder MAC-Adresse -> E-Mail: Hotline
+  - Änderung MAC-Adresse / Auskunft Vertragslaufzeit / Versand Vertragsdokumente an Kontaktadresse -> E-Mail: ✓
+
+- **3. Tarife & Optionen:** Allgemeine Fragen -> keine Authentifizierung nötig; gezeigte Änderungsprozesse -> E-Mail: ✓
+
+- **4. Hardware:**
+  - Allgemeine Fragen / Störung erfassen / Technikertermin -> keine Authentifizierung nötig
+  - Entsperrung/Teilsperrung, Multicard/Datacard deaktivieren, Multicard-Einstellungen ändern -> Web/App/Hotline
+  - Reparatur beauftragen, Retouren-Erfassung, vollständige SIM-Sperre, Teilsperrung SIM -> E-Mail: ✓
+
+- **5. Rechnung & Zahlung:**
+  - Fragen zur Rechnung **mit** Nennung von Verkehrsdaten in Antwort -> E-Mail: Web/App/Hotline (Brief/Fax: ✗)
+  - EVN einrichten/ändern -> Web/App
+  - Rechnungsduplikat abweichende Adresse -> Hotline
+  - übrige gezeigte Zeilen (z. B. Rechnungsart ändern, Umbuchung, offene Posten, Mahnstatus) -> E-Mail: ✓
+
+- **6. Vertrag:**
+  - Reaktivierung -> E-Mail: Hotline (Brief/Fax nur mit Kopie Ausweis/Pass)
+  - Rufnummernportierung Import zu uns -> Web/App (NettoKOM/Ay Yildiz teils Formular)
+  - Rufnummernportierung Export -> Hotline
+  - Rufnummerntausch -> Web/App/Hotline
+  - Kündigung sowie Storno/Widerruf Neuvetrag oder VVL -> keine Authentifizierung nötig
+
+- **7. Vermarktung:**
+  - Hardware-Bestellung abweichende Lieferadresse -> Web/App/Hotline
+  - VVL mit Hardware an abweichende Lieferadresse -> Hotline
+  - Verkaufsprozess Neukunden -> keine Authentifizierung nötig
+  - Bestandskunden-Verkaufsprozess mit Versand an abweichende Lieferadresse -> Hotline
+
+- **8. Prepaid:**
+  - Prepaid-Aufladung per Voucher-Code -> keine Authentifizierung nötig
+  - Prepaid Registrierung Express-Aufladung -> E-Mail: Web
+  - Vertragsübernahme Prepaid / Rücksetzung Prepaid-Registrierungsdaten -> E-Mail: ✓ (gemäß Matrixhinweis)
+  - Auskunft Prepaid-Aufladungen -> E-Mail: Web/App/Hotline
+
 ---
 
 ## Email reply template (mandatory for every reply)
@@ -130,13 +257,48 @@ Applies **only** to requests received by **E-Mail, Brief or Fax** and answered i
 
 ### Salutation
 
-- **Mirror** how the contact signs (e.g. first name only, full name). Ideally: **"Guten Tag [Vorname Nachname],"** — use first and last name **without** Herr/Frau.
-- **If no name is known**, or **only the last name** is given without (abbreviated) first name: use **"Guten Tag,"** only (no name).
+- **Absolute mirroring rule:** Always **mirror exactly how the customer signs their email**, without adding titles such as Herr/Frau or any other form of address that does not appear in the customer’s signature.
+- **Signature variants (examples):**
+  - If the customer signs with **full name** (e.g. `Viktoria Anaya`), use **"Guten Tag Viktoria Anaya,"**.
+  - If the customer signs with **initial + last name** (e.g. `M. Beispielname`), use **"Guten Tag M. Beispielname,"**.
+  - If the customer signs with **first name only** (e.g. `Viktoria`), use **"Guten Tag Viktoria,"**.
+  - If the customer signs with **last name only** (e.g. `Beispielname`), use **"Guten Tag Beispielname,"**.
+  - If the customer signs with any **custom/self-chosen title or description** (e.g. "The supreme queen of England, ruler of the universe"), you must address them using exactly that wording in the salutation (e.g. **"Guten Tag The supreme queen of England, ruler of the universe,"**).
+- **Exception for prank/derogatory signatures:** If the signature clearly contains **slurs, insults, hate speech, or obviously abusive/prank wording** directed at the agent, the brand, or third parties, **do not mirror that wording**. In those cases, fall back to a neutral salutation: **"Guten Tag,"** (no name), even if a “name” is technically present.
+- **No signature present:** If there is **no recognizable signature or name** at the end of the email, use **"Guten Tag,"** only (no name).
+- **Name change (Namensänderung):** Whenever the case involves a **customer request to change their name on the account**, you must **by default address the customer with the new, desired name** in the salutation and body, but still formatted according to the mirroring rule above (e.g. if they sign as `Malik Bieliauskas` use "Guten Tag Malik Bieliauskas,"; if they sign as `Malik`, use "Guten Tag Malik,"). Only deviate from this if the user explicitly instructs you in chat to do otherwise for that specific case.
 
 ### Body (after salutation)
 
-1. A **case-specific thank you** to the customer, **mentioning the case** in the thank you.
-2. **Apologise** and show **specific sympathy** for the customer's case and circumstances; be friendly.
+1. **A case-specific thank you** to the customer, **mentioning the case meaningfully** in the thank you.
+   - **CRITICAL:** The thank you must be **specific to the customer's individual concern**, not generic.
+   - **NEVER use:** 
+     - Generic lines like *"vielen Dank für Ihre E-Mail zu Fall #36747021"* or *"thank you for contacting us about your case"*
+     - **NEVER include "Fall #" in the thank you** — do not mention the case number to the customer
+   - **DO use:** A personalized thank you that reflects the **specific issue** (e.g. *"vielen Dank, dass Sie uns auf die fehlende Gutschrift aufmerksam gemacht haben"* / "thank you for bringing the missing refund to our attention" or *"vielen Dank für Ihre Geduld bezüglich der Verzögerung bei der Bearbeitung Ihrer Kündigung"* / "thank you for your patience as we process your cancellation").
+2. Show **specific sympathy** for the customer's case and circumstances; be friendly. Add an apology only if contextually necessary (clear inconvenience/error/delay caused by us).
+
+**Repeating numbers to the customer (data protection):** When you need to repeat the customer number (Kundennummer), phone number, or similar identifiers back to the customer in the email reply, **never write the full number**. Use only a short partial reference, e.g. *"mit 523 am Ende"* / *"with 523 at the end"* for customer number 6030029523, or *"mit … am Ende"* / *"ending in …"* for a phone number. Same rule for the customer's personal phone number or any other long numeric identifier. This reduces risk of misuse if the email is read by third parties.
+
+### No uninvited promises (default — strict)
+
+**Unless the chat user explicitly instructs you** to include specific wording for that reply:
+
+- **Do not** promise or imply **internal checks, reviews, investigations, ticket handling, logistics checks, or “we will look into it”** in the customer email (e.g. avoid *wir prüfen*, *wir werden prüfen*, *Logistikprüfung* as a promise of outcome, *wir kümmern uns darum* as a commitment to future processing).
+- **Do not** promise **another message, callback, email, Rückmeldung, update, or timeline** (e.g. avoid *Sie hören von uns*, *Sie erhalten eine Rückmeldung*, *in Kürze*, *bald*, *innerhalb von X Tagen*, *Bearbeitungsfrist*, *wir melden uns*).
+- **Do not** promise **processing steps** the agent has not been told to state as fact (*Ticket wurde angelegt* only if the chat user confirmed that; otherwise describe receipt of the concern neutrally without guaranteeing backend action).
+
+**Allowed without special instruction:** thank you, sympathy, **factual routing** already done (*Ihr Anliegen wurde an … weitergeleitet* if true), **requests for documents** (IBAN, Kundennummer), **links/hotline numbers only where KB, TransferMatrix, or a documented exception below explicitly requires hotline referral in the customer email**, and the **fixed survey + signature block**.
+
+**Solutions, self-service, alternatives (default customer body):** Prefer **case-specific actionable paths** — **Mein o2**, **o2.de**, app self-service, official forms, links, and **concrete alternatives** — so the customer can progress without vague internal processing language. **Do not** paste care hotline numbers by default. Follow `.cursor/rules/reply-customer-solutions-qa.mdc`.
+
+**When KB is thin or chat-user rewrite instructions lack substance:** Use **web search** (official o2/Telefónica pages, help content, reputable forums) to find **viable, issue-specific** self-service or alternative steps; include **1–3** in section 6 where they genuinely help. Goal: **QA-safe, substantive replies** that reduce bounce-backs and speed workflow.
+
+**No quoted internal actions in the customer email (unless chat user instructs):** Do **not** state what **we** are doing or will do internally (tickets opened, checks running, cases forwarded as a commitment, “we will process…”) unless the chat user **explicitly** tells you to include those exact statements for this reply. Agent-facing instructions (sections 4–5) may still describe backend steps; the **customer-facing section 6** stays solution- and self-service-oriented by default.
+
+**No internal systems in the customer email (hard rule):** Never mention **Authentifizierungsmatrix**, **Sabio**, **TIM**, **Wissensbasis**, TransferMatrix, Sprinklr, Marquez, Themen-ID, or internal queue names in section 6. Follow `.cursor/rules/reply-no-internal-systems.mdc`. Agent sections may use those names; the customer reply must not.
+
+**Premade templates in this skill:** If a template sentence **conflicts** with this rule, **adapt or omit** that sentence unless the chat user explicitly tells you to keep it.
 
 ### Survey line (before signature)
 
@@ -161,67 +323,108 @@ Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflic
 * gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz
 ```
 
-**Apply this template** to: (1) unverified-customer template (after the security text and Mein o2 tip), (2) verified case-specific replies, (3) exception replies (e.g. hotline referral). Salutation + body content may vary; survey line and signature block are fixed.
-
----
-
-## Complete chat output structure (mandatory order)
-
-Every time this skill runs, the **full output in the Cursor chat** must follow this exact structure, in this order:
-
-1. **Conversation Summary** (English) -- who wrote what, in what order, main points, current status. Include at the end: **"Attachments visible: N"** (count any file/image attachments visible in the customer's inbound email; default 0 if none).
-2. **Customer Verification** (English) -- "Customer verified: Yes/No" with listed identifiers.
-3. **Suggested Email Reply** (German) -- the full customer-facing email using the mandatory template.
-4. **Response Logic Segment** (English) -- labeled **"--- Response Logic ---"**, 3-6 concise bullet points explaining:
-   - Why this reply type was chosen (unverified template / verified KB-based / exception handling).
-   - Which KnowledgeBase articles, sections, or search terms informed the reply.
-   - Which Authentifizierung matrix rules were applied (process type, E-Mail column result).
-   - Why specific phrasing, actions, or referrals were included.
-5. **Agent Instruction Section** (English) -- labeled **"--- Agent Actions Required ---"**, containing:
-   - Numbered, sequential, **specific** backend steps the agent must perform.
-   - For ticket creation: which system, ticket category/type, required fields, priority.
-   - For form fulfillment: which form (name or link), which fields to fill, with what values.
-   - For case forwarding: target department, forwarding channel, what to include.
-   - For documentation: what to note in the case history, where to log it.
-   - For follow-up: deadlines, callback scheduling, escalation paths if no resolution.
-   - If no backend action is needed: explicitly state "No backend action required -- response-only case."
-
-**Only the Suggested Email Reply (item 3) goes into the reply file** for sprinklr-write-reply. Items 1, 2, 4, and 5 are agent-facing and remain in the Cursor chat only.
+**Apply this template** to: (1) unverified-customer template (after the security text and Mein o2 tip), (2) verified case-specific replies, (3) exception replies **only when KB, matrix, or a documented exception below requires hotline or channel wording in the customer email**. Salutation + body content may vary; survey line and signature block are fixed.
 
 ---
 
 ## Case processing (when customer IS verified)
 
-0. **Check the Transfer Matrix FIRST.** Before querying the general KnowledgeBase, check `KnowledgeBase/TransferMatrix.md` to determine if the case belongs to us (CBC_CARE_ALLGEMEIN) or must be transferred to another team. Search for the case topic/theme in the Transfer Matrix:
-   - `Grep(pattern="<case_topic_keyword>", path="KnowledgeBase/TransferMatrix.md")`
-   - **If Ziel-Kontakt = CBC_CARE_ALLGEMEIN**: The case stays with us. Proceed to step 1.
-   - **If Ziel-Kontakt = another team**: Instruct the agent to transfer the case in Sprinklr to that queue. Draft a reply informing the customer their case has been forwarded. Do NOT query the general KB for solution -- the other team handles it.
-   - **If Ziel-Kontakt = an email address**: Instruct the agent to forward the case/documents to that email. Draft a brief reply confirming forwarding.
-   - **If Ziel-Kontakt = "Kein Transfer" with handling instructions**: Follow those instructions (refer to hotline, use text block, handle per KB, etc.).
-   - **If Ziel-Kontakt = a ticket instruction (e.g. "Ticket Themen-ID 653")**: Instruct the agent to create that ticket. Draft reply confirming the case is being processed.
-1. **Query the KnowledgeBase** (grep/search only -- do not read entire files) for **relevant articles and the most likely solution** to the customer's case.
-2. **Create a fitting reply** for the customer that:
+1. **Query the KnowledgeBase** (grep/search only – do not read entire files) for **relevant articles and the most likely solution** to the customer's case.
+2. **If KB output is generic or insufficient** for a substantive customer reply, **search the web** for case-specific official or community-supported paths (Mein o2 flows, o2.de pages, documented workarounds). Use results only when relevant to **this** customer's issue.
+3. **Advise the customer service agent** on necessary **documentation or tickets** that need to be filled out (e.g. which form, which ticket type).
+4. **Create a fitting reply** for the customer that:
    - **Uses the mandatory email reply template** (salutation, case-specific thank you + sympathy, survey line, signature block),
-   - Reflects **specific handling actions** (e.g. ticket created, case forwarded, refund initiated, document sent),
-   - Follows **KnowledgeBase instructions and guidelines** for that type of case,
-   - Is case-specific (confirm what was done or what will happen next).
-3. **Response Logic Segment** (after the reply): Explain the reasoning behind the reply -- which KB articles matched, which rules/matrix entries applied, and why the chosen approach was selected. Keep it concise (3-6 bullet points).
-4. **Agent Instruction Section** (after the logic segment): Provide the agent with **detailed, precise backend action steps** derived from the KnowledgeBase -- ticket creation (system, category, fields), form fulfillment (which form, which fields), case forwarding (department, channel), documentation requirements, and follow-up actions. Every instruction must be specific and actionable, not generic.
+   - Prioritizes **viable self-service, app/web paths, case-specific alternatives, and clear next steps** (see **Solutions, self-service, alternatives** above); **omits hotline** unless KB/matrix/exception/chat user requires it; avoids quoting internal brand actions unless the chat user instructed those exact lines; **never names internal systems** (Authentifizierungsmatrix, Sabio, TIM, Wissensbasis, etc.).
+   - Reflects **only what the chat user has confirmed or what is strictly factual** (e.g. transfer completed, document attached) — **not** speculative processing or future contact (see **No uninvited promises** above),
+   - Follows **KnowledgeBase instructions and guidelines** for that type of case **except** where KB text would add promises; in those cases **omit or neutralize** unless the chat user instructs otherwise,
+   - Is case-specific without **default promises** of checks, processing, or follow-up messages.
 
 ---
 
-## Exceptions – do NOT query the Knowledge Base
+## Exceptions – do NOT (or only partially) query the Knowledge Base
 
-In the following situations, **do not query the KnowledgeBase** for solution articles. Handle as below. **This list may be updated by user instruction** – add or change exceptions as instructed.
+In the following situations, **do not query the KnowledgeBase** for general solution articles, or **override normal TransferMatrix behavior**. Handle as below. **This list may be updated by user instruction** – add or change exceptions as instructed.
 
-1. **Customer wishes to update their name** – Handle according to Authentifizierung matrix (typically Web/App/Schriftweg with Kopie Ausweis/Pass); do not query KB for general solution.
-2. **Customer wishes clarification on their bill** (specific cost positions, extraordinary costs, etc.) – Handle per matrix; do not query KB.
-3. **Customer sends a final, positive acknowledgment** (thank you, closing email, satisfaction confirmation) – Reply with a short, friendly closing; no KB query needed.
-4. **Customer wishes new offer, new contract, or contract extension** – Backoffice E-Mail team does **not** handle sales, offers, or contract extensions. Use **only** the following approach:
+1. **Customer wishes to update their name (Namensänderung)** – Handle according to Authentifizierung matrix (typically Web/App/Schriftweg with Kopie Ausweis/Pass); do not query KB for general solution.  
+   - **If the customer has already provided valid ID documents and the Authentifizierung matrix allows the change:**  
+     - Treat the name change as **approved and to be carried out**.  
+     - In section 6 (customer reply), **confirm the desired legal name change explicitly** (e.g. "wir haben Ihren Namen von [Altname] auf [Neuer Name] aktualisiert" or equivalent) and **address the customer consistently with the new name** in the salutation and body (see "Name change (Namensänderung)" rule in the Email reply template).  
+     - Default behavior after RE is: **confirmation of the requested name change with the new name**, unless the user later corrects or overrides the draft.  
+   - **When such cases appear, always output the following block in the chat** (before the suggested reply), so the agent can see and copy the values to be updated:
+   - **Current name:** [Bisheriger Vorname] [Bisheriger Nachname]
+   - **Desired name:** [Neuer Vorname] [Neuer Nachname]
+   - **Update:** state which position is to be updated (First name / Last name / Both) and show the **exact value to paste** in a copyable format (e.g. in a code block or on a line labeled "Copy for [field]:") next to that position.
+   - **Name in Bankverbindung ändern:** yes / no / not mentioned — depending on the case: use **yes** if the customer wants the account-holder name on the bank details updated too; **no** if they do not; **not mentioned** if the request or form does not state it.
+   **Example:**
+   - Current name: Julia Morais Gancz  
+   - Desired name: Luiza Morais Gancz  
+   - **Update: First name** → Copy for field: `Luiza`  
+   - Name in Bankverbindung ändern: yes.  
+   (If last name or both were changing, add e.g. **Update: Last name** → Copy for field: `…` or **Update: Both** → First: `…` | Last: `…`.)
+   This makes it clear what to update and gives a one-click copyable value next to the position (first name, last name, or both).
+2. **Customer contract withdrawal (Widerruf)** – Customer explicitly exercises the right of withdrawal from a newly activated contract.  
+   - If the withdrawal request is **within 3 months of contract activation** (based on dates in the thread):  
+     - **Ignore verification status for routing purposes** (you may still describe verification in section 2, but you must **not block or alter routing based on it**).  
+     - **Bypass normal TransferMatrix routing logic**: regardless of what the Transfer Matrix would normally say for the topic, you must set:  
+       - **Transfer eligible: Yes**  
+       - **Transfer goal:** queue **`CBC_XF_E_WIDERRUF`**  
+     - In section 5, clearly instruct the agent to transfer the case in Sprinklr to **`CBC_XF_E_WIDERRUF`** as the handling team for withdrawal cases within 3 months of activation.  
+     - Do **not** attempt alternative routing based on other matrix entries for this case type.  
+   - If the withdrawal is **older than 3 months after activation** or the timing is unclear, fall back to the standard TransferMatrix + KB behavior.
+3. **Customer wishes clarification on their bill** (specific cost positions, extraordinary costs, etc.) – Handle per matrix; do not query KB.
+4. **Customer sends a final, positive acknowledgment** (thank you, closing email, satisfaction confirmation) – Reply with a short, friendly closing; no KB query needed.
+5. **Customer wishes new offer, new contract, or contract extension** – Backoffice E-Mail team does **not** handle sales, offers, or contract extensions. Use **only** the following approach:
    - Issue a **case-specific thank you**, mentioning the case.
    - Be **apologetic**, and inform the customer that due to data safety regulation the email team does **not** handle promotions, offers or actions for new contracts and extensions.
    - Say that for that it would be best to contact the **care hotline**, where the contract specialist team can help: **089 78 79 79 400**.
    - Be kind and friendly.
+6. **Customer writes their email in English** – Regardless of verification status (verified or unverified), do **not** process the case yourself and do **not** query the KnowledgeBase. Treat this as a language-routing exception and **transfer the case directly to queue `CBC_XF_E_ENGLISCH`** so that the English-speaking specialist team can take over. If a customer-facing reply is needed, draft only a short German info that the concern has been forwarded to the English-language specialist team for further processing.
+
+---
+
+## Standard premade response: Router return / Schadensersatz (Erstattung Routerkosten)
+
+**When to use:** The customer case is about **router return**, **Schadensersatzkosten** (damage compensation charges) for late or delayed router return, or **refund of router costs / Erstattung der Routerkosten** that was promised or not applied. Use this as the **standard premade response** during email processing for such cases. Do not draft a different reply; use the template below and adapt only salutation (customer name) and, if needed, the conditional paragraph. **If the chat user explicitly instructs** you to add ticket/logistics details or promises of Rückmeldung, you may extend the middle paragraph accordingly; otherwise keep the neutral *„Wir haben Ihr Anliegen zur Kenntnis genommen.“* line and do not add promises of processing or further messages.
+
+**Include vs exclude the return paragraph:** You must **recognise from the customer email/thread** whether the customer has already returned the router or not.
+
+- **Signals that the customer has already returned the router** (→ **exclude** the return paragraph): e.g. "habe den Router zurückgeschickt", "Router bereits zurückgesendet", "habe ich zurückgegeben", "ist zurück", "retour geschickt", "zurückgesandt", "Rücksendung erfolgt", "verschickt", "zurückgegeben", "sent back", "returned", "already sent", "bereits zurück", "schon zurückgeschickt", or clear description that they sent it back / completed the return. If the thread or a previous brand message confirms the return was received, treat as already returned.
+- **Signals that the customer has not returned the router or it is unclear** (→ **include** the return paragraph): no mention of return; customer only complains about charges or missing refund; customer asks what to do; customer says they still have the router or have not sent it; or wording is ambiguous. In case of doubt, **include** the paragraph (so the customer gets the return link if needed).
+
+**Action:** If **already returned** → **omit** the whole paragraph that starts with "Um die monatlichen Kosten zu stoppen und die bereits entstandenen Beträge zu erstatten, bitten wir Sie, den Router bitte zurückzusenden, sofern Sie dies noch nicht getan haben." and ends with "... https://router-retoure.o2online.de/start". Keep the rest of the reply unchanged. If **not returned or unclear** → **include** that paragraph.
+
+**Template (German).** Replace `[Vorname Nachname]` with the customer's name.
+
+```
+Guten Tag [Vorname Nachname],
+
+vielen Dank für Ihre E-Mail. Es tut uns leid, dass es zu dieser Unannehmlichkeit gekommen ist.
+
+Derartige Kosten entstehen, wenn ein zurückzugebender Router nicht rechtzeitig zurückgesendet wird oder die Rücksendung sich bei der Bearbeitung verzögert; in diesen Fällen können monatlich Schadensersatzkosten anfallen. Wir entschuldigen uns für die entstandene Unannehmlichkeit.
+
+Wie es bei solchen Fällen in der automatischen Abwicklung vorkommen kann, ist bei der Erstattung des Schadensersatzes ein Fehler aufgetreten. Wir haben Ihr Anliegen zur Kenntnis genommen.
+
+Vielen Dank für Ihr Verständnis und Ihre Geduld. Wir wünschen Ihnen alles Gute und stehen bei Rückfragen gerne zur Verfügung.
+
+Um die monatlichen Kosten zu stoppen und die bereits entstandenen Beträge zu erstatten, bitten wir Sie, den Router bitte zurückzusenden, sofern Sie dies noch nicht getan haben. Für die bereits angefallenen Kosten haben wir bereits ein Erstattungsticket für Sie veranlasst. Die Rücksendung können Sie über ein Retoureticket einleiten, auf dem die Empfängeradresse bereits vermerkt ist. Den Link zum Retoureticket finden Sie hier: https://router-retoure.o2online.de/start
+
+Nochmals vielen Dank.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski 
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz
+```
 
 ---
 
@@ -230,16 +433,7 @@ In the following situations, **do not query the KnowledgeBase** for solution art
 1. Connect to the browser Skill 1 left open (CDP port 9222). **Do not reload the page or navigate to any URL.**
 2. Use **only the current tab** as-is. **Must be on the email content page** (case/Fall #... open).
 3. Extract case ID and email (subject, from, body) from the current page. **Print** the customer email to stdout, then **exit**.
-4. **Cursor:** Read the printed email and full conversation thread, **summarize the entire email conversation** in the Cursor chat, query KnowledgeBase (via grep/search), write the suggested reply in the chat, then append the **Response Logic Segment** and the **Agent Instruction Section**.
-
-**CRITICAL -- Case ID extraction rule:** The case ID must **always** be read from the `h2` element on the **currently open Sprinklr page** that contains "Fall #XXXXXXXX". This is the **authoritative** case ID. The script output may occasionally show an incorrect or stale case ID. If the script output case ID does not match the live page, **always use the live page case ID**. When in doubt, query the browser directly:
-```python
-h2_elements = page.query_selector_all('h2')
-for h2 in h2_elements:
-    text = h2.inner_text()
-    if 'Fall' in text: # This is the real case ID
-```
-Each case is unique. Never reuse a case ID from a previous session. The full 8-digit format (e.g., `#36013462`) must be preserved including any leading zeros.
+4. **Cursor:** Read the printed email and full conversation thread, **summarize the entire email conversation** in the Cursor chat, query KnowledgeBase (via grep/search), then write the suggested reply in the chat.
 
 If the user is on the console list (no case open), the script asks them to open a case and run again.
 
@@ -249,7 +443,7 @@ If the user is on the console list (no case open), the script asks them to open 
 uv run python .cursor/skills/sprinklr-read-answer-email/run.py
 ```
 
-The script runs with **`--process-current-only --extract-only`**: reads the email and full thread, prints them, then stops. You must then: (1) **summarize the entire email conversation** in the Cursor chat, (2) query the KnowledgeBase (grep/search), (3) write the suggested reply in the chat, (4) append the **Response Logic Segment** explaining your reasoning, (5) append the **Agent Instruction Section** with specific backend actions. To put the reply into the Sprinklr reply box, use **sprinklr-write-reply** with a file containing only the reply text (Logic Segment and Agent Instructions stay in chat only).
+The script runs with **`--process-current-only --extract-only`**: reads the email and full thread, prints them, then stops. You must then: (1) **summarize the entire email conversation** in the Cursor chat, (2) query the KnowledgeBase (grep/search), (3) write the suggested reply in the chat. To put that reply into the Sprinklr reply box, use **sprinklr-write-reply** with a file containing the reply.
 
 ## UI mapping (Sprinklr)
 
@@ -260,28 +454,8 @@ The script runs with **`--process-current-only --extract-only`**: reads the emai
 ## Script file
 
 - **Path:** `.cursor/skills/sprinklr-read-answer-email/run.py`
-- **Does:** Invokes the runner with **`--process-current-only --extract-only`**. Script prints the customer email and full conversation thread and exits; **Cursor** summarizes the entire conversation in the chat, queries KnowledgeBase (grep/search), writes the suggested reply in the chat, then appends the Response Logic Segment and the Agent Instruction Section.
+- **Does:** Invokes the runner with **`--process-current-only --extract-only`**. Script prints the customer email and full conversation thread and exits; **Cursor** summarizes the entire conversation in the chat, queries KnowledgeBase (grep/search), and writes the suggested reply in the chat.
 
 ## Knowledge base
 
-**You (Cursor)** draft the reply using **KnowledgeBase/** at repo root. Read the skill file at `.cursor/skills/query-knowledgebase/SKILL.md` first for the full query procedure.
-
-**Available KB files** (all converted from original Word documents):
-- `KnowledgeBase/TransferMatrix.md` **(CHECK THIS FIRST for every case -- determines if we handle or transfer)**
-- `KnowledgeBase/knowledgebase1.md`
-- `KnowledgeBase/knowledgebase3.md`
-- `KnowledgeBase/knowledgebase4.md`
-- `KnowledgeBase/knowledgebase5.md`
-- `KnowledgeBase/knowledgebase6.md`
-- `KnowledgeBase/knowledgebase7.md`
-- `KnowledgeBase/INDEX.md` (table of contents with previews)
-- `KnowledgeBase/SEARCH_HINT.md` (query strategy)
-- `KnowledgeBase/images/<docname>/img_NNN.png` (embedded diagrams/screenshots)
-
-**These files are very large (500K-1.3M chars each). You must NEVER read an entire KnowledgeBase file.** Instead:
-1. Use `Grep` with `path="KnowledgeBase/"` and a German keyword from the customer email (e.g. Rückerstattung, Kündigung, Rechnung, SIM, eSIM, Sperrung, Transfermatrix).
-2. Read only the **matching lines and surrounding context** (50-100 lines around the match).
-3. If an image is referenced near the match (`![...]`), read that PNG from `KnowledgeBase/images/` to inspect the diagram.
-4. Use the search results to draft the reply and cite the relevant KB section in the Response Logic Segment.
-
-**Transfer Matrix:** Search with `Grep(pattern="Transfermatrix|Weiterleitung", path="KnowledgeBase/")` to find routing rules for cases that must be forwarded to other divisions.
+**You (Cursor)** draft the reply using **KnowledgeBase/** at repo root. The files there (e.g. **KnowledgeBase_Complete.md**, **TransferMatrix_KnowledgeBase.md**) are **extremely long (millions of lines)**. You must **never read an entire KnowledgeBase file**. Instead: **grep or search** for keywords/phrases from the customer email (e.g. Rückerstattung, refund, Kündigung, transfer, Rechnung, IBAN, Kundennummer, specific product names) and read only the **matching lines or surrounding context**. Use the search results to draft and cite the reply.

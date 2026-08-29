@@ -1,0 +1,57 @@
+---
+description: When the user types LF, run the log-form flow (fill O2 Roberta case tracker). CRITICAL - ONE CASE ONLY.
+alwaysApply: true
+---
+
+# LF = Log Form (ONE CASE ONLY)
+
+CRITICAL: This command MUST fill ONE case tracker form ONLY. Never combine or fill multiple cases at once.
+
+When the user prompts with LF/lf:
+
+## BEFORE PROCEEDING:
+
+1. Identify the **currently visible case in Sprinklr**.
+   - By default, LF always refers to the case that is currently open and visible in the Sprinklr console (the active tab/thread).
+   - Do **not** require the user to restate the case ID if exactly one case is open and active.
+
+2. Verify ONE case ID in context
+   - Look at the current Sprinklr page (and, if needed, the recent RE output for that same case).
+   - Confirm you see only ONE Fall # / case ID for the currently visible case.
+   - If multiple case IDs are simultaneously visible or ambiguous → STOP and ask: Which case ID should I fill the form for?
+
+3. Verify ONE customer name (optional but good practice)
+   - Check the customer details on the currently visible case.
+   - If multiple customer names are associated with the visible case → STOP and clarify before proceeding.
+
+## THEN:
+
+1. Use the current case ID in context (e.g. Fall ID from recent RE)
+   - If no case ID is clear → Ask: What is the case ID (Fall #) for this form?
+2. Open or reuse the **Roberta Case Tracker** tab from the current Sprinklr browser context:
+   - URL: `https://roberta.yoummday.com/casetracker/` (or `case_tracker_url` from `config.json`).
+   - First, check whether a Roberta Case Tracker tab is already open; if yes, reuse it.
+   - Otherwise open a **new tab** from the Sprinklr context and navigate to the Case Tracker URL.
+   - If the password gate is shown, log in using `case_tracker_nq` + `case_tracker_password` from `config.json`.
+   - After open/fill, return focus to the Sprinklr email tab.
+3. Run the fill script for ONE case only:
+
+```powershell
+uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --attachments 0
+```
+
+   - Default: E-Mail Care, no transfer — **do not** click Speichern unless the user asks.
+   - **Salcus (Roberta) / Kundennummer (Sprinklr):** read from sidebar field **`data-entityid="Kundennummer"`** (value in `span[data-testid="htmlText"]`, e.g. `60543052`). Paste into Roberta `input#salcus`. Leave empty when **Nicht festgelegt** or missing — do **not** use email body text.
+   - **Ticketstatus Salcus:** Transfer **Ja** → always `3-Bot dokumentiert nicht in Salcus`. Transfer **Nein** → `1-Erfolgreich` when Kundennummer present, else `3-Bot dokumentiert nicht in Salcus`.
+   - **Transfer:** auto from Sprinklr **Quelle/Ziel** — e.g. **Widerruf** → Transfer **Ja**, target **`CBC_XF_E_WIDERRUF`**; handle-directly queues → Transfer **Nein**.
+4. Do NOT fill multiple forms or multiple cases in one LF command
+
+## AFTER EXECUTION:
+
+- ONE form only has been opened and filled for ONE case
+- User clicks **Speichern** manually after sending the email
+- Case Tracker tab may stay open for the next LF
+- Next LF command is for the NEXT case (if any)
+
+VIOLATION OF THIS RULE = DATA BREACH. DO NOT PROCEED IF UNCERTAIN.
+

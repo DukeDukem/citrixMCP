@@ -1,0 +1,28 @@
+---
+description: German Umlauts (Strict) - No substitutes like ae, oe, ue, ss
+alwaysApply: true
+---
+
+# German Umlauts (Strict)
+
+When writing ANY German text in customer replies, knowledge base queries, or Sprinklr output, ALWAYS use the correct umlauts:
+
+- ä (not "ae") - e.g. "Kundendaten"
+- ö (not "oe") - e.g. "Möglich"
+- ü (not "ue") - e.g. "Überblick"
+- ß (not "ss") - e.g. "Maßnahme"
+
+## Common words to check:
+- Änderung, ändern, Angebot
+- Gebühren, Öffnungszeiten, Rückerstattung
+- Überprüfung, Überblick, Übernahme
+- Maßnahme, Sicherheitsmaßnahme, ausschließlich
+- Größe, größer, Größeres
+
+## When drafting customer replies:
+1. Copy text directly from the skill files (which have correct umlauts)
+2. Never manually retype German words without umlauts
+3. If correcting text, always use ä, ö, ü, ß — never substitute
+
+RULE: If you catch yourself or me writing "ae", "oe", "ue", or "ss" for German words, it's wrong. Fix it immediately.
+

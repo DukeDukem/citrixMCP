@@ -1,0 +1,15 @@
+---
+description: When the user has designated the chat as instructions-only (rules/configuration only), never run RE, PR, or LF for customer cases.
+alwaysApply: false
+---
+# Instructions-only chat: no RE, PR, LF
+
+When the user has **explicitly stated** in this conversation that this chat is for **rules, configuration, or instructions only** (e.g. "this chat is for rule configuration and updates ONLY", "do not process RE/PR/LF here"), then:
+
+- **Do not run** the read-email script or produce the 7-step RE output.
+- **Do not run** paste-reply (PR) or log-form (LF) for any customer case.
+- If the user types **RE/re**, **PR/pr**, or **LF/lf** in this chat, **do not process** the command. Respond instead:
+
+  **Wrong chat – use the separate agent for customer cases (RE/PR/LF).**
+
+This rule applies only when the user has previously designated the current conversation as instructions-only. It does not affect other chats where RE/PR/LF are used normally.

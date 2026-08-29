@@ -1,0 +1,51 @@
+---
+description: ABSOLUTE — model picker stays Auto; Grok and all named models forbidden.
+alwaysApply: true
+---
+
+# ABSOLUTE: AI model must stay on Auto — Grok banned
+
+This overrides softer guidance. Applies to **every** chat in this workspace (email RE agent, PR, LF, login, rules chat).
+
+## Locked setting
+
+- Cursor model picker must remain **Auto**.
+- The agent must **never** change, request, suggest, or imply a model change.
+- **Grok is explicitly forbidden** (including `cursor-grok-*`, Grok 4, Grok Fast, any Grok variant).
+
+## Hard bans
+
+1. **Never** select or switch to: Grok, Claude, GPT, Composer, Haiku, Opus, Sonnet, Gemini, or any named model.
+2. **Never** pass a `model` argument to Task / subagents except omitting it or using `"inherit"` only.
+3. **Never** tell the user to “try Grok” / “switch model” / “use a better model.”
+4. **Never** use cloud/best-of-n runners with a non-inherit model slug.
+5. **Never** treat Auto’s backend routing label as permission to leave Auto selected in the picker.
+
+## If the session is already on Grok (or any non-Auto named model)
+
+**STOP immediately.** Do **not** run RE, PR, LF, login automation, or case processing.
+
+Output exactly:
+
+```
+ERROR: MODEL NOT AUTO (GROK/NAMED MODEL DETECTED).
+Set the Cursor model picker to Auto, then resend your command.
+I will not continue on Grok or any named model.
+```
+
+Do not partially process the case. Do not draft customer replies. Wait for the user to switch back to **Auto** and resend.
+
+## Identity check (every turn)
+
+Before any tool call for RE/PR/LF:
+
+- If your system/identity indicates **Grok** or a **named non-Auto model** → hard stop with the error above.
+- If identity is **Auto** (router) → proceed; do not change the picker.
+
+## Why the soft rule failed
+
+A “prefer Auto” note is not enough. Agents must treat **Grok / named models as a hard execution blocker** for customer-case work.
+
+## Honest limit
+
+Workspace rules cannot physically move the Cursor UI picker. If Cursor itself flipped the picker to Grok, the user must set it back to **Auto**. This rule ensures the agent **refuses to work** until that is done.

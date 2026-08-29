@@ -1,0 +1,33 @@
+---
+description: Always check and validate customer case dates against today's date
+alwaysApply: true
+---
+
+# Check Dates in Customer Cases
+
+When processing customer emails (RE flow), **always check date references** against today's date (**March 9, 2026**):
+
+## What to Check
+
+- **Exit dates / Cancellation dates** - Is the date in the past, present, or future?
+- **Invoice dates / Payment deadlines** - Has the deadline passed?
+- **Appointment dates / Service dates** - Is the date still valid?
+- **Last contact dates** - How old is the case?
+
+## What to Do
+
+If a date mentioned by the customer is **already in the past**:
+
+1. **Flag it clearly** in the summary (e.g., "⚠️ Exit date 01.03.2026 is 8 days past")
+2. **Adjust the reply tone** - Don't repeat a past date as if it's current
+3. **Propose corrected actions** - Ask for a new date or clarify the intended date
+4. **Note urgency** - Customer may not realize the deadline has passed
+
+## Example
+
+**Wrong:** "We will process your cancellation for exit date 01.03.2026"  
+**Right:** "Your requested exit date (01.03.2026) has already passed. We need to clarify: would you like to cancel effective immediately, or set a new future exit date?"
+
+## Today's Date
+
+**Current date: Monday, March 9, 2026**

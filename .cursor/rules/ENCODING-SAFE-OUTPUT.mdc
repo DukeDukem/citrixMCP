@@ -1,0 +1,58 @@
+---
+description: UTF-8 encoding safety - Output customer replies in code blocks, never as plain text
+alwaysApply: true
+priority: CRITICAL
+---
+
+# ENCODING-SAFE OUTPUT (UTF-8 Protection)
+
+PROBLEM: German umlauts get corrupted when pasted as plain text (GÃ¼nter, bezÃ¼glich, etc.).
+SOLUTION: Output customer replies in markdown code blocks to preserve UTF-8 encoding.
+
+## RULE:
+
+When outputting a customer reply (section 6 of RE, or after PR), DO NOT paste it as plain text.
+
+INSTEAD: Wrap it in a markdown code block:
+
+```
+Guten Tag Silvana Spajzer,
+
+vielen Dank, dass Sie uns bezüglich der Hardware-Rückforderung...
+[rest of reply]
+```
+
+The triple backticks preserve UTF-8 encoding and prevent mojibake corruption.
+
+## CRITICAL:
+
+- If you paste customer reply as plain text and it shows mojibake (GÃ¼, Ã¤, Ã¶, Ã¼, ÃŸ) → YOU FAILED
+- Always use code block format
+- This applies to ALL customer-facing email replies
+
+## FORMAT FOR SECTION 6:
+
+Section 6 output should look like:
+
+---
+
+**6. Your response to customer:**
+
+```
+Guten Tag [Name],
+
+[case-specific thank you]
+[body]
+[survey line]
+[signature block]
+```
+
+---
+
+## CHECK BEFORE OUTPUTTING:
+
+1. Is reply in a code block (between triple backticks)?
+2. Does it show correct umlauts (ü, ä, ö, ß) not mojibake (Ã¼, Ã¤, Ã¶, ÃŸ)?
+3. If NO to either → STOP and fix encoding before output
+
+This prevents encoding corruption before it reaches the user.

@@ -1,0 +1,82 @@
+---
+description: When the user types PR, run the paste-reply flow (write reply into Sprinklr box). CRITICAL - ONE REPLY ONLY.
+alwaysApply: true
+---
+
+# PR = Paste Reply (ONE CUSTOMER ONLY)
+
+CRITICAL: This command MUST output ONE customer reply ONLY. Never merge or combine responses.
+CRITICAL: Paste content must belong ONLY to the currently visible case and the single customer in that case.
+
+**AI model gate:** If this session is **Grok** or any named non-Auto model → STOP. Do not paste. Output: `ERROR: MODEL NOT AUTO (GROK/NAMED MODEL DETECTED). Set the Cursor model picker to Auto, then resend PR.` See `.cursor/rules/ai-model-stay-auto.mdc`.
+
+When the user prompts with PR/pr:
+
+## BEFORE PROCEEDING:
+
+1. Identify the **currently visible case in Sprinklr**.
+   - By default, PR always refers to the email/case that is currently open and visible in the Sprinklr console (the active tab/thread).
+   - Do **not** require the user to restate the case ID or customer name if exactly one case is open and active.
+
+2. Verify ONE customer in context
+   - Look at the active Sprinklr case (and, if needed, the previous RE output for that same case).
+   - Confirm you see only ONE customer name for the currently visible case.
+   - If TWO or more different customer names appear **for the visible case** → STOP and ask: Which customer response should I paste?
+   - If any customer detail in draft text does not belong to the visible-case customer → STOP. Output: ERROR: CUSTOMER DATA MIX DETECTED. DO NOT PASTE.
+   - If any customer-number or phone-number suffix in draft text does not match the visible-case customer identifiers → STOP. Output: ERROR: IDENTIFIER MISMATCH DETECTED. DO NOT PASTE.
+   - If salutation name in draft does not match visible-case customer signature/identity → STOP. Output: ERROR: SALUTATION NAME MISMATCH DETECTED. DO NOT PASTE.
+   - If no customer name is visibly verifiable in the active case, any named salutation is forbidden; use only `Guten Tag,` or STOP.
+
+3. Verify ONE case ID
+   - Confirm the active Sprinklr thread has only one Fall # / case ID.
+   - If multiple case IDs are simultaneously in context (e.g. user has switched cases mid-flow or multiple IDs are shown) → STOP and ask which one should be used.
+   - Confirm the reply source case ID (from latest RE output used for this PR) matches the currently visible Fall #.
+   - If IDs differ → STOP and output: ERROR: CASE ID MISMATCH. Do not paste previous-case reply into current case.
+   - If any second case reference is found in draft text/context -> STOP. Output: ERROR: MULTI-CASE CONTAMINATION DETECTED. DO NOT PASTE.
+
+## THEN:
+
+1. Use the suggested reply from the previous read-email (RE) output for ONE customer only
+   - Source must be the latest RE for the currently visible case only.
+   - Default binding rule: if PR is issued immediately after RE and no explicit rewrite instruction was provided by the user, paste the exact customer-reply text from that RE output (no paraphrase, no alternative draft).
+   - Hard gate: if latest RE case ID does not match the currently visible case ID, PR must STOP and refuse paste (never fallback to any other draft file).
+   - Only two source types are allowed for PR (same visible case only):
+     1) exact section-5 reply from latest RE (7-step output), or
+     2) explicit user-directed replacement text provided after RE for that same case.
+   - Any other payload source is forbidden and must be blocked.
+   - Explicitly forbidden: inserting unrelated canned replies (e.g., generic cancellation/deactivation confirmations) that are not the case-locked RE reply or a case-locked user-directed override.
+   - Do **not** reuse stale cached text, old temp files, clipboard remnants, or prior-case drafts.
+   - Do **not** fuse/append text fragments from any other case under any circumstances.
+2. BEFORE writing to file: do a final visual check
+   - Count "Guten Tag" salutations — must be exactly 1
+   - Verify salutation identity: named salutation must belong to visible-case customer; if uncertain, rewrite to `Guten Tag,`
+   - Count signature blocks — must be exactly 1
+   - Count survey lines ("Zur Verbesserung unseres Kundenservices ...") — must be exactly 1
+   - Reject repeated paragraphs: if any paragraph block is duplicated or near-duplicated, STOP.
+   - Verify identifier safety: no full customer number/phone number, and any suffix reference must belong to the visible case only.
+   - Enforce no-uninvited-promises rule before paste: reject wording that promises internal checks, processing updates, or follow-up messages unless the user explicitly instructed those exact promises.
+   - Enforce no-internal-systems rule: reject any mention of Authentifizierungsmatrix, Sabio, TIM, Wissensbasis, TransferMatrix, Sprinklr, Marquez, Themen-ID, or internal queue names (see `.cursor/rules/reply-no-internal-systems.mdc`). If found → ERROR: INTERNAL SYSTEM NAME IN CUSTOMER REPLY. DO NOT PASTE.
+   - If any check fails → REJECT and output: ERROR: DUPLICATE OR PROMISE-BLOCKED RESPONSE DETECTED. Rewrite to a single clean reply before pasting.
+3. Write that ONE reply to a file (freshly generated for this case; never append to existing reply file)
+4. Run the write-reply script with that file path and the --no-fill-case-tracker flag
+   - If page-state detection is uncertain but the reply editor (`Nachricht verfassen`) is visible, proceed with single-shot paste (do not block on strict state label alone).
+   - Mandatory write gate: the script must hard-clear editor first and verify the editor is truly empty before write. If not empty after retry, STOP with error and do not paste.
+   - Mandatory duplicate-invocation gate: block near-immediate duplicate PR invocation for same case/reply (single-shot across process runs).
+5. Immediately run post-paste verification (`verify_no_data_leak.py`).
+6. If verification is not CLEAN:
+   - Clear the editor completely.
+   - Lock context to currently visible case only (discard any previous case context).
+   - STOP immediately (no automatic second paste attempt).
+   - Do not allow send.
+   - Output: ERROR: POST-PASTE VERIFICATION FAILED. MANUAL CLEANUP REQUIRED.
+
+## AFTER EXECUTION:
+
+- ONE and only ONE customer reply has been pasted into Sprinklr
+- No data leaks
+- User will then send the email and optionally say LF for the form
+- Write-reply flow terminates immediately after one paste + verification step (no repaste loop)
+
+VIOLATION OF THIS RULE = DATA BREACH. DO NOT PROCEED IF UNCERTAIN.
+
+

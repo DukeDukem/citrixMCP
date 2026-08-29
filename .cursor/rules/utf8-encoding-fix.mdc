@@ -1,0 +1,41 @@
+---
+description: UTF-8 encoding enforcement - No mojibake corruption of German umlauts
+alwaysApply: true
+---
+
+# UTF-8 Encoding (No Mojibake)
+
+When outputting German text with umlauts (ä, ö, ü, ß), ALWAYS ensure proper UTF-8 encoding.
+
+## THE PROBLEM:
+
+Text gets corrupted like this (WRONG):
+- GÃ¼nter (should be: Günter)
+- SicherheitsmaÃŸnahme (should be: Sicherheitsmaßnahme)
+- TelefÃ³nica (should be: Telefónica)
+- â€žMein o2â€œ (should be: „Mein o2")
+
+This is mojibake — UTF-8 text interpreted as ISO-8859-1 or similar.
+
+## THE FIX:
+
+When pasting customer reply text:
+1. Copy text directly from the .md skill files (which are UTF-8 encoded)
+2. Do NOT retype German words manually
+3. Do NOT use Python f-strings that might corrupt encoding
+4. Paste the exact text as-is from the source file
+
+When generating text in code:
+- Ensure all strings are UTF-8
+- Use explicit encoding if needed: .encode('utf-8').decode('utf-8')
+- Test that output displays correctly before sending to user
+
+## CRITICAL:
+
+If you see mojibake in output (GÃ¼, Ã¤, Ã¶, Ã¼, ÃŸ), DO NOT SEND.
+- Stop immediately
+- Copy the correct UTF-8 text from the skill file
+- Verify it displays correctly (Günter, ä, ö, ü, ß)
+- Then output/paste
+
+This prevents data corruption before it reaches the customer.
