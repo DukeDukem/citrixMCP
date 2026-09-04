@@ -18,23 +18,27 @@ Then use commands below as you work each case.
 
 ## Per-case workflow (Anwenden-gated RE)
 
+## Close-out commands (do not mix)
+
+| Command | Case type | Arm |
+|---------|-----------|-----|
+| **PR LF** | Non-transfer (we answered) | **Anwenden** (`run.py --arm`) |
+| **LF TR** | Transfer (no customer reply) | **Weiter** (`run.py --arm-weiter`) |
+
 | Step | Command | What |
 |------|---------|------|
 | 1 | **login** | Once per session — sets **`FIRST_RE_ONCE_PENDING`** + Case Tracker tab |
 | 2 | **RE** (first after login) | **`--once`**: extract the **currently open** case → 7-step RE (not Anwenden arm) |
-| 3 | **PR** | Paste reply |
-| 4 | Send | You send in Sprinklr |
-| 5 | **LF** (or **PR LF**) | Case Tracker |
-| 6 | *(agent, automatic)* | After **both PR + LF** → **`run.py --arm`** (Anwenden watch) |
-| 7 | You click **Anwenden** | Script waits 3s → opens next case → extract → 7-step RE |
+| 3a | **PR LF** | Non-transfer: paste + log → **`--arm`** (Anwenden) |
+| 3b | **LF TR** | Transfer: log Transfer Ja, no PR → **`--arm-weiter`** (Weiter) |
+| 4 | You click Anwenden / Weiter | 3s → next case → extract → 7-step RE |
 
 **Forced modes:**  
 - Open case now: `run.py --once`  
-- Arm Anwenden now: `run.py --arm`
+- Arm Anwenden (after **PR LF**): `run.py --arm`  
+- Arm Weiter (after **LF TR**): `run.py --arm-weiter`
 
-**Mandatory:** After PR and LF are both done for a case, the agent **must** run  
-`uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm`  
-without waiting for the user to type **RE**.
+**Mandatory:** **PR LF** → `--arm`. **LF TR** → `--arm-weiter`. Do not wait for typed **RE**. Do not swap the two arms.
 
 ---
 
@@ -46,11 +50,13 @@ without waiting for the user to type **RE**.
 | **RE** | `…/run.py` — first after login = **`--once`**; else Anwenden arm |
 | **RE once** | `…/run.py --once` |
 | **RE arm** | `…/run.py --arm` (after PR+LF) |
+| **RE arm-weiter** | `…/run.py --arm-weiter` (after LF TR) |
 | **PR** | sprinklr-write-reply + verify |
 | **LF** | `uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID"` |
-| **DONE** / **Done for today** | Stop Anwenden RE / watches; pause until next login |
+| **LF TR** | Transfer LF (`--transfer 1 --target …`) then `--arm-weiter` |
+| **DONE** / **Done for today** | Stop Anwenden/Weiter RE / watches; pause until next login |
 
-Rules: `.cursor/rules/re-read-email.mdc`, `pr-paste-reply.mdc`, `lf-log-form.mdc`, `login-command.mdc`, `done-for-today.mdc`.
+Rules: `.cursor/rules/re-read-email.mdc`, `pr-paste-reply.mdc`, `lf-log-form.mdc`, `lf-tr-transfer.mdc`, `login-command.mdc`, `done-for-today.mdc`.
 
 **End of day:** type **`DONE`** (or **Done for today**) — agent runs `done_for_today.py` and stops automation.
 

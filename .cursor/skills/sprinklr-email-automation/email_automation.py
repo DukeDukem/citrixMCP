@@ -4507,6 +4507,58 @@ Use cursor-agent's file reading capabilities to read these files before generati
   window.__anwendenReClickInfo = null;
 }
 """
+    # Transfer workflow confirm: "Weiter" (also Weiterleiten / Weiteleiten) — LF TR gated auto-RE
+    _WAIT_WEITER_CLICK_JS = """
+() => {
+  if (window.__weiterReArmed) return true;
+  const cleanup = () => {
+    if (window.__weiterReClickHandler) {
+      document.removeEventListener('mousedown', window.__weiterReClickHandler, true);
+      document.removeEventListener('click', window.__weiterReClickHandler, true);
+      window.__weiterReClickHandler = null;
+    }
+  };
+  const handler = (e) => {
+    if (typeof e.button === 'number' && e.button !== 0) return;
+    const btn = e.target.closest(
+      'button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]'
+    );
+    if (!btn) return;
+    const tracker = btn.getAttribute('data-tracker-event-id') || '';
+    const text = (btn.textContent || '').replace(/\\s+/g, ' ').trim();
+    // Exact Weiter, or transfer confirms Weiterleiten / Weiteleiten
+    if (!/^(Weiter|Weiterleiten|Weiteleiten)$/i.test(text)) return;
+    window.__weiterReClickInfo = { tracker: tracker, text: text, at: Date.now() };
+    cleanup();
+  };
+  window.__weiterReClickHandler = handler;
+  window.__weiterReClickInfo = null;
+  window.__weiterReArmed = true;
+  document.addEventListener('mousedown', handler, true);
+  document.addEventListener('click', handler, true);
+  return true;
+}
+"""
+    _POLL_WEITER_CLICK_JS = """
+() => {
+  const info = window.__weiterReClickInfo;
+  if (!info) return null;
+  window.__weiterReClickInfo = null;
+  window.__weiterReArmed = false;
+  return info;
+}
+"""
+    _REMOVE_WEITER_CLICK_JS = """
+() => {
+  if (window.__weiterReClickHandler) {
+    document.removeEventListener('mousedown', window.__weiterReClickHandler, true);
+    document.removeEventListener('click', window.__weiterReClickHandler, true);
+    window.__weiterReClickHandler = null;
+  }
+  window.__weiterReArmed = false;
+  window.__weiterReClickInfo = null;
+}
+"""
     # Externer Transfer -> Weiterleiten (transfer case → user taken to console/c)
     _SELECTOR_EXTERNER_TRANSFER = 'button[data-entityid="@sprinklr/action/GuidedAction"]:has-text("Externer Transfer"), button:has-text("Externer Transfer")'
     _SELECTOR_WEITERLEITEN = 'button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]:has-text("Weiterleiten"), button:has-text("Weiterleiten")'
@@ -4782,6 +4834,113 @@ Use cursor-agent's file reading capabilities to read these files before generati
             except Exception as e:
                 logger.error(f"Anwenden auto-RE loop error: {e}")
                 print(f"[ERROR] Anwenden auto-RE: {e}")
+                time.sleep(2)
+
+    def _wait_for_weiter_click(self, poll_seconds: float = 0.5) -> Optional[dict]:
+        """Arm Weiter (guidedWorkflow screenButton) click listener and poll until left-click."""
+        self._reattach_sprinklr_page_no_steal()
+        try:
+            self.page.evaluate(self._REMOVE_WEITER_CLICK_JS)
+        except Exception:
+            pass
+        try:
+            self.page.evaluate(self._WAIT_WEITER_CLICK_JS)
+        except Exception as e:
+            logger.error(f"Could not arm Weiter click listener: {e}")
+            print(f"[ERROR] Could not arm Weiter click listener: {e}")
+            return None
+
+        last_heartbeat = 0.0
+        while True:
+            try:
+                self._reattach_sprinklr_page_no_steal()
+                try:
+                    armed = self.page.evaluate("() => !!window.__weiterReArmed")
+                    if not armed:
+                        self.page.evaluate(self._WAIT_WEITER_CLICK_JS)
+                except Exception:
+                    time.sleep(poll_seconds)
+                    continue
+                info = self.page.evaluate(self._POLL_WEITER_CLICK_JS)
+                if isinstance(info, dict):
+                    return info
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                logger.debug(f"Weiter poll tick: {e}")
+
+            now = time.time()
+            if now - last_heartbeat >= 5:
+                ts = datetime.now().strftime("%H:%M:%S")
+                print(f"[{ts}] Still waiting for Weiter left-click... (transfer confirm → click Weiter)")
+                last_heartbeat = now
+            time.sleep(poll_seconds)
+
+    def monitor_weiter_then_open_case_for_re(self, wait_seconds: int | None = None) -> bool:
+        """
+        Transfer-gated auto-RE (LF TR):
+        1. Wait for user left-click on Weiter (guidedWorkflow/runner/screenButton)
+        2. Wait wait_seconds (default 3)
+        3. Click first visible collapsed-case-item
+        4. Extract current case (extract-only) for 7-step RE
+        """
+        delay = self._ANWENDEN_RE_WAIT_SECONDS if wait_seconds is None else max(0, int(wait_seconds))
+        logger.info("Starting Weiter-gated auto-RE (wait=%ss after click)", delay)
+        print("\n" + "=" * 80, flush=True)
+        print("WEITER -> AUTO-RE ARMED (transfer / LF TR)", flush=True)
+        print("1. Left-click Weiter on Sprinklr transfer workflow:", flush=True)
+        print('     button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]', flush=True)
+        print('     label: Weiter (also Weiterleiten / Weiteleiten)', flush=True)
+        print(f"2. Script waits {delay}s, then clicks:", flush=True)
+        print(f'     {self._COLLAPSED_CASE_ITEM_SELECTOR}', flush=True)
+        print("3. Extract email -> agent runs 7-step RE", flush=True)
+        print("Ctrl+C to cancel. Manual extract: run.py --once", flush=True)
+        print("=" * 80 + "\n", flush=True)
+        print("WEITER_RE_ARMED", flush=True)
+
+        while True:
+            try:
+                self._reattach_sprinklr_page_no_steal()
+                ts = datetime.now().strftime("%H:%M:%S")
+                print(f"[{ts}] Waiting for Weiter left-click...", flush=True)
+                click_info = self._wait_for_weiter_click()
+                if not click_info:
+                    print("[WARN] Weiter listener could not be armed — retrying in 2s…", flush=True)
+                    time.sleep(2)
+                    continue
+
+                print("\n" + "=" * 80, flush=True)
+                print("WEITER_CLICK_DETECTED", flush=True)
+                if click_info.get("tracker"):
+                    print(f"tracker: {click_info.get('tracker')}", flush=True)
+                if click_info.get("text"):
+                    print(f"button text: {click_info.get('text')}", flush=True)
+                print(f"Waiting {delay}s before clicking next case...", flush=True)
+                print("=" * 80 + "\n", flush=True)
+
+                time.sleep(delay)
+
+                if not self._click_first_collapsed_case_item():
+                    print("[WARN] Case item click failed — waiting for another Weiter click.")
+                    continue
+
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=10000)
+                except Exception:
+                    pass
+                time.sleep(1.5)
+
+                ok = self.process_current_page_once(chat_only=False, extract_only=True)
+                if ok:
+                    print("WEITER_RE_EXTRACT_DONE")
+                    return True
+                print("[WARN] Extract after Weiter failed — waiting for another Weiter click.")
+            except KeyboardInterrupt:
+                print("\n[INFO] Weiter auto-RE stopped by user (Ctrl+C)")
+                raise
+            except Exception as e:
+                logger.error(f"Weiter auto-RE loop error: {e}")
+                print(f"[ERROR] Weiter auto-RE: {e}")
                 time.sleep(2)
 
     def process_current_page_once(self, chat_only: bool = False, extract_only: bool = False) -> bool:
@@ -5179,10 +5338,15 @@ def main():
     wait_next_extract_only = '--wait-next-extract-only' in sys.argv
     no_fill_case_tracker = '--no-fill-case-tracker' in sys.argv
     watch_anwenden_re = '--watch-anwenden-re' in sys.argv
+    watch_weiter_re = '--watch-weiter-re' in sys.argv
     reply_file = _get_arg_value('--reply-file')
     if watch_anwenden_re:
         print("\n" + "=" * 80)
         print("MODE: --watch-anwenden-re (Anwenden click → 3s → open case → extract)")
+        print("=" * 80 + "\n")
+    if watch_weiter_re:
+        print("\n" + "=" * 80)
+        print("MODE: --watch-weiter-re (Weiter click → 3s → open case → extract)")
         print("=" * 80 + "\n")
     # Load configuration
     config = load_config()
@@ -5198,11 +5362,13 @@ def main():
     
     try:
         # Connect without navigating: Skill 2 (read email) and write-reply must not reload or change URL
-        # Anwenden-gated RE also must leave the open case tab alone (Anwenden lives on the case page).
+        # Anwenden/Weiter-gated RE also must leave the open case tab alone.
         stop_after_login = bool(login_only and not login_then_monitor)
         automation.connect_to_browser(
             CDP_ENDPOINT,
-            leave_page_unchanged=(process_current_only or write_reply_only or watch_anwenden_re),
+            leave_page_unchanged=(
+                process_current_only or write_reply_only or watch_anwenden_re or watch_weiter_re
+            ),
             stop_after_login=stop_after_login
         )
         
@@ -5354,6 +5520,20 @@ def main():
             finally:
                 automation.cleanup()
             return
+
+        # Weiter-gated auto-RE (LF TR transfer close-out)
+        if watch_weiter_re:
+            try:
+                automation.monitor_weiter_then_open_case_for_re(wait_seconds=3)
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                logger.error(f"Weiter-gated RE failed: {e}")
+                print(f"\n[ERROR] Weiter-gated RE failed: {e}")
+                print("[INFO] Tip: complete transfer UI, show Weiter, rerun --arm-weiter — or use: run.py --once")
+            finally:
+                automation.cleanup()
+            return
         
         # Skill 2: process current page once then exit
         if process_current_only:
@@ -5407,7 +5587,7 @@ def main():
         traceback.print_exc()
         print(f"\n[ERROR] Fatal error: {e}")
         # Never fall back into continuous monitor_emails for Anwenden-RE / extract-only modes
-        if watch_anwenden_re or process_current_only or write_reply_only or extract_only:
+        if watch_anwenden_re or watch_weiter_re or process_current_only or write_reply_only or extract_only:
             print("[INFO] Stopping (no monitor fallback for RE/extract modes).")
             try:
                 automation.cleanup()

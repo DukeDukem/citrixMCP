@@ -165,6 +165,8 @@ def main() -> int:
         args.append("--watch-fall-re")
     if "--watch-anwenden-re" in sys.argv:
         args.append("--watch-anwenden-re")
+    if "--watch-weiter-re" in sys.argv:
+        args.append("--watch-weiter-re")
     if "--write-reply-only" in sys.argv:
         args.append("--write-reply-only")
     if "--wait-next-extract-only" in sys.argv:

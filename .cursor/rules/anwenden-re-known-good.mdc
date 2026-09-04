@@ -7,6 +7,13 @@ alwaysApply: true
 
 **Status:** Working as of 2026-09-04. User confirmed: “NICE. It worked.”
 
+## Close-out arms (do not mix)
+
+| Command | Meaning | Arm |
+|---------|---------|-----|
+| **PR LF** | Non-transfer (answered) | **Anwenden** (`--arm`) |
+| **LF TR** | Transfer (no reply) | **Weiter** (`--arm-weiter`) |
+
 ## Workflow (email processing chat only)
 
 1. **RE** (or auto-arm after PR+LF) runs:
@@ -18,6 +25,7 @@ alwaysApply: true
 5. Agent outputs full **7-step RE**
 6. User **PR** + **LF** (or **PR LF**)
 7. After **both** succeed → agent **immediately** runs `run.py --arm` (do not wait for typed RE)
+8. **LF TR** (transfer, no PR) → Transfer Ja LF → **`run.py --arm-weiter`** → user clicks **Weiter** → same 3s → next case extract
 
 Manual open-case extract anytime: `run.py --once`
 

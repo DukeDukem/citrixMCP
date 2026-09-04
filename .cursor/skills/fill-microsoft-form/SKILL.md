@@ -27,6 +27,17 @@ uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id 
 
 Optional overrides: `--salcus`, `--transfer 0|1`, `--target`, `--submit`
 
+### LF TR (transfer, no PR)
+
+When the user types **LF TR** / **lf tr** (optional `"alternate target"`):
+
+1. Fill with `--transfer 1 --target "<RE 4a goal or user override>"`
+2. Do **not** run PR
+3. After fill succeeds, arm Weiter RE:
+   `uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-weiter`
+
+Full rule: `.cursor/rules/lf-tr-transfer.mdc`.
+
 ### Field mapping
 
 | Roberta | Sprinklr source | Rule |

@@ -12,10 +12,22 @@ CRITICAL: This command MUST fill ONE Roberta Case Tracker entry ONLY. Never comb
 **Platform:** Roberta / Yoummday Case Tracker — `https://roberta.yoummday.com/casetracker/`  
 **Legacy Microsoft Forms (`forms.office.com`) is retired for LF.** Do not use shortcut tiles or NQ10061547 MS Form navigation.
 
-When the user prompts with LF/lf or **PR LF** / **pr lf**:
+When the user prompts with LF/lf or **PR LF** / **pr lf** or **LF TR** / **lf tr**:
+
+### Close-out command map (mandatory)
+
+| User says | Meaning | Arm after success |
+|-----------|---------|-------------------|
+| **PR LF** / **pr lf** | **Non-transfer** answered case: paste reply, then log form | **`run.py --arm`** (**Anwenden**) |
+| **LF TR** / **lf tr** (+ optional target) | **Transfer** case: log form as Transfer Ja, **no PR** | **`run.py --arm-weiter`** (**Weiter**) |
+| **LF** alone | Log form only (no auto-arm unless PR already done for this Fall # → then Anwenden) | See Auto-arm sections below |
+
+- **PR LF** → never use `--arm-weiter` / Weiter.
+- **LF TR** → never use `--arm` / Anwenden; never PR unless user explicitly requests a reply.
 
 - **PR LF:** run **PR** first (paste reply), then **LF** on the same visible Fall #.
 - **LF alone:** log form only.
+- **LF TR** / **lf tr** (optional `"target"`): transfer close-out — see `.cursor/rules/lf-tr-transfer.mdc`.
 
 ## BEFORE PROCEEDING
 
@@ -125,7 +137,7 @@ Routing rules will be extended case-by-case in chat; script default lives in `fi
 - User clicks **Speichern** manually after sending the email
 - Tracker tab may stay open for the next LF
 
-### Auto-arm Anwenden RE (mandatory when PR already done)
+### Auto-arm Anwenden RE (mandatory after **PR LF** / PR then LF — non-transfer)
 
 If **PR** (paste + post-paste verify CLEAN) already completed for this **same** Fall # in this close-out — including when the user sent **PR LF** — then **immediately** after LF succeeds:
 
@@ -133,6 +145,20 @@ If **PR** (paste + post-paste verify CLEAN) already completed for this **same** 
 Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
 ```
 
-Do **not** wait for the user to type **RE**. Full rule: `.cursor/rules/re-read-email.mdc` → **Auto-arm after PR + LF**.
+Do **not** wait for the user to type **RE**. Full rule: `.cursor/rules/re-read-email.mdc` → **Auto-arm after PR + LF**.  
+This path is **non-transfer / answered cases** → **Anwenden** only (not Weiter).
+
+### Auto-arm Weiter RE (**LF TR** only — transfer)
+
+When the user sent **LF TR** / **lf tr** (transfer, no PR):
+
+1. Fill tracker with **Transfer Ja** + target (RE 4a / user override).
+2. After LF succeeds, arm:
+   ```powershell
+   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-weiter
+   ```
+3. Expect **`WEITER_RE_ARMED`**. Do **not** use `--arm` (Anwenden) for this path.
+
+Full rule: `.cursor/rules/lf-tr-transfer.mdc`.
 
 VIOLATION OF THIS RULE = DATA BREACH. DO NOT PROCEED IF UNCERTAIN.

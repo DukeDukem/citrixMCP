@@ -29,11 +29,12 @@ alwaysApply: true
    - then you output full **7-step RE**
 4. **Audio (automatic):** Project hook plays Prowler after section 7 when pending. Manual: **`sound`**.
 5. User sends **PR** / **LF** when ready.
-6. **Mandatory after PR + LF both complete** for that Fall #: **immediately re-arm Anwenden** with **`--arm`** (never rely on default if a first-RE flag could linger):
+6. **Mandatory after PR + LF both complete** for that Fall #: **immediately re-arm Anwenden** with **`--arm`**:
    ```powershell
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
    ```
    Do **not** wait for the user to type **RE**. See **Auto-arm after PR+LF** below.
+7. **Transfer close-out (no PR):** user sends **LF TR** → Transfer Ja LF → arm **`--arm-weiter`** (Weiter click). See `.cursor/rules/lf-tr-transfer.mdc`.
 
 ### Explicit modes
 
@@ -41,11 +42,12 @@ alwaysApply: true
 |---------|----------|
 | `run.py` | Post-login pending → **`--once`**; else Anwenden arm |
 | `run.py --once` | Always extract open case now |
-| `run.py --arm` | Always arm Anwenden (used after PR+LF) |
+| `run.py --arm` | Always arm Anwenden (after PR+LF) |
+| `run.py --arm-weiter` | Always arm Weiter (after LF TR) |
 
-## Auto-arm after PR + LF (mandatory)
+## Auto-arm after PR + LF (mandatory) — **non-transfer / Anwenden**
 
-When **both** paste (**PR**) and Case Tracker fill (**LF**) have finished successfully for the **same** Fall #:
+When **both** paste (**PR**) and Case Tracker fill (**LF**) have finished successfully for the **same** Fall # (typical command: **PR LF**):
 
 1. **Immediately** arm Anwenden RE:
    ```powershell
@@ -54,16 +56,19 @@ When **both** paste (**PR**) and Case Tracker fill (**LF**) have finished succes
 2. Confirm briefly: e.g. `Anwenden RE armed for next case.` Expect **`ANWENDEN_RE_ARMED`**.
 3. User clicks **Anwenden** → 3s → next case → extract → 7-step RE.
 
+**PR LF = non-transfer answered case → Anwenden only.** Do **not** use `--arm-weiter` after PR LF.
+
 **When this fires**
 
-| User command | Arm Anwenden RE when |
-|--------------|----------------------|
-| **PR LF** / **pr lf** | After PR paste+verify **and** LF fill both succeed |
-| **PR** then later **LF** | After **LF** succeeds (PR already done for that Fall #) |
-| **LF** alone with no prior PR for this Fall # | Do **not** auto-arm |
-| **PR** alone (no LF yet) | Do **not** auto-arm yet |
+| User command | Arm when | Arm script |
+|--------------|----------|------------|
+| **PR LF** / **pr lf** | After PR + LF both succeed | **`--arm`** (Anwenden) |
+| **PR** then later **LF** | After LF succeeds | **`--arm`** (Anwenden) |
+| **LF TR** / **lf tr** | After transfer LF succeeds | **`--arm-weiter`** (Weiter) — see `lf-tr-transfer.mdc` |
+| **LF** alone with no prior PR | Do **not** auto-arm Anwenden | — |
+| **PR** alone (no LF yet) | Do **not** auto-arm yet | — |
 
-Do **not** arm twice for the same close-out. If Anwenden RE is already running, do not start a second overlapping process.
+Do **not** arm twice for the same close-out. If Anwenden/Weiter RE is already running, do not start a second overlapping process.
 
 ## 7-step output
 

@@ -19,6 +19,7 @@ _REPO = _SCRIPT_DIR.parent.parent.parent
 # Command-line substrings that identify automation processes to stop (not the IDE itself).
 _KILL_CMDLINE_MARKERS = (
     "watch-anwenden-re",
+    "watch-weiter-re",
     "sprinklr-read-answer-email" + os.sep + "run.py",
     "sprinklr-read-answer-email/run.py",
     "run_sprinklr_email_automation.py",
