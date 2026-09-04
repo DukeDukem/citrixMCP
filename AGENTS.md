@@ -14,7 +14,7 @@
 ## Case commands (email processing chat)
 
 - **login** — Sprinklr + Case Tracker; sets first-RE **`--once`** gate
-- **RE** — first after login = **`--once`**; after **PR LF** = **`--arm`** (Anwenden); after **LF TR** = **`--arm-weiter`** (queue) or **`--arm-extern`** (email)
+- **RE** — first after login = **`--once`**; after **PR LF** or **LF alone** = **`--arm`** (Anwenden); after **LF TR** = **`--arm-weiter`** (queue) or **`--arm-extern`** (email)
 - **PR LF** / **LF alone** — non-transfer → **`run.py --arm`** (Anwenden only)
 - **LF TR** — transfer, no PR → Transfer Ja LF → queue → **`--arm-weiter`**; email → **`--arm-extern`**
 - Never swap: PR LF / LF ≠ Weiter/Extern; LF TR ≠ Anwenden; queue ≠ email arm
