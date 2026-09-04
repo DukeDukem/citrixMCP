@@ -31,6 +31,7 @@ alwaysApply: true
    - **Armed auto-RE start:** After Anwenden / Weiter / Extern → 4s wait → case open → extract begins → Prowler (`ARMED_RE_START_SOUND`).
    - **RE ready (after section 7):** Hook plays book-opening cue (`RE_READY_SOUND`) when `RE_PENDING_SOUND` was set — case is ready to read.
    - **PR LF done:** Finishing quote `PR LF done for #FALL_ID` → Dexter (`PR_LF_DONE_SOUND`).
+   - **LF TR done:** Finishing quote `LF TR done for #FALL_ID` → Dexter (same cue).
    - Manual: **`sound`** → `--play-ready`.
 5. User sends **PR** / **LF** when ready.
 6. **Mandatory after PR + LF both complete** for that Fall #: **immediately re-arm Anwenden** with **`--arm`**:

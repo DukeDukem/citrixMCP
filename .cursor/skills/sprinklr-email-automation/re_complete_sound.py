@@ -168,13 +168,18 @@ def play_re_ready_sound() -> bool:
 
 
 def play_pr_lf_done_sound() -> bool:
-    """Dexter cue when agent finishes PR LF close-out."""
+    """Dexter cue when agent finishes PR LF or LF TR close-out."""
     sound, volume = _load_pr_lf_done_config()
     if sound is None:
-        logger.warning("PR LF done sound file not found")
-        print("[WARN] PR LF done sound not found — skipping audio cue.")
+        logger.warning("Close-out done sound file not found")
+        print("[WARN] Close-out done sound not found — skipping audio cue.")
         return False
     return play_mp3(sound, volume, label="PR_LF_DONE_SOUND", hold_ms=4500)
+
+
+# Alias for transfer close-out (same Dexter file / volume)
+play_closeout_done_sound = play_pr_lf_done_sound
+play_lf_tr_done_sound = play_pr_lf_done_sound
 
 
 if __name__ == "__main__":

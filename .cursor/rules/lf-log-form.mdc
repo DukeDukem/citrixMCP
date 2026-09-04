@@ -178,6 +178,7 @@ When the user sent **LF TR** / **lf tr** (transfer, no PR):
      ```
      Expect **`EXTERN_RE_ARMED`**. User: Externer Transfer → exact **Weiterleiten**.
 3. Do **not** use `--arm` (Anwenden) for this path.
+4. Finishing quote: **`LF TR done for #FALL_ID`** (Dexter via hook).
 
 Full rule: `.cursor/rules/lf-tr-transfer.mdc`.
 

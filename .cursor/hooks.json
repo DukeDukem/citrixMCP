@@ -4,7 +4,13 @@
     "afterAgentResponse": [
       {
         "command": ".cursor/hooks/re_complete_sound_hook.cmd",
-        "timeout": 15
+        "timeout": 30
+      }
+    ],
+    "stop": [
+      {
+        "command": ".cursor/hooks/re_complete_sound_hook.cmd",
+        "timeout": 30
       }
     ]
   }

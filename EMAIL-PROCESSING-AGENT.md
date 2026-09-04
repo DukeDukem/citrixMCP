@@ -62,7 +62,8 @@ LF TR EMAIL / EXTERN PATH (I click both; script reacts ONLY to step 2):
 SOUNDS (volume 0.75; do not change unless I ask):
 - EXTRACT DONE (armed only, after CUSTOMER EMAIL fully printed) → Prowler (NOT after the 4s wait)
 - After full 7-step RE (section 7) → book-opening (RE_READY_SOUND)
-- After PR LF: finish with `PR LF done for #FALL_ID` → Dexter (ack only; does not mean extract ran)
+- After PR LF: finish with `PR LF done for #FALL_ID` → Dexter
+- After LF TR: finish with `LF TR done for #FALL_ID` → Dexter (same sound)
 - Manual: type "sound" → play ready cue
 
 OTHER:
@@ -128,6 +129,7 @@ Rules: `re-read-email.mdc`, `pr-paste-reply.mdc`, `lf-log-form.mdc`, `lf-tr-tran
 | Armed extract starts (CUSTOMER EMAIL) | Prowler | `ARMED_RE_START_SOUND` / `RE_COMPLETE_SOUND` |
 | Agent finishes **7-step RE** (section 7) | Book opening | `RE_READY_SOUND` |
 | Agent finishes **PR LF** (`PR LF done for #…`) | Dexter | `PR_LF_DONE_SOUND` |
+| Agent finishes **LF TR** (`LF TR done for #…`) | Dexter | `PR_LF_DONE_SOUND` |
 
 - Volume: **0.75** (`re_complete_sound_volume` / `re_ready_sound_volume` / `pr_lf_done_sound_volume`).
 - Manual tests:  
@@ -165,10 +167,11 @@ CRITICAL — ANWENDEN / WEITER / EXTERN WATCH MUST STAY ALIVE:
    - Meaning: draft ready for me to read / PR / LF / LF TR
    - Manual: if I type "sound" → re_complete_sound.py --play-ready
 
-3) PR LF DONE (close-out ack)
-   - Finishing quote MUST include: PR LF done for #FALL_ID
-   - Triggers Dexter (PR_LF_DONE_SOUND)
-   - Meaning: PR+LF+arm started — I can send / Speichern / Anwenden
+3) CLOSE-OUT DONE (PR LF or LF TR)
+   - PR LF finishing quote MUST include: PR LF done for #FALL_ID
+   - LF TR finishing quote MUST include: LF TR done for #FALL_ID
+   - Either triggers Dexter (PR_LF_DONE_SOUND)
+   - Meaning: close-out + arm started — I can send/Speichern/Anwenden or transfer UI
    - Does NOT mean extract/RE already ran
 
 Do not invent extra sounds. Do not change config sound paths or volumes unless I ask.

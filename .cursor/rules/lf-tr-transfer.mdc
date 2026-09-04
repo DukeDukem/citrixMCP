@@ -95,6 +95,15 @@ On **Weiterleiten** only (extern arm):
 
 6. After the trigger click: script waits **4 seconds**, clicks `collapsed-case-item`, extracts → agent outputs full **7-step RE**.
 
+### Finishing quote (mandatory after LF TR)
+
+After Transfer Ja LF + Weiter/Extern arm is armed, include:
+
+`LF TR done for #FALL_ID`
+
+Example: `LF TR done for #55403274`  
+(Dexter cue via hook — same as PR LF done.)
+
 ## Integrity
 
 - ONE Fall # only; target must match this case’s RE (or explicit user override).  

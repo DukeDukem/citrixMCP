@@ -66,7 +66,7 @@ If customer is **not verified**: do steps 1, 2, then skip transfer matrix; use u
 
 7. **When section 7 (Summary of response) is complete**, book-opening audio plays via project hook (`.cursor/hooks/re_complete_sound_hook.py`) if **`RE_PENDING_SOUND`** was set (`RE_READY_SOUND`). Manual: **`sound`** or `re_complete_sound.py --play-ready`.
 8. **After both PR and LF succeed** (**PR LF**, non-transfer): **immediately** run **`run.py --arm`** (Anwenden). Keep that process alive until **`ANWENDEN_RE_EXTRACT_DONE`** / **CUSTOMER EMAIL**, then write full 7-step RE. Do **not** abort the watch after `PR LF done`. If the watch dies with no extract → `ERROR: ANWENDEN WATCH DIED BEFORE EXTRACT` → **`run.py --once`** on the visible case.
-9. **LF TR** (transfer, no PR): Transfer Ja LF, then **immediately** arm by target — queue → **`run.py --arm-weiter`** (Transfer → … → exact **Weiter**); email → **`run.py --arm-extern`** (Externer Transfer → exact **Weiterleiten**). Never swap arms with PR LF.
+9. **LF TR** (transfer, no PR): Transfer Ja LF, then **immediately** arm by target — queue → **`run.py --arm-weiter`**; email → **`run.py --arm-extern`**. Finishing quote: **`LF TR done for #FALL_ID`** (Dexter). Never swap arms with PR LF. Keep the watch alive until extract, then 7-step RE.
 
 **No reload or navigation:** Script reads the **current tab** only. Run **login** first. Script does **not** write to the editor.
 
