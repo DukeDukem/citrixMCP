@@ -1,4 +1,4 @@
-# Transfer Matrix (Sabio Transfermatrix)
+﻿# Transfer Matrix (Sabio Transfermatrix)
 
 > Extracted from transfer tree screenshots. Kanal is always **E-Mail** (unless noted otherwise).
 > Our domain: **CBC_CARE_ALLGEMEIN** -- cases with this Ziel-Kontakt stay with us and are processed directly.
@@ -37,11 +37,11 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 | CBC_XF_E_KUNDENDATEN | Customer data / bank details team |
 | CBC_Vertragsstillegung | Contract suspension team |
 | CBC_XF_E_WIDERRUF | Revocation/withdrawal team |
-| collection_webform@cc.o2online.de | Collections / dunning / payment (forward to email) |
+| CBC_XF_E_COLLECTIONS | Collections / dunning / payment |
 | CS_E_XF_SELBSTSTAENDIGE | Self-employed (SOHO) service |
-| CS_Hardware | Hardware support team |
+| CS_XF_E_HARDWARE | Hardware support team |
 | CS_Premium | Premium/VIP customer service |
-| CS_XF_AKTION1 | Retention - network availability cancellations |
+| CS_E_XF_AKTION1 | Retention - network availability cancellations |
 | CS_E_XF_AKTION2 | Retention - move abroad cancellations |
 | CS_XF_E_LOOP_ALLGEMEIN | o2 Prepaid/Loop service |
 | DM_XF_E_HAENDLERBESCHWERDEN | Dealer complaints team |
@@ -121,7 +121,7 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 33 | Inhouse Dunning - Englisch | E-Mail | collection_webform@cc.o2online.de | Forward to email |
+| 33 | Inhouse Dunning - Englisch | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
 | 34 | Vertragsthemen o2 Postpaid Care - Englisch | E-Mail | CBC_ENGLISCH | Transfer in Sprinklr |
 | 35 | Vertragsthemen o2 Postpaid Care - Tuerkisch | Hotline | Tuerkisch o2 Care | Refer customer to Turkish hotline |
 
@@ -131,13 +131,13 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 36 | Defekt - Beschwerde ueber Bearbeitung | E-Mail | CS_Hardware | Transfer in Sprinklr |
+| 36 | Defekt - Beschwerde ueber Bearbeitung | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
 | 37 | Defekt - DSL Router | E-Mail | Kein Transfer | Handle per KB (router troubleshooting) |
-| 38 | Defekt - mobile Hardware | E-Mail | CS_Hardware | Transfer in Sprinklr |
+| 38 | Defekt - mobile Hardware | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
 | 39 | DSL-Zugangsdaten, MAC-Adresse und Telefon-PIN | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
 | 40 | Installation, Nutzung, Hilfe - DSL/Glasfaser/Kabel Router | E-Mail | Kein Transfer | Handle per KB (installation guides) |
-| 41 | Installation, Nutzung, Hilfe - mobile Hardware/Homespot | E-Mail | CS_Hardware | Transfer in Sprinklr |
-| 42 | WLAN-Hotspots | E-Mail | CS_Hardware | Transfer in Sprinklr |
+| 41 | Installation, Nutzung, Hilfe - mobile Hardware/Homespot | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
+| 42 | WLAN-Hotspots | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
 
 ---
 
@@ -159,7 +159,7 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 50 | eSIM Installation, Einrichten, Synchronisieren, Beeintraechtigungen | E-Mail | CS_Hardware | Transfer in Sprinklr |
+| 50 | eSIM Installation, Einrichten, Synchronisieren, Beeintraechtigungen | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
 | 51 | eSIM/SIM/Multicard/Datacard - Bestellung, Tausch, Versand, Aktivierung, Deaktivierung | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
 | 52 | PIN/PUK - Auskunft | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
 | 53 | Sperren & Entsperren (SIM, DSL, Drittanbieter etc.) | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
@@ -228,9 +228,9 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
 | 76 | Newsletter | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 77 | o2 Apps (z. B. Mein o2, o2 Protect) | E-Mail | CS_Hardware | Transfer in Sprinklr |
+| 77 | o2 Apps (z. B. Mein o2, o2 Protect) | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
 | 78 | o2 E-Mail | E-Mail - Festnetz | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 79 | o2 E-Mail | E-Mail - Mobile | CS_Hardware | Transfer in Sprinklr |
+| 79 | o2 E-Mail | E-Mail - Mobile | CS_XF_E_HARDWARE | Transfer in Sprinklr |
 | 80 | o2.de Portal | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
 
 ---
@@ -241,16 +241,16 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 |---|---|---|---|---|
 | 81 | DSL | E-Mail | Kein Transfer | Handle per KB (DSL troubleshooting) |
 | 82 | Forderung Entschaedigung/Minderung EECC TKG | E-Mail | Kein Transfer | Handle per KB (EECC compensation rules) |
-| 83 | Homespot | E-Mail | CS_Hardware | Transfer in Sprinklr |
+| 83 | Homespot | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
 | 84 | Kabel | E-Mail | Kein Transfer | Handle per KB (cable troubleshooting) |
 | 85 | Mailbox, Visual Voice Mail, o2 Voicemail | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 86 | MMS | E-Mail | CS_Hardware | Transfer in Sprinklr |
-| 87 | Mobilfunk Daten (Ursache vermutlich Hardware/Konfiguration) | E-Mail | CS_Hardware | Transfer in Sprinklr |
+| 86 | MMS | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
+| 87 | Mobilfunk Daten (Ursache vermutlich Hardware/Konfiguration) | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
 | 88 | Mobilfunk Daten (Ursache vermutlich Netz) | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
 | 89 | Mobilfunk Daten (Netz) - Anfragen Bundesnetzagentur | E-Mail | Verbraucherauskunft@telefonica.com | Forward to email |
 | 90 | Mobilfunk Sprache | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
 | 91 | Mobilfunk Sprache - Anfragen Bundesnetzagentur | E-Mail | Verbraucherauskunft@telefonica.com | Forward to email |
-| 92 | o2 Mehrwertdienste (keine Drittanbieterdienste) | E-Mail | CS_Hardware | Transfer in Sprinklr |
+| 92 | o2 Mehrwertdienste (keine Drittanbieterdienste) | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
 
 ---
 
@@ -266,16 +266,16 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 | 98 | eingehende Kuendigung - ausserordentlich (AOK) - DSL - specific cases | E-Mail | Kein Transfer | Former queue AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL no longer exists — handle per KB; do not transfer |
 | 99 | eingehende Kuendigung - AOK - Mobile/FMS - Haft/Krankheit/Nutzertod | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; process AOK per KB; request proof if required; do not transfer |
 | 100 | eingehende Kuendigung - AOK - Mobile/FMS - Insolvenz | E-Mail | Kein Transfer | Handle per KB (insolvency procedures) |
-| 101 | eingehende Kuendigung - AOK - Mobile/FMS - Handydefekt | E-Mail | CS_Hardware | Transfer in Sprinklr |
+| 101 | eingehende Kuendigung - AOK - Mobile/FMS - Handydefekt | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
 | 102 | eingehende Kuendigung - AOK - Mobile/FMS - Handyverlust | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; process AOK per KB; do not transfer |
-| 103 | eingehende Kuendigung - AOK - Mobile/FMS - Netzverfuegbarkeit | E-Mail | CS_XF_AKTION1 | Transfer in Sprinklr |
+| 103 | eingehende Kuendigung - AOK - Mobile/FMS - Netzverfuegbarkeit | E-Mail | CS_E_XF_AKTION1 | Transfer in Sprinklr |
 | 104 | eingehende Kuendigung - AOK - Mobile/FMS - Rechnungs-/Servicebeschwerde | E-Mail | KUENDIGUNG_RECHNUNG | Transfer in Sprinklr |
 | 105 | eingehende Kuendigung - AOK - Mobile/FMS - Todesfall Vertragsinhaber | E-Mail | Kein Transfer | Handle per KB (death of account holder procedures) |
 | 106 | eingehende Kuendigung - AOK - Mobile/FMS - Umzug ins Ausland | E-Mail | CS_E_XF_AKTION2 | Transfer in Sprinklr |
 | 107 | eingehende Kuendigung - fristgerecht - DSL | E-Mail - DSL | Kein Transfer | Former queue AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL no longer exists — handle per KB; do not transfer |
-| 108 | eingehende Kuendigung - fristgerecht - Mobile Handydefekt | E-Mail | CS_Hardware | Transfer in Sprinklr |
+| 108 | eingehende Kuendigung - fristgerecht - Mobile Handydefekt | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
 | 109 | eingehende Kuendigung - fristgerecht - Mobile Rechnungs-/Servicebeschwerde | E-Mail | KUENDIGUNG_RECHNUNG | Transfer in Sprinklr |
-| 110 | eingehende Kuendigung - fristgerecht - Mobile/FMS Netzverfuegbarkeit | E-Mail | CS_XF_AKTION1 | Transfer in Sprinklr |
+| 110 | eingehende Kuendigung - fristgerecht - Mobile/FMS Netzverfuegbarkeit | E-Mail | CS_E_XF_AKTION1 | Transfer in Sprinklr |
 | 118 | Kuendigungstermin falsch hinterlegt | E-Mail - Mobile/FMS | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; verify/correct termination date per KB; customer can check status in Mein o2 |
 | 119 | Reaktivierungswunsch durch Kunde | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
 | 120 | Reklamation Kuendigungsruecknahme | E-Mail - DSL | Kein Transfer | Former queue AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL no longer exists — handle per KB; do not transfer |
@@ -371,15 +371,15 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 | 172 | Auszahlung | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
 | 173 | Highspend - NUR aktuelle Ticketeintraege und "wichtigen Hinweis" im Kundendatensatz beachten | E-Mail | HUR@telefonica.com | Forward to email |
 | 174 | Inkasso - Rueckfragen nach Abgabe | E-Mail | Kein Transfer | Handle per KB (post-collection inquiry procedures) |
-| 175 | Mahnung - Rueckfragen | E-Mail | collection_webform@cc.o2online.de | Forward to email |
-| 176 | Ratenzahlung | E-Mail | collection_webform@cc.o2online.de | Forward to email |
+| 175 | Mahnung - Rueckfragen | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
+| 176 | Ratenzahlung | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
 | 177 | Rechnungslauf aendern | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 178 | Ruecklastschrift - Ankuendigung | E-Mail | collection_webform@cc.o2online.de | Forward to email |
-| 179 | Ruecklastschrift - Rueckfragen | E-Mail | collection_webform@cc.o2online.de | Forward to email |
-| 180 | Sperrung - Rueckfragen | E-Mail | collection_webform@cc.o2online.de | Forward to email |
-| 181 | Umbuchung (Einzahlung unter falscher Kundennummer) | E-Mail | collection_webform@cc.o2online.de | Forward to email |
-| 182 | Verbleib einer Einzahlung / Ueberweisung | E-Mail | collection_webform@cc.o2online.de | Forward to email |
-| 183 | Zahlung - Zahlungsaufschub - CACS-Status "rof" | E-Mail | collection_webform@cc.o2online.de | Forward to email |
+| 178 | Ruecklastschrift - Ankuendigung | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
+| 179 | Ruecklastschrift - Rueckfragen | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
+| 180 | Sperrung - Rueckfragen | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
+| 181 | Umbuchung (Einzahlung unter falscher Kundennummer) | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
+| 182 | Verbleib einer Einzahlung / Ueberweisung | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
+| 183 | Zahlung - Zahlungsaufschub - CACS-Status "rof" | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
 
 ---
 
@@ -426,11 +426,11 @@ Current transfer goal names and their last-known status:
 | CBC_KUENDIGUNGEN_SME_SOHO | Inactive (no longer exists) | 2026-07-27 |
 | CBC_Vertragsstillegung | Active | 2026-03-02 |
 | CBC_XF_E_WIDERRUF | Active | 2026-03-02 |
-| collection_webform@cc.o2online.de | Active | 2026-08-11 |
+| CBC_XF_E_COLLECTIONS | Active | 2026-08-30 |
 | CS_E_XF_SELBSTSTAENDIGE | Active | 2026-03-02 |
-| CS_Hardware | Active | 2026-03-02 |
+| CS_XF_E_HARDWARE | Active | 2026-09-01 |
 | CS_Premium | Active | 2026-03-02 |
-| CS_XF_AKTION1 | Active | 2026-03-02 |
+| CS_E_XF_AKTION1 | Active | 2026-03-02 |
 | CS_E_XF_AKTION2 | Active | 2026-03-02 |
 | CS_XF_E_LOOP_ALLGEMEIN | Active | 2026-03-02 |
 | DM_XF_E_HAENDLERBESCHWERDEN | Active | 2026-03-02 |
