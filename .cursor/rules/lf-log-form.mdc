@@ -141,16 +141,21 @@ Routing rules will be extended case-by-case in chat; script default lives in `fi
 
 ### Auto-arm Anwenden RE (mandatory after **LF** / **PR LF** — non-transfer)
 
-After **LF** succeeds for this Fall # — whether **LF alone**, **PR then LF**, or **PR LF** — **immediately** arm Anwenden:
+After **LF** succeeds for this Fall # — whether **LF alone**, **PR then LF**, or **PR LF** — **immediately**:
 
 ```powershell
 Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
 ```
 
-Do **not** wait for the user to type **RE**. Full rule: `.cursor/rules/re-read-email.mdc` → **Auto-arm after LF / PR LF**.  
-This path is **non-transfer** → **Anwenden** only (not Weiter). **Do not** skip arming just because there was no PR.
+Expect **`ANWENDEN_RE_ARMED`** + **`ARM_WATCH_DETACHED`**. Then:
 
-**Keep the `--arm` process alive** until `ANWENDEN_RE_EXTRACT_DONE` / `CUSTOMER EMAIL` appears, then write full 7-step RE. Never abort the watch after the finishing quote. Never start a second arm while one is waiting. If the watch dies with no extract → `ERROR: ANWENDEN WATCH DIED BEFORE EXTRACT` → `run.py --once` on the visible case.
+```powershell
+uv run python .cursor/skills/sprinklr-read-answer-email/run.py --await-arm
+```
+
+Do **not** wait for typed **RE**. Arm is detached so Cursor aborting the shell does **not** kill the watch. Full rule: `.cursor/rules/re-read-email.mdc`.
+
+**Keep awaiting** until `AWAIT_ARM_EXTRACT_DONE` / `CUSTOMER EMAIL`, then write full 7-step RE. If await is aborted, re-run `--await-arm` (detached watch still running) or `--once` only if log has no extract.
 
 ### Finishing quote (mandatory after LF / PR LF)
 

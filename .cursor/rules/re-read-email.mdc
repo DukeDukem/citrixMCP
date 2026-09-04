@@ -58,24 +58,22 @@ alwaysApply: true
 
 When Case Tracker fill (**LF**) has finished successfully for the visible Fall # — including **LF alone**, **PR then LF**, or **PR LF**:
 
-1. **Immediately** arm Anwenden RE (blocking watch — do **not** cancel it):
+1. **Immediately** arm Anwenden RE via detached watch (survives Cursor aborting the shell):
    ```powershell
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
    ```
-2. Expect **`ANWENDEN_RE_ARMED`**. Confirm briefly: `Anwenden RE armed for next case.`
-3. End with finishing quote:
-   - **PR LF** / PR+LF: **`PR LF done for #FALL_ID`**
-   - **LF alone:** **`LF done for #FALL_ID`**
-   (Dexter via hook for both.)
-4. **HARD — keep the arm process alive** until extract finishes:
-   - Do **not** abort / kill / Ctrl+C the `--arm` shell.
-   - Do **not** start a second `--arm` / `--arm-weiter` / `--arm-extern` while one is waiting.
-   - Do **not** treat the finishing quote as permission to stop the watch.
-5. User clicks **Anwenden** → script: 4s → case open → **CUSTOMER EMAIL** extract → **`ANWENDEN_RE_EXTRACT_DONE`**.
-6. **Only then** (after extract output is in the terminal): output full **7-step RE**. If the arm shell died before extract (`exit` with no `ANWENDEN_CLICK_DETECTED` / no `CUSTOMER EMAIL`), report `ERROR: ANWENDEN WATCH DIED BEFORE EXTRACT` and run `run.py --once` on the visible case (or re-arm if still needed).
+   Expect **`ANWENDEN_RE_ARMED`** + **`ARM_WATCH_DETACHED`**. Do **not** use `--foreground` unless debugging.
+2. Confirm briefly: `Anwenden RE armed for next case.`
+3. End with finishing quote (`PR LF done` / `LF done for #FALL_ID`) — Dexter.
+4. **Then await extract** (keep this poll alive; re-run if aborted):
+   ```powershell
+   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --await-arm
+   ```
+   Expect **`AWAIT_ARM_EXTRACT_DONE`** / **CUSTOMER EMAIL** in output.
+5. User clicks **Anwenden** while await is running (or even if await was aborted — detached watch still listens).
+6. **Only then** output full **7-step RE**. If await times out and log has no extract → `ERROR: ANWENDEN WATCH DIED BEFORE EXTRACT` → `run.py --once`.
 
-**PR LF / LF alone = non-transfer → Anwenden only.** Do **not** use `--arm-weiter` or `--arm-extern` after these. (**LF TR** still uses Weiter/Extern.)
-
+**Why watches used to “die”:** Cursor **aborts** long-running agent shells (~20s) when the turn ends. That killed the in-shell watch. Arm is now **detached** by default so aborting the shell does not stop listening.
 **When this fires**
 
 | User command | Arm when | Arm script |

@@ -39,7 +39,13 @@ _SAFE_SKIP = (
 
 def _clear_session_flags() -> None:
     state_dir = _REPO / ".cursor" / "state"
-    for name in ("re_pending_sound.json", "fall_watch_primed.json", "first_re_once.json"):
+    for name in (
+        "re_pending_sound.json",
+        "fall_watch_primed.json",
+        "first_re_once.json",
+        "arm_watch.json",
+        "arm_watch.log",
+    ):
         path = state_dir / name
         if path.exists():
             try:

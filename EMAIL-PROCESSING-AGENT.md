@@ -44,11 +44,12 @@ CLOSE-OUT ARMS (do not mix):
 | LF TR (queue) | Internal transfer | run.py --arm-weiter -> Transfer -> Weiterleiten -> Weiteleiten -> Weiter |
 | LF TR (email) | External email transfer | run.py --arm-extern -> Externer Transfer -> Weiterleiten |
 
-WATCH MUST STAY ALIVE:
-- After arming, KEEP the --arm / --arm-weiter / --arm-extern process running until extract finishes (ANWENDEN_RE_EXTRACT_DONE / CUSTOMER EMAIL).
-- NEVER abort/kill the watch after "PR LF done". NEVER start a second arm while one is waiting.
-- If watch dies with no click/extract → ERROR: ANWENDEN WATCH DIED BEFORE EXTRACT → run.py --once on visible case → full 7-step RE.
-- Sprinklr showing a new case after Anwenden is NOT enough by itself.
+WATCH MUST STAY ALIVE (detached):
+- After LF / PR LF: run.py --arm → expect ARM_WATCH_DETACHED + ANWENDEN_RE_ARMED, then run.py --await-arm until extract.
+- After LF TR: --arm-weiter or --arm-extern (detached), then --await-arm.
+- Cursor aborting the shell must NOT kill the watch (detached by default). Do not use --foreground unless debugging.
+- If await dies, re-run --await-arm. Only use --once if ARM_WATCH_LOG has no CUSTOMER EMAIL.
+- NEVER start a second --arm while one detached watch is still waiting.
 
 LF TR QUEUE PATH (I click all four; script reacts ONLY to step 4):
 1/4 Transfer (GuidedAction)
