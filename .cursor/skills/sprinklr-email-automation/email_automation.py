@@ -1518,20 +1518,28 @@ class EmailAutomation:
     
     def extract_case_id(self, text: str) -> Optional[str]:
         """
-        Extract case ID from text (format: # followed by at least 6 numbers)
-        
-        Args:
-            text: Text to search for case ID
-            
-        Returns:
-            Case ID if found, None otherwise
+        Extract case ID from text (format: # followed by at least 6 numbers,
+        or "Fall Nr. 12345678" / "Fall #12345678").
         """
+        if not text:
+            return None
         pattern = r'#(\d{6,})'
         match = re.search(pattern, text)
         if match:
-            case_id = f"#{match.group(1)}"
-            return case_id
+            return f"#{match.group(1)}"
+        # Sidebar collapsed-case-item aria-label: "Fall Nr. 55411928 von …"
+        match2 = re.search(r'(?i)Fall\s*(?:Nr\.?|#)?\s*(\d{6,})', text)
+        if match2:
+            return f"#{match2.group(1)}"
         return None
+
+    @staticmethod
+    def _fall_digits(case_id: Optional[str]) -> Optional[str]:
+        """Normalize Fall id to digit string only (e.g. '#55411928' → '55411928')."""
+        if not case_id:
+            return None
+        m = re.search(r'(\d{6,})', str(case_id))
+        return m.group(1) if m else None
 
     # Canonical case ID element: <h2>Fall <span data-testid="box" ...>#36556980</span></h2> (always use this, never body/URL)
     _CASE_ID_HEADER_SELECTOR = "h2:has-text('Fall') span:has-text('#'), h1:has-text('Fall') span:has-text('#')"
@@ -4800,26 +4808,188 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 last_heartbeat = now
             time.sleep(poll_seconds)
 
-    def _click_first_collapsed_case_item(self) -> bool:
-        """Click the first visible sidebar collapsed-case-item (next case after Anwenden)."""
-        self._reattach_sprinklr_page_no_steal()
-        try:
-            loc = self.page.locator(self._COLLAPSED_CASE_ITEM_SELECTOR).first
-            loc.wait_for(state="visible", timeout=15000)
-            aria = ""
+    def _click_first_collapsed_case_item(
+        self,
+        exclude_fall_digits: Optional[str] = None,
+        settle_timeout_s: float = 25.0,
+        poll_s: float = 0.75,
+    ) -> bool:
+        """
+        Click the next sidebar collapsed-case-item after Anwenden/Weiter/Extern.
+
+        Skips items whose aria-label still shows the just-closed/transferred Fall #
+        (common after Extern Weiterleiten — stale first item is the same case).
+        Polls until a different item appears or timeout.
+        """
+        exclude = self._fall_digits(exclude_fall_digits) if exclude_fall_digits else None
+        if exclude is None and exclude_fall_digits:
+            exclude = self._fall_digits(str(exclude_fall_digits))
+        deadline = time.time() + max(5.0, float(settle_timeout_s))
+        last_log = 0.0
+
+        while time.time() < deadline:
+            self._reattach_sprinklr_page_no_steal()
             try:
-                aria = loc.get_attribute("aria-label") or ""
-            except Exception:
-                pass
-            loc.click(timeout=8000)
-            print("CASE_ITEM_AUTO_CLICKED")
-            if aria:
-                print(f"aria-label: {aria}")
-            return True
-        except Exception as e:
-            logger.error(f"Could not click collapsed-case-item: {e}")
-            print(f"[ERROR] Could not click collapsed-case-item: {e}")
+                locs = self.page.locator(self._COLLAPSED_CASE_ITEM_SELECTOR)
+                n = locs.count()
+            except Exception as e:
+                logger.debug(f"collapsed-case-item count: {e}")
+                n = 0
+
+            for i in range(n):
+                try:
+                    loc = locs.nth(i)
+                    if not loc.is_visible(timeout=800):
+                        continue
+                    aria = ""
+                    try:
+                        aria = loc.get_attribute("aria-label") or ""
+                    except Exception:
+                        pass
+                    item_digits = self._fall_digits(self.extract_case_id(aria) or aria)
+                    if exclude and item_digits and item_digits == exclude:
+                        now = time.time()
+                        if now - last_log >= 3.0:
+                            print(
+                                f"[INFO] Skipping closed Fall #{exclude} in sidebar "
+                                f"(aria-label={aria!r}) — waiting for a different case…",
+                                flush=True,
+                            )
+                            last_log = now
+                        continue
+                    loc.click(timeout=8000)
+                    print("CASE_ITEM_AUTO_CLICKED", flush=True)
+                    if aria:
+                        print(f"aria-label: {aria}", flush=True)
+                    if exclude:
+                        print(f"excluded_closed_fall: #{exclude}", flush=True)
+                    return True
+                except Exception as e:
+                    logger.debug(f"collapsed-case-item nth({i}) click try: {e}")
+                    continue
+
+            now = time.time()
+            if now - last_log >= 3.0:
+                print(
+                    f"[INFO] Waiting for next collapsed-case-item"
+                    + (f" (not Fall #{exclude})" if exclude else "")
+                    + "…",
+                    flush=True,
+                )
+                last_log = now
+            time.sleep(poll_s)
+
+        print(
+            "[ERROR] No next-case collapsed-case-item found"
+            + (f" (still only Fall #{exclude}?)" if exclude else "")
+            + f" within {settle_timeout_s:.0f}s.",
+            flush=True,
+        )
+        print("ERROR: NEXT CASE NOT OPEN — run run.py --once", flush=True)
+        return False
+
+    def _open_next_case_and_extract(
+        self,
+        *,
+        closed_fall: Optional[str],
+        delay_s: float,
+        mode_label: str,
+        extract_done_marker: str,
+    ) -> bool:
+        """
+        Shared post-trigger path: wait → click next case (skip closed Fall) → extract.
+        Returns True on successful extract. On failure prints recovery and returns False
+        (caller should stop re-arming the same transfer click).
+        """
+        closed_digits = self._fall_digits(closed_fall)
+        print(f"Waiting {delay_s}s before looking for next case...", flush=True)
+        if closed_digits:
+            print(f"Will skip closed/transferred Fall #{closed_digits} in sidebar.", flush=True)
+        time.sleep(delay_s)
+
+        # Extra settle: poll for a different case item (not just first .first)
+        if not self._click_first_collapsed_case_item(
+            exclude_fall_digits=closed_digits,
+            settle_timeout_s=25.0,
+        ):
+            print(
+                f"[ERROR] {mode_label}: next-case click failed. "
+                "Do not wait for another transfer click — use run.py --once if case is open.",
+                flush=True,
+            )
+            print("ERROR: NEXT CASE NOT OPEN — run run.py --once", flush=True)
             return False
+
+        try:
+            self.page.wait_for_load_state("domcontentloaded", timeout=10000)
+        except Exception:
+            pass
+        time.sleep(1.5)
+
+        for attempt in range(1, 4):
+            try:
+                state = self._detect_page_state()
+            except Exception:
+                state = "unknown"
+            try:
+                opened = self._fall_digits(self._get_case_id_from_page_header())
+            except Exception:
+                opened = None
+
+            if state == "console" or not opened:
+                print(
+                    f"[WARN] After click: state={state} opened_fall={opened or 'none'} "
+                    f"(attempt {attempt}/3) — retrying next-case click…",
+                    flush=True,
+                )
+            elif closed_digits and opened == closed_digits:
+                print(
+                    f"[WARN] Still on closed Fall #{closed_digits} (attempt {attempt}/3) — "
+                    "retrying next-case click…",
+                    flush=True,
+                )
+            else:
+                ok = self.process_current_page_once(
+                    chat_only=False, extract_only=True, cue_on_extract_start=True
+                )
+                if ok:
+                    # Final guard if header flipped back to closed Fall
+                    try:
+                        again = self._fall_digits(self._get_case_id_from_page_header())
+                    except Exception:
+                        again = opened
+                    if closed_digits and again and again == closed_digits:
+                        print(
+                            f"[WARN] Extracted closed Fall #{closed_digits} — not accepting.",
+                            flush=True,
+                        )
+                    else:
+                        print(extract_done_marker, flush=True)
+                        return True
+                print(
+                    f"[WARN] Extract after {mode_label} failed (attempt {attempt}/3).",
+                    flush=True,
+                )
+
+            if attempt < 3:
+                time.sleep(2.0)
+                self._click_first_collapsed_case_item(
+                    exclude_fall_digits=closed_digits,
+                    settle_timeout_s=15.0,
+                )
+                try:
+                    self.page.wait_for_load_state("domcontentloaded", timeout=10000)
+                except Exception:
+                    pass
+                time.sleep(1.5)
+
+        print(
+            f"[ERROR] Extract after {mode_label} failed. "
+            "Stopping arm watch — run run.py --once on the visible case.",
+            flush=True,
+        )
+        print("ERROR: NEXT CASE NOT OPEN — run run.py --once", flush=True)
+        return False
 
     def _cue_armed_re_start_sound(self) -> None:
         """Play Prowler only after armed extract fully finished (CUSTOMER EMAIL + RE_PENDING_SOUND)."""
@@ -4853,14 +5023,21 @@ Use cursor-agent's file reading capabilities to read these files before generati
         print("Ctrl+C to cancel. Manual extract: run.py --once", flush=True)
         print("=" * 80 + "\n", flush=True)
         print("ANWENDEN_RE_ARMED", flush=True)
+        closed_fall_remembered: Optional[str] = None
 
         while True:
             try:
                 self._reattach_sprinklr_page_no_steal()
+                # Remember open Fall while still on case (before Anwenden navigates away)
+                try:
+                    live = self._get_case_id_from_page_header()
+                    if live:
+                        closed_fall_remembered = live
+                except Exception:
+                    pass
                 ts = datetime.now().strftime("%H:%M:%S")
                 print(f"[{ts}] Waiting for Anwenden left-click...", flush=True)
                 click_info = self._wait_for_anwenden_click()
-                # _wait_for_anwenden_click blocks until click (or returns None only if arming failed)
                 if not click_info:
                     print("[WARN] Anwenden listener could not be armed — retrying in 2s…", flush=True)
                     time.sleep(2)
@@ -4872,35 +5049,24 @@ Use cursor-agent's file reading capabilities to read these files before generati
                     print(f"tracker: {click_info.get('tracker')}", flush=True)
                 if click_info.get("text"):
                     print(f"button text: {click_info.get('text')}", flush=True)
-                print(f"Waiting {delay}s before clicking next case...", flush=True)
+                if closed_fall_remembered:
+                    print(f"closed_fall: {closed_fall_remembered}", flush=True)
                 print("=" * 80 + "\n", flush=True)
 
-                time.sleep(delay)
-
-                if not self._click_first_collapsed_case_item():
-                    print("[WARN] Case item click failed — waiting for another Anwenden click.")
-                    continue
-
-                # Allow case view to load (no focus steal)
-                try:
-                    self.page.wait_for_load_state("domcontentloaded", timeout=10000)
-                except Exception:
-                    pass
-                time.sleep(1.5)
-
-                ok = self.process_current_page_once(
-                    chat_only=False, extract_only=True, cue_on_extract_start=True
-                )
-                if ok:
-                    print("ANWENDEN_RE_EXTRACT_DONE")
+                if self._open_next_case_and_extract(
+                    closed_fall=closed_fall_remembered,
+                    delay_s=delay,
+                    mode_label="Anwenden",
+                    extract_done_marker="ANWENDEN_RE_EXTRACT_DONE",
+                ):
                     return True
-                print("[WARN] Extract after Anwenden failed — waiting for another Anwenden click.")
+                return False
             except KeyboardInterrupt:
                 print("\n[INFO] Anwenden auto-RE stopped by user (Ctrl+C)")
                 raise
             except Exception as e:
                 logger.error(f"Anwenden auto-RE loop error: {e}")
-                print(f"[ERROR] Anwenden auto-RE: {e}")
+                print(f"[ERROR] Anwenden auto-RE: {e}", flush=True)
                 time.sleep(2)
 
     def _wait_for_weiter_click(self, poll_seconds: float = 0.5) -> Optional[dict]:
@@ -4970,10 +5136,17 @@ Use cursor-agent's file reading capabilities to read these files before generati
         print("Ctrl+C to cancel. Manual extract: run.py --once", flush=True)
         print("=" * 80 + "\n", flush=True)
         print("WEITER_RE_ARMED", flush=True)
+        closed_fall_remembered: Optional[str] = None
 
         while True:
             try:
                 self._reattach_sprinklr_page_no_steal()
+                try:
+                    live = self._get_case_id_from_page_header()
+                    if live:
+                        closed_fall_remembered = live
+                except Exception:
+                    pass
                 ts = datetime.now().strftime("%H:%M:%S")
                 print(f"[{ts}] Waiting for Weiter left-click...", flush=True)
                 click_info = self._wait_for_weiter_click()
@@ -4988,34 +5161,24 @@ Use cursor-agent's file reading capabilities to read these files before generati
                     print(f"tracker: {click_info.get('tracker')}", flush=True)
                 if click_info.get("text"):
                     print(f"button text: {click_info.get('text')}", flush=True)
-                print(f"Waiting {delay}s before clicking next case...", flush=True)
+                if closed_fall_remembered:
+                    print(f"closed_fall: {closed_fall_remembered}", flush=True)
                 print("=" * 80 + "\n", flush=True)
 
-                time.sleep(delay)
-
-                if not self._click_first_collapsed_case_item():
-                    print("[WARN] Case item click failed — waiting for another Weiter click.")
-                    continue
-
-                try:
-                    self.page.wait_for_load_state("domcontentloaded", timeout=10000)
-                except Exception:
-                    pass
-                time.sleep(1.5)
-
-                ok = self.process_current_page_once(
-                    chat_only=False, extract_only=True, cue_on_extract_start=True
-                )
-                if ok:
-                    print("WEITER_RE_EXTRACT_DONE")
+                if self._open_next_case_and_extract(
+                    closed_fall=closed_fall_remembered,
+                    delay_s=delay,
+                    mode_label="Weiter",
+                    extract_done_marker="WEITER_RE_EXTRACT_DONE",
+                ):
                     return True
-                print("[WARN] Extract after Weiter failed — waiting for another Weiter click.")
+                return False
             except KeyboardInterrupt:
                 print("\n[INFO] Weiter auto-RE stopped by user (Ctrl+C)")
                 raise
             except Exception as e:
                 logger.error(f"Weiter auto-RE loop error: {e}")
-                print(f"[ERROR] Weiter auto-RE: {e}")
+                print(f"[ERROR] Weiter auto-RE: {e}", flush=True)
                 time.sleep(2)
 
     def _wait_for_extern_weiterleiten_click(self, poll_seconds: float = 0.5) -> Optional[dict]:
@@ -5086,10 +5249,18 @@ Use cursor-agent's file reading capabilities to read these files before generati
         print("Ctrl+C to cancel. Manual extract: run.py --once", flush=True)
         print("=" * 80 + "\n", flush=True)
         print("EXTERN_RE_ARMED", flush=True)
+        closed_fall_remembered: Optional[str] = None
 
         while True:
             try:
                 self._reattach_sprinklr_page_no_steal()
+                # Capture Fall # while case is still open (before Externer Transfer UI)
+                try:
+                    live = self._get_case_id_from_page_header()
+                    if live:
+                        closed_fall_remembered = live
+                except Exception:
+                    pass
                 ts = datetime.now().strftime("%H:%M:%S")
                 print(f"[{ts}] Waiting for Extern Weiterleiten left-click...", flush=True)
                 click_info = self._wait_for_extern_weiterleiten_click()
@@ -5104,34 +5275,24 @@ Use cursor-agent's file reading capabilities to read these files before generati
                     print(f"tracker: {click_info.get('tracker')}", flush=True)
                 if click_info.get("text"):
                     print(f"button text: {click_info.get('text')}", flush=True)
-                print(f"Waiting {delay}s before clicking next case...", flush=True)
+                if closed_fall_remembered:
+                    print(f"closed_fall: {closed_fall_remembered}", flush=True)
                 print("=" * 80 + "\n", flush=True)
 
-                time.sleep(delay)
-
-                if not self._click_first_collapsed_case_item():
-                    print("[WARN] Case item click failed — waiting for another Extern Weiterleiten click.")
-                    continue
-
-                try:
-                    self.page.wait_for_load_state("domcontentloaded", timeout=10000)
-                except Exception:
-                    pass
-                time.sleep(1.5)
-
-                ok = self.process_current_page_once(
-                    chat_only=False, extract_only=True, cue_on_extract_start=True
-                )
-                if ok:
-                    print("EXTERN_RE_EXTRACT_DONE")
+                if self._open_next_case_and_extract(
+                    closed_fall=closed_fall_remembered,
+                    delay_s=delay,
+                    mode_label="Extern",
+                    extract_done_marker="EXTERN_RE_EXTRACT_DONE",
+                ):
                     return True
-                print("[WARN] Extract after Extern failed — waiting for another Extern Weiterleiten click.")
+                return False
             except KeyboardInterrupt:
                 print("\n[INFO] Extern auto-RE stopped by user (Ctrl+C)")
                 raise
             except Exception as e:
                 logger.error(f"Extern auto-RE loop error: {e}")
-                print(f"[ERROR] Extern auto-RE: {e}")
+                print(f"[ERROR] Extern auto-RE: {e}", flush=True)
                 time.sleep(2)
 
     def process_current_page_once(

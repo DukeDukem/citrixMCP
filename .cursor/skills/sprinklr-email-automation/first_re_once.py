@@ -1,4 +1,5 @@
-"""Post-login first RE must extract the open case (--once), not arm Anwenden."""
+"""Post-login marker + helpers. Typed RE / bare run.py always extracts (--once);
+Anwenden arm is only via explicit --arm after LF — not gated on this flag."""
 from __future__ import annotations
 
 import json

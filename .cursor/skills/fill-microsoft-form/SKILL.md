@@ -33,10 +33,15 @@ When the user types **LF TR** / **lf tr** (optional `"alternate target"`):
 
 1. Fill with `--transfer 1 --target "<RE 4a goal or user override>"`
 2. Do **not** run PR
-3. After fill succeeds, arm Weiter RE:
-   `uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-weiter`
+3. After fill succeeds, arm by target (**detached**), then await:
+   - Queue: `run.py --arm-weiter` → expect `ARM_WATCH_DETACHED` → `run.py --await-arm`
+   - Email (`@`): `run.py --arm-extern` → expect `ARM_WATCH_DETACHED` → `run.py --await-arm`
 
 Full rule: `.cursor/rules/lf-tr-transfer.mdc`.
+
+### After LF / PR LF (non-transfer)
+
+After fill succeeds: `run.py --arm` → `ARM_WATCH_DETACHED` → finishing quote → `run.py --await-arm`. See `.cursor/rules/re-read-email.mdc`.
 
 ### Field mapping
 

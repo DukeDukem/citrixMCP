@@ -38,7 +38,7 @@ After Sprinklr login is verified in **login-only** mode, the automation **opens 
 
 This is the only extra tab opened during login-only (no monitor, no Anwenden arm, no RE extract yet).
 
-After login succeeds, the script sets **`FIRST_RE_ONCE_PENDING`**. The **next** user **RE** must extract the open case via **`--once`** (not Anwenden arm). See `.cursor/rules/re-read-email.mdc`.
+After login succeeds, the script sets **`FIRST_RE_ONCE_PENDING`** (marker). The user’s first **RE** (and any typed **RE**) always extracts the open case via **`--once`** — never Anwenden arm. See `.cursor/rules/re-read-email.mdc`.
 
 ## Stop condition (strict)
 

@@ -1,58 +1,69 @@
 ---
-description: Known-good Anwenden-gated RE workflow (verified working). Retain as baseline memory for case agent.
+description: Known-good Anwenden/Weiter/Extern RE workflow — current verified baseline (2026-09-04).
 alwaysApply: true
 ---
 
-# Anwenden RE — known-good baseline (verified)
+# Anwenden RE — known-good baseline (current)
 
-**Status:** Working as of 2026-09-04. User confirmed: “NICE. It worked.”
+**Status:** Current as of **2026-09-04**. Detached arm + typed-RE `--once` + next-case Fall skip + sounds.
 
 ## Close-out arms (do not mix)
 
-| Command | Meaning | Arm |
-|---------|---------|-----|
-| **PR LF** | Non-transfer (answered) | **Anwenden** (`--arm`) |
-| **LF** alone | Logged without PR | **Anwenden** (`--arm`) |
-| **LF TR** (queue) | Transfer (no reply) | **Weiter** (`--arm-weiter`) |
-| **LF TR** (email) | External email transfer | **Extern** (`--arm-extern`) |
+| Command | Meaning | Arm | Then |
+|---------|---------|-----|------|
+| **PR LF** | Non-transfer (answered) | **Anwenden** (`--arm`) | **`--await-arm`** |
+| **LF** alone | Logged without PR | **Anwenden** (`--arm`) | **`--await-arm`** |
+| **LF TR** (queue) | Transfer (no reply) | **Weiter** (`--arm-weiter`) | **`--await-arm`** |
+| **LF TR** (email) | External email transfer | **Extern** (`--arm-extern`) | **`--await-arm`** |
 
-## Workflow (email processing chat only)
+## Typed RE vs arm
 
-1. **RE** (or auto-arm after PR+LF) runs:
-   - **First RE after login:** `run.py` → **`--once`** (open case extract). Login prints **`FIRST_RE_ONCE_PENDING`**.
-   - **Later / after PR+LF:** `run.py --arm` → **`ANWENDEN_RE_ARMED`**
-2. For Anwenden mode: expect **`ANWENDEN_RE_ARMED`** / **`MODE: --watch-anwenden-re`**
-3. User left-clicks **Anwenden** (`validateMacro` / `UNIVERSAL_CASE`)
-4. Script waits **4s** → clicks `button[data-testid="collapsed-case-item"]` → extract
-5. Agent outputs full **7-step RE**
-6. User **PR** + **LF** (or **PR LF**)
-7. After **LF** succeeds (LF alone **or** PR LF) → agent **immediately** runs `run.py --arm`. **Keep the watch alive** until extract finishes, then 7-step RE. Never abort after the finishing quote. If watch dies with no extract → `--once` recovery.
-8. **LF TR** queue target → Transfer Ja LF → **`run.py --arm-weiter`** → Transfer → Weiterleiten → Weiteleiten → exact **Weiter** (4/4)
-9. **LF TR** email target → Transfer Ja LF → **`run.py --arm-extern`** → Externer Transfer → exact **Weiterleiten** (2/3) → same 4s → next case extract
+| Action | Behavior |
+|--------|----------|
+| Typed **RE** / bare `run.py` | **Always `--once`** — extract open case (workday push-start / re-read). **Never** arm Anwenden. |
+| After LF close-out | Explicit `--arm` / `--arm-weiter` / `--arm-extern` only |
 
-**Weiter arm:** ignore Weiterleiten / Weiteleiten; trigger only on exact **Weiter**.  
-**Extern arm:** ignore Externer Transfer; trigger only on exact **Weiterleiten**.  
-**Prowler:** only after CUSTOMER EMAIL extract fully printed (not after the 4s wait).
+## Detached arm + click-ready
 
-Manual open-case extract anytime: `run.py --once`
+1. `run.py --arm*` → **`ARM_WATCH_DETACHED`** + **`READY_FOR_YOUR_CLICK`** + **Dexter** (no console window: `CREATE_NO_WINDOW`).
+2. Chat: `Armed — click … now.` + finishing quote (`PR LF done` / `LF done` / `LF TR done`).
+3. `run.py --await-arm` (user may already click; await spinner ≠ “not ready”).
+4. Full **7-step RE**, then `re_complete_sound.py --play-ready` (book).
 
-## Hard constraints that fixed stuck monitor
+If `--await-arm` aborted → **re-run `--await-arm`**. If log has `ERROR: NEXT CASE NOT OPEN` → **`run.py --once`**. Never stack a second arm while one wait is live.
 
-- Anwenden RE uses **`leave_page_unchanged`** (do not navigate to console list on connect)
-- **Never** fall back into `monitor_emails` / `get_new_emails` for RE modes
-- Do not steal browser focus while waiting
+**Click-ready = Dexter + READY_FOR_YOUR_CLICK** — not “await finished.”
 
-## End of day
+## Next-case open (post Anwenden / Weiter / Weiterleiten)
 
-User types **`DONE`** or **Done for today** → run `done_for_today.py`, stop watches, pause until next **login**. See `.cursor/rules/done-for-today.mdc`.
+1. Remember **closed Fall #** while case still open.
+2. Wait **4s**, then click sidebar `collapsed-case-item` whose aria-label is **not** that Fall # (poll ~25s).
+3. Retry if still console / same Fall; on hard fail → stop arm + `ERROR: NEXT CASE NOT OPEN — run run.py --once` (do **not** wait for another Weiterleiten).
 
-## Related docs
+**Weiter:** exact **Weiter** only (ignore Weiterleiten / Weiteleiten).  
+**Extern:** exact **Weiterleiten** only (ignore Externer Transfer).  
+**Prowler:** after CUSTOMER EMAIL extract fully printed.
 
-- `.cursor/rules/re-read-email.mdc` — RE + auto-arm after PR+LF
-- `.cursor/rules/lf-log-form.mdc` / `pr-paste-reply.mdc`
-- `EMAIL-PROCESSING-AGENT.md`
-- Rollback of *pre-experiment* manual RE: **`revert last`** → `.cursor/revert-checkpoints/pre-anwenden-re/`
+## Workday flow
 
-## LF Salcus note (also retained)
+1. **login** → open first case → **RE** (`--once`) → 7-step → `--play-ready`
+2. **PR LF** / **LF** / **LF TR** → arm + Dexter → click → await extract → 7-step → `--play-ready`
+3. Repeat; **DONE** at end of day
 
-Sidebar value like **`C-0026448826`** (e.g. Fall #55920431) is **not** Salcus → leave empty → ticketstatus **3-Bot dokumentiert nicht in Salcus**.
+## Hard constraints
+
+- `leave_page_unchanged` on Anwenden RE connect
+- Detached arms; no `DETACHED_PROCESS` console pop
+- No `monitor_emails` / `get_new_emails` fallback for RE modes
+- No focus steal while waiting
+
+## Related
+
+- `.cursor/rules/re-read-email.mdc`, `lf-log-form.mdc`, `lf-tr-transfer.mdc`
+- `EMAIL-PROCESSING-AGENT.md` (GO bootstrap)
+- Reports: `.cursor/reports/ERROR-EXTERN-ARM-MISS-2026-09-04.md`, `FIX-EXTERN-ARM-NEXT-CASE-2026-09-04.md`
+- Rollback pre-experiment: **`revert last`** → `.cursor/revert-checkpoints/pre-anwenden-re/`
+
+## LF Salcus
+
+Sidebar **`C-…`** (e.g. Fall #55920431) is **not** Salcus → empty → ticketstatus **3**.

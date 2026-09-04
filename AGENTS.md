@@ -13,12 +13,15 @@
 
 ## Case commands (email processing chat)
 
-- **login** — Sprinklr + Case Tracker; sets first-RE **`--once`** gate
-- **RE** — first after login = **`--once`**; after **PR LF** or **LF alone** = **`--arm`** (Anwenden); after **LF TR** = **`--arm-weiter`** (queue) or **`--arm-extern`** (email)
-- **PR LF** / **LF alone** — non-transfer → **`run.py --arm`** (Anwenden only)
-- **LF TR** — transfer, no PR → Transfer Ja LF → queue → **`--arm-weiter`**; email → **`--arm-extern`**
+- **login** — Sprinklr + Case Tracker; sets first-RE marker
+- **RE** (typed) — **always `--once`** extract open case (first case of day / fresh agent push-start, or manual re-read). Never Anwenden arm on typed RE.
+- **PR LF** / **LF alone** — non-transfer → **`--arm`** (detached) → Dexter / READY_FOR_YOUR_CLICK → finishing quote → **`--await-arm`**
+- **LF TR** — transfer, no PR → queue **`--arm-weiter`** or email **`--arm-extern`**, then **`--await-arm`**
+- Arms are **detached** (`CREATE_NO_WINDOW`); click-ready = Dexter, not await spinner; re-run `--await-arm` if poll aborted
+- Next-case open skips closed Fall #; fail → `ERROR: NEXT CASE NOT OPEN` → **`--once`**
+- After section 7 → `re_complete_sound.py --play-ready` (book)
 - Never swap: PR LF / LF ≠ Weiter/Extern; LF TR ≠ Anwenden; queue ≠ email arm
-- **DONE** — stop watches; pause until next login
+- **DONE** — stop watches (including detached); pause until next login
 - **LF Salcus:** Kundennummer sidebar only; **`C-…`** is not Salcus → empty → ticketstatus **3**
 
 ## Instructions dashboard

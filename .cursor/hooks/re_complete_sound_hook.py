@@ -14,7 +14,7 @@ _SKILLS = _REPO / ".cursor" / "skills" / "sprinklr-email-automation"
 _STATE = _REPO / ".cursor" / "state"
 _LOG = _STATE / "sound_hook.log"
 _DEBOUNCE = _STATE / "sound_hook_debounce.json"
-_DEBOUNCE_SECONDS = 4.0
+_DEBOUNCE_SECONDS = 12.0
 
 if str(_SKILLS) not in sys.path:
     sys.path.insert(0, str(_SKILLS))
@@ -41,9 +41,14 @@ _CLOSEOUT_DONE_PATTERNS = (
     re.compile(r"(?mi)\bLF\s*TR\s+done\s+for\s+#?\d+"),
     re.compile(r"(?mi)^\s*#{0,3}\s*\*{0,2}\s*LF\s*TR\s+done\b"),
     re.compile(r"(?mi)\bLFTR\s+done\s+for\s+#?\d+"),
-    # Plain LF alone — "LF done for #…" (not "LF TR done" — TR sits between LF and done)
     re.compile(r"(?mi)\bLF\s+done\s+for\s+#?\d+"),
     re.compile(r"(?mi)^\s*#{0,3}\s*\*{0,2}\s*LF\s+done\s+for\s+#?\d+"),
+)
+# Also match arm-ready lines from run.py (script already plays Dexter; hook is backup)
+_ARMED_READY_PATTERNS = (
+    re.compile(r"(?mi)READY_FOR_YOUR_CLICK"),
+    re.compile(r"(?mi)PR_LF_DONE_SOUND"),
+    re.compile(r"(?mi)>>> CLICK .+ NOW"),
 )
 
 
@@ -62,11 +67,33 @@ def _any(text: str, patterns: tuple[re.Pattern, ...]) -> bool:
 
 
 def _extract_text(payload: dict) -> str:
-    for key in ("text", "response", "message", "final_text", "assistant_message"):
+    for key in (
+        "text",
+        "response",
+        "message",
+        "final_text",
+        "assistant_message",
+        "agent_response",
+        "output",
+        "content",
+        "result",
+    ):
         val = payload.get(key)
         if isinstance(val, str) and val.strip():
             return val
-    for nest in ("data", "result", "output"):
+        if isinstance(val, list):
+            parts = []
+            for item in val:
+                if isinstance(item, str):
+                    parts.append(item)
+                elif isinstance(item, dict):
+                    t = item.get("text") or item.get("content") or ""
+                    if isinstance(t, str):
+                        parts.append(t)
+            joined = "\n".join(parts).strip()
+            if joined:
+                return joined
+    for nest in ("data", "result", "output", "payload", "body"):
         sub = payload.get(nest)
         if isinstance(sub, dict):
             t = _extract_text(sub)
@@ -104,14 +131,43 @@ def _debounce_allow(kind: str) -> bool:
         return True
 
 
-def main() -> int:
+def _read_stdin_payload() -> dict:
+    """Read Cursor hook JSON; tolerate empty stdin / UTF-8 BOM."""
     try:
-        raw = sys.stdin.read()
-        payload = json.loads(raw) if raw.strip() else {}
+        raw_b = sys.stdin.buffer.read()
+    except Exception:
+        raw_b = b""
+    if not raw_b:
+        try:
+            raw = sys.stdin.read()
+        except Exception:
+            raw = ""
+        raw_b = raw.encode("utf-8", errors="replace") if raw else b""
+    if not raw_b.strip():
+        return {}
+    # Strip BOM (Windows hooks often prepend EF BB BF)
+    text = raw_b.decode("utf-8-sig", errors="replace").strip()
+    if not text:
+        return {}
+    try:
+        data = json.loads(text)
+        return data if isinstance(data, dict) else {}
     except Exception as e:
-        _log(f"json_error={e!r}")
-        payload = {}
+        _log(f"json_error={e!r} raw_prefix={text[:120]!r}")
+        return {}
 
+
+def main() -> int:
+    # Always emit empty JSON decision object so Cursor does not treat hook as failed
+    def _ok() -> int:
+        try:
+            sys.stdout.write("{}\n")
+            sys.stdout.flush()
+        except Exception:
+            pass
+        return 0
+
+    payload = _read_stdin_payload()
     event = payload.get("hook_event_name") or payload.get("event") or ""
     text = _extract_text(payload)
     _log(
@@ -119,25 +175,25 @@ def main() -> int:
         f"keys={list(payload.keys())[:12]}"
     )
 
-    if _any(text, _CLOSEOUT_DONE_PATTERNS):
+    if _any(text, _CLOSEOUT_DONE_PATTERNS) or _any(text, _ARMED_READY_PATTERNS):
         if not _debounce_allow("closeout"):
             _log("closeout_dexter debounced")
-            return 0
+            return _ok()
         ok = play_pr_lf_done_sound()
         _log(f"closeout_dexter ok={ok}")
-        return 0
+        return _ok()
 
     if _should_play_re_ready(text):
         if not _debounce_allow("re_ready"):
             _log("re_ready_book debounced")
-            return 0
+            return _ok()
         ok = play_re_ready_sound()
         clear_re_pending_sound()
         _log(f"re_ready_book ok={ok}")
-        return 0
+        return _ok()
 
     _log("no_sound_match")
-    return 0
+    return _ok()
 
 
 if __name__ == "__main__":

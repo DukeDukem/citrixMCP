@@ -78,8 +78,8 @@ When the user prompts with PR/pr:
 - No data leaks
 - User will then send the email and optionally say LF for the form
 - Write-reply flow terminates immediately after one paste + verification step (no repaste loop)
-- **Do not** arm Anwenden RE after PR alone. When the user also runs **LF** (or sent **PR LF**), arm Anwenden RE only **after LF succeeds** with **`run.py --arm`** — see `.cursor/rules/re-read-email.mdc`.
-- **PR LF** = **non-transfer** answered case → Anwenden arm only. **LF TR** = transfer → Weiter arm (`--arm-weiter`); that is a different command (no PR).
+- **Do not** arm Anwenden RE after PR alone. When the user also runs **LF** (or sent **PR LF**), arm Anwenden RE only **after LF succeeds** with **`run.py --arm`** then **`run.py --await-arm`** — see `.cursor/rules/re-read-email.mdc`.
+- **PR LF** = **non-transfer** answered case → Anwenden arm only (detached + await). **LF TR** = transfer → Weiter/Extern arm (`--arm-weiter` / `--arm-extern` + `--await-arm`); that is a different command (no PR).
 
 VIOLATION OF THIS RULE = DATA BREACH. DO NOT PROCEED IF UNCERTAIN.
 

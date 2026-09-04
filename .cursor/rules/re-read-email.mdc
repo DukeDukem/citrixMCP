@@ -11,81 +11,107 @@ alwaysApply: true
 
 **AI model (ABSOLUTE):** Model picker stays **Auto**. **Grok is banned.**
 
+## Detached arm (mandatory — why watches used to “die”)
+
+Cursor **aborts** long-running agent shells (~20s) when a turn ends. That used to kill the in-shell Anwenden/Weiter/Extern watch → `ERROR: ANWENDEN WATCH DIED BEFORE EXTRACT` → `--once` recovery.
+
+**Fix:** `--arm` / `--arm-weiter` / `--arm-extern` spawn a **detached** Windows process by default (`ARM_WATCH_DETACHED`). Cursor aborting the shell does **not** kill the listener. Log: `.cursor/state/arm_watch.log`.
+
+| Step | Command | Expect |
+|------|---------|--------|
+| 1 | `run.py --arm` (or `--arm-weiter` / `--arm-extern`) | `ARM_WATCH_DETACHED` + `READY_FOR_YOUR_CLICK` + Dexter; parent exits; **no console window** |
+| 2 | Chat + finishing quote | `Armed — click … now.` + `PR LF done` / `LF done` / `LF TR done` |
+| 3 | `run.py --await-arm` | Poll until extract **or** fail-fast on `ERROR: NEXT CASE NOT OPEN` |
+| 4 | Full **7-step RE** + `--play-ready` | Book cue after section 7 |
+
+- **Click-ready = Dexter + READY_FOR_YOUR_CLICK** — do not wait for await to finish before clicking.
+- If **`--await-arm`** is aborted by Cursor → **re-run `--await-arm`** (detached watch still running).
+- If log shows **`ERROR: NEXT CASE NOT OPEN`** → **`run.py --once`** on the visible case (arm already stopped).
+- Use **`--once`** also if `ARM_WATCH_LOG` has **no** CUSTOMER EMAIL after timeout.
+- **Never** start a second `--arm*` while a detached watch is still waiting.
+- **`--foreground`** = legacy blocking watch (debug only).
+
+### Next-case click (after Anwenden / Weiter / Weiterleiten)
+
+Script remembers **closed Fall #**, skips that sidebar item, polls ~25s for a different case, retries if still console/same Fall. Hard fail → stop arm + `--once` tip (no second Weiterleiten wait).
+
 ## When user sends **RE** / **re**
 
-1. Run default RE entrypoint (mode chosen by script):
+**Hard rule:** Typed **RE** always means **extract the currently open case now** (`--once`). It must **never** arm Anwenden / wait for an Anwenden click.
+
+Typical workday start:
+1. **login** (once)
+2. Open / have first case visible in Sprinklr
+3. Type **RE** → push-start: extract + full 7-step RE
+4. **PR LF** / **LF** / **LF TR** → automation arms next case (`--arm*` + `--await-arm`)
+5. You click Anwenden / Weiter / Weiterleiten → next extract → agent continues
+
+1. Run default RE entrypoint:
    ```powershell
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
    ```
-2. **Mode A — post-login first RE (mandatory):** After a successful **login**, the script sets **`FIRST_RE_ONCE_PENDING`**. The next `run.py` **consumes** that flag and runs **`--once`** (extract the **currently open** case). Expect:
-   - `FIRST_RE_ONCE_CONSUMED (post-login initial RE → --once)`
-   - `MODE: --once`
-   - **CUSTOMER EMAIL** + **`RE_PENDING_SOUND`**
-   - Then output full **7-step RE**. **Do not** wait for Anwenden on this first RE.
-3. **Mode B — Anwenden-gated (later cases):** If the first-RE flag is **not** pending, default `run.py` arms Anwenden:
-   - prints **`ANWENDEN_RE_ARMED`** / `MODE: --watch-anwenden-re`
-   - waits for left-click on **Anwenden** (`validateMacro` / `UNIVERSAL_CASE`)
-   - waits **4 seconds**, clicks `button[data-testid="collapsed-case-item"]`, extracts
-   - then you output full **7-step RE**
-4. **Audio:**
+   Expect **`MODE: --once`** and either `FIRST_RE_ONCE_CONSUMED` (after login) or `RE_ONCE_DEFAULT`. Then **CUSTOMER EMAIL** + full **7-step RE**.
+2. **Do not** run `--arm` / `--await-arm` on typed RE. Anwenden arm is **only** after LF close-out (see Auto-arm below).
+3. **Audio:**
    - **Armed auto-RE start:** After Anwenden / Weiter / Extern → 4s wait → case open → extract begins → Prowler (`ARMED_RE_START_SOUND`).
    - **RE ready (after section 7):** Hook plays book-opening cue (`RE_READY_SOUND`) when `RE_PENDING_SOUND` was set — case is ready to read.
    - **PR LF done:** Finishing quote `PR LF done for #FALL_ID` → Dexter (`PR_LF_DONE_SOUND`).
    - **LF TR done:** Finishing quote `LF TR done for #FALL_ID` → Dexter (same cue).
    - Manual: **`sound`** → `--play-ready`.
-5. User sends **PR** / **LF** when ready.
-6. **Mandatory after PR + LF both complete** for that Fall #: **immediately re-arm Anwenden** with **`--arm`**:
-   ```powershell
-   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
-   ```
-   Do **not** wait for the user to type **RE**. See **Auto-arm after PR+LF** below.
-7. **Transfer close-out (no PR):** user sends **LF TR** → Transfer Ja LF → arm by target type:
-   - **Queue** (no `@`) → **`--arm-weiter`** (Transfer → Weiterleiten → Weiteleiten → exact **Weiter** 4/4)
-   - **Email** (contains `@`) → **`--arm-extern`** (Externer Transfer → exact **Weiterleiten** 2/3)
+4. User sends **PR** / **LF** when ready.
+5. **Mandatory after PR + LF both complete** for that Fall #: **immediately** arm + await (see below). Do **not** wait for typed **RE**.
+6. **Transfer close-out (no PR):** user sends **LF TR** → Transfer Ja LF → arm by target type + **`--await-arm`**:
+   - **Queue** (no `@`) → **`--arm-weiter`** then **`--await-arm`**
+   - **Email** (contains `@`) → **`--arm-extern`** then **`--await-arm`**
    See `.cursor/rules/lf-tr-transfer.mdc`.
 
 ### Explicit modes
 
 | Command | Behavior |
 |---------|----------|
-| `run.py` | Post-login pending → **`--once`**; else Anwenden arm |
-| `run.py --once` | Always extract open case now |
-| `run.py --arm` | Always arm Anwenden (after PR+LF) |
-| `run.py --arm-weiter` | Always arm Weiter (after LF TR **queue** target) |
-| `run.py --arm-extern` | Always arm Extern (after LF TR **email** target) |
+| `run.py` / typed **RE** | **Always `--once`** — extract open case now (first case of day, fresh agent, or re-read) |
+| `run.py --once` | Same as above (explicit) |
+| `run.py --arm` | Arm Anwenden (**detached**; **only** after LF / PR LF) |
+| `run.py --arm-weiter` | Arm Weiter (**detached**; after LF TR **queue**) |
+| `run.py --arm-extern` | Arm Extern (**detached**; after LF TR **email**) |
+| `run.py --await-arm` | Poll `arm_watch.log` until extract done |
+| `run.py --foreground` | Debug only: blocking in-shell watch |
 
 ## Auto-arm after LF / PR LF (mandatory) — **non-transfer / Anwenden**
 
 When Case Tracker fill (**LF**) has finished successfully for the visible Fall # — including **LF alone**, **PR then LF**, or **PR LF**:
 
-1. **Immediately** arm Anwenden RE via detached watch (survives Cursor aborting the shell):
+1. **Immediately** arm Anwenden (detached):
    ```powershell
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
    ```
-   Expect **`ANWENDEN_RE_ARMED`** + **`ARM_WATCH_DETACHED`**. Do **not** use `--foreground` unless debugging.
-2. Confirm briefly: `Anwenden RE armed for next case.`
-3. End with finishing quote (`PR LF done` / `LF done for #FALL_ID`) — Dexter.
-4. **Then await extract** (keep this poll alive; re-run if aborted):
+   Expect **`ANWENDEN_RE_ARMED`** + **`ARM_WATCH_DETACHED`** + **`READY_FOR_YOUR_CLICK: Anwenden`**.
+   Script plays **Dexter** (= safe to click). No console window should appear.
+2. In chat (before await): `Armed — click Anwenden now.` + finishing quote (`PR LF done` / `LF done for #FALL_ID`).
+3. **Then** await extract (re-run if Cursor aborts the poll):
    ```powershell
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --await-arm
    ```
-   Expect **`AWAIT_ARM_EXTRACT_DONE`** / **CUSTOMER EMAIL** in output.
-5. User clicks **Anwenden** while await is running (or even if await was aborted — detached watch still listens).
-6. **Only then** output full **7-step RE**. If await times out and log has no extract → `ERROR: ANWENDEN WATCH DIED BEFORE EXTRACT` → `run.py --once`.
+   Expect **`AWAIT_ARM_EXTRACT_DONE`** / **CUSTOMER EMAIL**.
+4. User may click **Anwenden** as soon as Dexter / `READY_FOR_YOUR_CLICK` appears — **do not wait** for await to finish before clicking. Await only waits for extract *after* the click.
+5. After extract: full **7-step RE**. Then play book cue (hooks often get empty stdin on Windows):
+   ```powershell
+   uv run python .cursor/skills/sprinklr-email-automation/re_complete_sound.py --play-ready
+   ```
+6. If await times out and log has no extract → `ERROR: ANWENDEN WATCH DIED BEFORE EXTRACT` → `run.py --once`.
 
-**Why watches used to “die”:** Cursor **aborts** long-running agent shells (~20s) when the turn ends. That killed the in-shell watch. Arm is now **detached** by default so aborting the shell does not stop listening.
-**When this fires**
+**Click-ready = Dexter + READY_FOR_YOUR_CLICK.** The await spinner is not a “not ready yet” signal.
 
-| User command | Arm when | Arm script |
-|--------------|----------|------------|
-| **PR LF** / **pr lf** | After PR + LF both succeed | **`--arm`** (Anwenden) |
-| **PR** then later **LF** | After LF succeeds | **`--arm`** (Anwenden) |
-| **LF** alone | After LF succeeds | **`--arm`** (Anwenden) |
-| **LF TR** / **lf tr** (queue target) | After transfer LF succeeds | **`--arm-weiter`** (Weiter) |
-| **LF TR** / **lf tr** (email target) | After transfer LF succeeds | **`--arm-extern`** (Extern Weiterleiten) |
-| **PR** alone (no LF yet) | Do **not** auto-arm yet | — |
+| User command | Arm when | Arm script | Then |
+|--------------|----------|------------|------|
+| **PR LF** / **pr lf** | After PR + LF both succeed | **`--arm`** | **`--await-arm`** |
+| **PR** then later **LF** | After LF succeeds | **`--arm`** | **`--await-arm`** |
+| **LF** alone | After LF succeeds | **`--arm`** | **`--await-arm`** |
+| **LF TR** / **lf tr** (queue) | After transfer LF | **`--arm-weiter`** | **`--await-arm`** |
+| **LF TR** / **lf tr** (email) | After transfer LF | **`--arm-extern`** | **`--await-arm`** |
+| **PR** alone (no LF yet) | Do **not** auto-arm yet | — | — |
 
-Do **not** arm twice for the same close-out. If Anwenden/Weiter/Extern RE is already running, do not start a second overlapping process.
+Do **not** arm twice for the same close-out. If a detached watch is already waiting, do not start a second overlapping arm.
 
 ## 7-step output
 
@@ -95,7 +121,7 @@ Do **not** arm twice for the same close-out. If Anwenden/Weiter/Extern RE is alr
 4a/4b. Backend / instructions  
 5. Instructions on handling case  
 6. Your response to customer (German, code block)  
-7. Summary of response (EN) — **audio after this section (hook)**
+7. Summary of response (EN) — then run **`re_complete_sound.py --play-ready`** (book)
 
 ## Integrity
 
