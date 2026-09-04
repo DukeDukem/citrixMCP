@@ -19,16 +19,16 @@ When the user prompts with LF/lf or **PR LF** / **pr lf** or **LF TR** / **lf tr
 | User says | Meaning | Arm after success |
 |-----------|---------|-------------------|
 | **PR LF** / **pr lf** | **Non-transfer** answered case: paste reply, then log form | **`run.py --arm`** (**Anwenden**) |
+| **LF** alone | Log form only (no PR) | **`run.py --arm`** (**Anwenden**) |
 | **LF TR** / **lf tr** (+ optional **queue** target) | **Transfer** to queue coding | **`run.py --arm-weiter`** (**Weiter**) |
 | **LF TR** / **lf tr** (+ optional **email** target) | **External email transfer** | **`run.py --arm-extern`** (**Weiterleiten**) |
-| **LF** alone | Log form only (no auto-arm unless PR already done for this Fall # → then Anwenden) | See Auto-arm sections below |
 
-- **PR LF** → never use `--arm-weiter` / `--arm-extern`.
+- **PR LF** / **LF alone** → never use `--arm-weiter` / `--arm-extern`.
 - **LF TR** → never use `--arm` / Anwenden; never PR unless user explicitly requests a reply.
 - **LF TR** email target (contains `@`) → **`--arm-extern`**; queue target → **`--arm-weiter`**.
 
-- **PR LF:** run **PR** first (paste reply), then **LF** on the same visible Fall #.
-- **LF alone:** log form only.
+- **PR LF:** run **PR** first (paste reply), then **LF** on the same visible Fall # → arm Anwenden.
+- **LF alone:** fill tracker, then **immediately** arm Anwenden (same as after PR LF).
 - **LF TR** / **lf tr** (optional `"target"`): transfer close-out — see `.cursor/rules/lf-tr-transfer.mdc`.
 
 ## BEFORE PROCEEDING
@@ -139,26 +139,29 @@ Routing rules will be extended case-by-case in chat; script default lives in `fi
 - User clicks **Speichern** manually after sending the email
 - Tracker tab may stay open for the next LF
 
-### Auto-arm Anwenden RE (mandatory after **PR LF** / PR then LF — non-transfer)
+### Auto-arm Anwenden RE (mandatory after **LF** / **PR LF** — non-transfer)
 
-If **PR** (paste + post-paste verify CLEAN) already completed for this **same** Fall # in this close-out — including when the user sent **PR LF** — then **immediately** after LF succeeds:
+After **LF** succeeds for this Fall # — whether **LF alone**, **PR then LF**, or **PR LF** — **immediately** arm Anwenden:
 
 ```powershell
 Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
 ```
 
-Do **not** wait for the user to type **RE**. Full rule: `.cursor/rules/re-read-email.mdc` → **Auto-arm after PR + LF**.  
-This path is **non-transfer / answered cases** → **Anwenden** only (not Weiter).
+Do **not** wait for the user to type **RE**. Full rule: `.cursor/rules/re-read-email.mdc` → **Auto-arm after LF / PR LF**.  
+This path is **non-transfer** → **Anwenden** only (not Weiter). **Do not** skip arming just because there was no PR.
 
-**Keep the `--arm` process alive** until `ANWENDEN_RE_EXTRACT_DONE` / `CUSTOMER EMAIL` appears, then write full 7-step RE. Never abort the watch after printing `PR LF done`. Never start a second arm while one is waiting. If the watch dies with no extract → `ERROR: ANWENDEN WATCH DIED BEFORE EXTRACT` → `run.py --once` on the visible case.
+**Keep the `--arm` process alive** until `ANWENDEN_RE_EXTRACT_DONE` / `CUSTOMER EMAIL` appears, then write full 7-step RE. Never abort the watch after the finishing quote. Never start a second arm while one is waiting. If the watch dies with no extract → `ERROR: ANWENDEN WATCH DIED BEFORE EXTRACT` → `run.py --once` on the visible case.
 
-### Finishing quote (mandatory after PR LF)
+### Finishing quote (mandatory after LF / PR LF)
 
-After PR verify CLEAN + LF + Anwenden arm is **`ANWENDEN_RE_ARMED`**, the agent’s finishing quote must include:
+After LF + Anwenden arm is **`ANWENDEN_RE_ARMED`**:
 
-`PR LF done for #FALL_ID`
+| Close-out | Finishing quote |
+|-----------|-----------------|
+| **PR LF** / PR then LF | `PR LF done for #FALL_ID` |
+| **LF alone** | `LF done for #FALL_ID` |
 
-Example: `PR LF done for #55387859`  
+Examples: `PR LF done for #55387859` · `LF done for #55403274`  
 (Dexter cue via hook.) **This must not cancel the arm watch.**
 
 ### Auto-arm transfer RE (**LF TR** only)

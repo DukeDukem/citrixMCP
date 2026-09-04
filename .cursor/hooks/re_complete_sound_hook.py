@@ -41,6 +41,9 @@ _CLOSEOUT_DONE_PATTERNS = (
     re.compile(r"(?mi)\bLF\s*TR\s+done\s+for\s+#?\d+"),
     re.compile(r"(?mi)^\s*#{0,3}\s*\*{0,2}\s*LF\s*TR\s+done\b"),
     re.compile(r"(?mi)\bLFTR\s+done\s+for\s+#?\d+"),
+    # Plain LF alone — "LF done for #…" (not "LF TR done" — TR sits between LF and done)
+    re.compile(r"(?mi)\bLF\s+done\s+for\s+#?\d+"),
+    re.compile(r"(?mi)^\s*#{0,3}\s*\*{0,2}\s*LF\s+done\s+for\s+#?\d+"),
 )
 
 

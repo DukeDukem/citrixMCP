@@ -12,6 +12,7 @@ alwaysApply: true
 | Command | Meaning | Arm |
 |---------|---------|-----|
 | **PR LF** | Non-transfer (answered) | **Anwenden** (`--arm`) |
+| **LF** alone | Logged without PR | **Anwenden** (`--arm`) |
 | **LF TR** (queue) | Transfer (no reply) | **Weiter** (`--arm-weiter`) |
 | **LF TR** (email) | External email transfer | **Extern** (`--arm-extern`) |
 
@@ -25,7 +26,7 @@ alwaysApply: true
 4. Script waits **4s** → clicks `button[data-testid="collapsed-case-item"]` → extract
 5. Agent outputs full **7-step RE**
 6. User **PR** + **LF** (or **PR LF**)
-7. After **both** succeed → agent **immediately** runs `run.py --arm` (do not wait for typed RE). **Keep the watch alive** until extract finishes, then 7-step RE. Never abort after `PR LF done`. If watch dies with no extract → `--once` recovery.
+7. After **LF** succeeds (LF alone **or** PR LF) → agent **immediately** runs `run.py --arm`. **Keep the watch alive** until extract finishes, then 7-step RE. Never abort after the finishing quote. If watch dies with no extract → `--once` recovery.
 8. **LF TR** queue target → Transfer Ja LF → **`run.py --arm-weiter`** → Transfer → Weiterleiten → Weiteleiten → exact **Weiter** (4/4)
 9. **LF TR** email target → Transfer Ja LF → **`run.py --arm-extern`** → Externer Transfer → exact **Weiterleiten** (2/3) → same 4s → next case extract
 

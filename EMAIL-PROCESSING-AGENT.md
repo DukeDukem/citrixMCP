@@ -27,6 +27,7 @@ COMMANDS:
 - login -> Sprinklr login-only + Case Tracker tab; sets FIRST_RE_ONCE_PENDING
 - RE -> run.py (first after login = --once extract open case; later default Anwenden arm unless flagged)
 - PR LF -> non-transfer answered case: PR then LF, then IMMEDIATELY run.py --arm (Anwenden). Never --arm-weiter / --arm-extern.
+- LF alone -> log form, then IMMEDIATELY run.py --arm (Anwenden). Same as PR LF for next-case arm.
 - LF TR [optional "target"] -> transfer, NO PR: LF with --transfer 1 --target from RE 4a (or override).
   - Queue target (no @) -> IMMEDIATELY run.py --arm-weiter
   - Email target (has @, e.g. geschaeftskunden-service@telefonica.com) -> IMMEDIATELY run.py --arm-extern
@@ -39,6 +40,7 @@ POST-LOGIN FIRST RE:
 CLOSE-OUT ARMS (do not mix):
 | Command | Case type | Arm |
 | PR LF | Non-transfer (we answered) | run.py --arm -> I click Anwenden |
+| LF alone | Logged without PR | run.py --arm -> I click Anwenden |
 | LF TR (queue) | Internal transfer | run.py --arm-weiter -> Transfer -> Weiterleiten -> Weiteleiten -> Weiter |
 | LF TR (email) | External email transfer | run.py --arm-extern -> Externer Transfer -> Weiterleiten |
 
@@ -63,6 +65,7 @@ SOUNDS (volume 0.75; do not change unless I ask):
 - EXTRACT DONE (armed only, after CUSTOMER EMAIL fully printed) → Prowler (NOT after the 4s wait)
 - After full 7-step RE (section 7) → book-opening (RE_READY_SOUND)
 - After PR LF: finish with `PR LF done for #FALL_ID` → Dexter
+- After LF alone: finish with `LF done for #FALL_ID` → Dexter + still arm Anwenden
 - After LF TR: finish with `LF TR done for #FALL_ID` → Dexter (same sound)
 - Manual: type "sound" → play ready cue
 
@@ -169,8 +172,9 @@ CRITICAL — ANWENDEN / WEITER / EXTERN WATCH MUST STAY ALIVE:
 
 3) CLOSE-OUT DONE (PR LF or LF TR)
    - PR LF finishing quote MUST include: PR LF done for #FALL_ID
+   - LF alone finishing quote MUST include: LF done for #FALL_ID (still arm Anwenden)
    - LF TR finishing quote MUST include: LF TR done for #FALL_ID
-   - Either triggers Dexter (PR_LF_DONE_SOUND)
+   - Any of these triggers Dexter (PR_LF_DONE_SOUND)
    - Meaning: close-out + arm started — I can send/Speichern/Anwenden or transfer UI
    - Does NOT mean extract/RE already ran
 
