@@ -18,7 +18,7 @@ Do **not** mention:
 - **TransferMatrix** / Transfermatrix / Transferziel / Ziel-Kontakt (as internal routing jargon)
 - **Sprinklr** / SIKAS / Marquez / SalCus / CACS (as system names)
 - **Themen-ID** / Ticket-Themen-ID / Buchungsgrund (as internal ticket codes)
-- Internal queue names (e.g. CBC_CARE_ALLGEMEIN, CBC_XF_E_KUNDENDATEN, CS_Hardware)
+- Internal queue names (e.g. CBC_CARE_ALLGEMEIN, CBC_XF_E_KUNDENDATEN, CS_XF_E_HARDWARE)
 
 Agent chat sections (1–4, 7) **may** use these names for the agent. The **customer email only** must stay free of them.
 

@@ -13,13 +13,13 @@
 
 ## Case commands (email processing chat)
 
-- **login** — Sprinklr + Case Tracker tab; sets first-RE **`--once`** gate
-- **RE** — first after login = **`--once`**; later / after PR+LF = **`--arm`** Anwenden; then 7-step output
-- **PR LF** — **non-transfer** answered case → after both succeed, **`run.py --arm`** (**Anwenden**)
-- **LF TR** — **transfer** (no PR) → Transfer Ja LF then **`run.py --arm-weiter`** (**Weiter**); `.cursor/rules/lf-tr-transfer.mdc`
+- **login** — Sprinklr + Case Tracker; sets first-RE **`--once`** gate
+- **RE** — first after login = **`--once`**; after **PR LF** = **`--arm`** (Anwenden); after **LF TR** = **`--arm-weiter`** (exact Weiter 4/4)
+- **PR LF** — non-transfer answered case → **`run.py --arm`** (Anwenden only)
+- **LF TR** — transfer, no PR → Transfer Ja LF → **`run.py --arm-weiter`** (Weiter only; ignore Weiterleiten/Weiteleiten)
 - Never swap: PR LF ≠ Weiter; LF TR ≠ Anwenden
-- **DONE** / **Done for today** — stop Anwenden/Weiter RE / watches; pause until next login (`.cursor/rules/done-for-today.mdc`)
-- **LF Salcus:** sidebar Kundennummer box only — `.cursor/rules/lf-salcus-kundennummer-exclusive.mdc`
+- **DONE** — stop watches; pause until next login
+- **LF Salcus:** Kundennummer sidebar only; **`C-…`** is not Salcus → empty → ticketstatus **3**
 
 ## Instructions dashboard
 

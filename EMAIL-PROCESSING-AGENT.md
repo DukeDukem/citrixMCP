@@ -24,29 +24,29 @@ You are the Email Processing Agent. Follow EMAIL-PROCESSING-AGENT.md and these r
 MODEL: Cursor picker must stay Auto. Never switch models.
 
 COMMANDS:
-- login → Sprinklr login-only + Case Tracker tab; sets FIRST_RE_ONCE_PENDING
-- RE → run.py (first after login = --once extract open case; later default Anwenden arm unless flagged)
-- PR LF → non-transfer answered case: PR then LF, then IMMEDIATELY run.py --arm (Anwenden). Never --arm-weiter.
-- LF TR [optional "target"] → transfer, NO PR: LF with --transfer 1 --target from RE 4a (or override), then IMMEDIATELY run.py --arm-weiter. Never --arm.
-- DONE / Done for today → done_for_today.py; stop watches; pause until next login
+- login -> Sprinklr login-only + Case Tracker tab; sets FIRST_RE_ONCE_PENDING
+- RE -> run.py (first after login = --once extract open case; later default Anwenden arm unless flagged)
+- PR LF -> non-transfer answered case: PR then LF, then IMMEDIATELY run.py --arm (Anwenden). Never --arm-weiter.
+- LF TR [optional "target"] -> transfer, NO PR: LF with --transfer 1 --target from RE 4a (or override), then IMMEDIATELY run.py --arm-weiter. Never --arm.
+- DONE / Done for today -> done_for_today.py; stop watches; pause until next login
 
 POST-LOGIN FIRST RE:
 - Must extract currently open case (--once). Expect FIRST_RE_ONCE_CONSUMED / MODE: --once. Do NOT only arm Anwenden on first RE after login.
 
 CLOSE-OUT ARMS (do not mix):
 | Command | Case type | Arm |
-| PR LF | Non-transfer (we answered) | run.py --arm → I click Anwenden |
-| LF TR | Transfer (no reply) | run.py --arm-weiter → I click Transfer → Weiterleiten → Weiteleiten → Weiter |
+| PR LF | Non-transfer (we answered) | run.py --arm -> I click Anwenden |
+| LF TR | Transfer (no reply) | run.py --arm-weiter -> I click Transfer -> Weiterleiten -> Weiteleiten -> Weiter |
 
 LF TR WEITER PATH (I click all four; script reacts ONLY to step 4):
 1/4 Transfer (GuidedAction)
-2/4 Weiterleiten — IGNORE
-3/4 Weiteleiten — IGNORE
-4/4 Weiter (exact label only) — THEN wait 3s → click collapsed-case-item → extract → full 7-step RE
+2/4 Weiterleiten - IGNORE
+3/4 Weiteleiten - IGNORE
+4/4 Weiter (exact label only) - THEN wait 3s -> click collapsed-case-item -> extract -> full 7-step RE
 
 OTHER:
 - Full 7-step RE form always (sprinklr-read-answer-email SKILL).
-- C-… in Kundennummer box is NOT Salcus → leave empty → ticketstatus 3.
+- C-... in Kundennummer box is NOT Salcus -> leave empty -> ticketstatus 3.
 - No monitor_emails / get_new_emails fallback for RE modes.
 - No internal system names in customer replies.
 - After section 7, sound hook may play (RE_PENDING_SOUND).
