@@ -22,7 +22,7 @@ On **login** (`--login-only`), Sprinklr automation opens Case Tracker in a new t
 uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --open-only
 
 # LF — fill current case (reads Sprinklr sidebar automatically)
-uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#36698255" --attachments 0
+uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#36698255"
 ```
 
 Optional overrides: `--salcus`, `--transfer 0|1`, `--target`, `--submit`
@@ -32,24 +32,36 @@ Optional overrides: `--salcus`, `--transfer 0|1`, `--target`, `--submit`
 | Roberta | Sprinklr source | Rule |
 |---------|-----------------|------|
 | `sikas` (Case #) | Fall # | Digits only |
-| `salcus` | **Kundennummer** `data-entityid="Kundennummer"` → `htmlText` | Empty if **Nicht festgelegt**. Not from email body. |
+| `salcus` | **Exclusive:** `div[data-entityid="Kundennummer"][aria-label="Kundennummer"]`. Re-read every Fall. Prefer `htmlText` when a number is shown; `spr-text-03` only if **Nicht festgelegt**. | Empty if unset/missing. **Never** from email/Webform body or other DOM. |
 | Kanal | — | E-Mail Care |
 | Transfer / target | Quelle, Ziel, Subject | See below |
 | Ticketstatus Salcus | Derived | See below |
+| Notiz | — | **Always empty** — never log attachment counts or other notes |
+
+### Salcus (mandatory — exclusive source)
+
+Fill Roberta `salcus` **only** from:
+
+`div[data-entityid="Kundennummer"][aria-label="Kundennummer"]`
+
+The number **changes every Fall #**. Prefer `[data-testid="htmlText"]` when a number is shown (do not rely on `spr-text-03` alone). Else `span.spr-text-03` for **Nicht festgelegt**. Missing/unset → empty. **Never** from email body, Webform, Betreff, or any other DOM. Full spec: `.cursor/rules/lf-log-form.mdc`.
 
 ### Ticketstatus Salcus
 
 | Condition | Value |
 |-----------|--------|
 | Transfer **Ja** | **3-Bot dokumentiert nicht in Salcus** (always) |
-| Transfer **Nein** + Kundennummer | **1-Erfolgreich** |
-| Transfer **Nein** + no Kundennummer | **3-Bot dokumentiert nicht in Salcus** |
+| Transfer **Nein** + valid numeric Kundennummer/Salcus | **1-Erfolgreich** |
+| Transfer **Nein** + no Kundennummer / **`C-…` Vertragsnummer** | **3-Bot dokumentiert nicht in Salcus** |
+
+**`C-` IDs are not Salcus:** e.g. Fall #55920431 — Kundennummer box shows `C-0026448826` → Salcus empty → ticketstatus **3**.
 
 ### Transfer
 
 | Signal | Transfer | Target |
 |--------|----------|--------|
-| Widerruf in Quelle/Subject | **Ja** | `CBC_XF_E_WIDERRUF` |
+| Widerruf in **Quelle** (e.g. Care Widerruf, not Webform) | **Ja** | `CBC_XF_E_WIDERRUF` |
+| Care Webform + our **Ziel** | **Nein** | — (ignore `\|Widerruf` in Betreff categories) |
 | Ziel = our team (`CBC_*_CARE_ALLGEMEIN`, incl. `CBC_XF_E_CARE_ALLGEMEIN`) | **Nein** | — |
 | External Ziel queue / email | **Ja** | Ziel value |
 

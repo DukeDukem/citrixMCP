@@ -1,0 +1,32 @@
+---
+description: LF Salcus must come only from the Sprinklr sidebar Kundennummer box. The number changes every Fall. Prefer htmlText when set. Never from email or Webform body. C- Vertragsnummern are not Salcus.
+alwaysApply: true
+---
+
+# LF Salcus — exclusive Kundennummer field (verified)
+
+When filling Roberta Case Tracker (LF / `fill_case_tracker.py`):
+
+**Salcus is taken from one Sprinklr field only** (currently visible case):
+
+`div[data-entityid="Kundennummer"][aria-label="Kundennummer"]`
+
+That is the sidebar box whose label is **Kundennummer**. The **value inside that box changes every Fall #** — read it fresh each LF. Never reuse a previous case’s number. Do **not** require a fixed `data-errorid`.
+
+## How the value is shown (do not miss a visible number)
+
+| State in that box | Typical DOM | Roberta Salcus | Ticketstatus (Transfer Nein) |
+|-------------------|-------------|----------------|-------------------------------|
+| Numeric Kundennummer | `[data-testid="htmlText"]` (digits only; may include trailing NBSP) | Fill those digits | **1-Erfolgreich** |
+| **Vertragsnummer `C-…`** (e.g. `C-0026448826`) | `[data-testid="htmlText"]` | **Leave empty** — **not Salcus** | **3-Bot dokumentiert nicht in Salcus** |
+| Unset | `span.spr-text-03` = **Nicht festgelegt**; no `htmlText` | Leave empty | **3-Bot dokumentiert nicht in Salcus** |
+
+**Verified example:** Fall **#55920431** — Kundennummer box shows **`C-0026448826`**. That is a **Vertragsnummer**, not a Salcus/Kundennummer. Do **not** fill Roberta Salcus with `0026448826` or any digits stripped from the `C-` prefix. Leave Salcus empty → **3 - Bot dokumentiert nicht in Salcus**.
+
+**Order:** read `htmlText` first inside that box, then `span.spr-text-03` in `.dont-break-out`. A visible number is usually **htmlText**, not `spr-text-03`. Looking only at `spr-text-03` will miss a set Kundennummer.
+
+**Do not** read Kundennummer from email body, Care Webform, Betreff, Freitext, `html-message-content`, other DOM nodes, clipboard, or previous cases.
+
+Ticketstatus “Kundennummer present” means **this field** has a **valid numeric Salcus/Kundennummer** — not a `C-` Vertragsnummer and not a number found in the email.
+
+Full LF spec: `.cursor/rules/lf-log-form.mdc`.

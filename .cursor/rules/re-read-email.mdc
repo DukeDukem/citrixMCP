@@ -1,54 +1,83 @@
 ---
-description: When the user types RE, run the read-email flow (Sprinklr).
+description: When the user types RE, arm Anwenden-gated auto-RE (or --once for current case) and produce full 7-step RE output.
 alwaysApply: true
 ---
 
-# RE = Read Email
+# RE = Read Email (Anwenden-gated auto + manual fallback)
 
-**Always stick to the processing form:** When handling RE (read email), you must ALWAYS use the full 7-step output structure and the verification/case-processing flow from **sprinklr-read-answer-email** SKILL.md. Do not skip, reorder, or merge sections. Stick to the given processing form at all times.
+**Chat scope:** Email processing chat only (`EMAIL-PROCESSING-AGENT.md`).
 
-**AI model (ABSOLUTE):** Model picker must stay **Auto**. **Grok is banned.** If this session is Grok or any named model, **STOP** — do not run the read-email script or draft replies. Output the ERROR from `.cursor/rules/ai-model-stay-auto.mdc` and wait for the user to set Auto and resend.
+**Always stick to the processing form:** Full 7-step output from **sprinklr-read-answer-email** SKILL.md.
 
-When the user prompts with **RE**/**re** (and nothing else, or only "RE"/"re" as the main intent), treat it as **read email for the currently visible case** and do the following:
+**AI model (ABSOLUTE):** Model picker stays **Auto**. **Grok is banned.**
 
-1. **Ensure the correct case is visible in Sprinklr:**
-   - RE must always target the email/case that is **currently open and visible** in the Sprinklr console (the active thread in the email receptacle), **not** any previously processed case.
-   - Before running the script, make sure the agent has the intended case selected and visible in the UI; RE must never "reuse" or "re-open" the last case if a different one is now active.
-   - RE must **not** open new Sprinklr tabs or launch login navigation. It must read only from the already active, visible case tab.
-   - RE output must reference **only** this one visible case and **only** this case’s customer.
-   - If multiple customer identities or multiple case IDs appear in the extracted thread/context, STOP and ask the user to confirm the exact active case before drafting.
-   - Identifier integrity is mandatory: if customer number / phone suffix references are used, they must be derived from the currently visible case only; never inherit number fragments from prior cases.
-   - Salutation integrity is mandatory: the salutation name must map to the visible-case customer signature only; if uncertain, use `Guten Tag,` without name.
+## When user sends **RE** / **re**
 
-2. **Run the read-email script:**
+1. Run default extract arm (Anwenden-gated):
    ```powershell
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
    ```
+2. Script prints **`ANWENDEN_RE_ARMED`** and waits for a **left-click** on Sprinklr **Anwenden**:
+   - `button[data-action-id="validateMacro"]`
+   - preferably `data-tracker-event-id="@macro/editableMacroBox/UNIVERSAL_CASE"`
+3. On that click: script waits **3 seconds**, then clicks the first visible  
+   `button[data-testid="collapsed-case-item"]`, extracts the case, prints **CUSTOMER EMAIL** + **`RE_PENDING_SOUND`**.
+4. Output full **7-step RE** (sections 1–7). Section **7. Summary of response** must be the **last** segment.
+5. **Audio (automatic):** Project hook plays Prowler after section 7 when pending. Manual: **`sound`**.
+6. User sends **PR** / **LF** when ready.
+7. **Mandatory after PR + LF both complete** for that Fall #: **immediately re-arm** Anwenden-gated RE (same command as step 1). Do **not** wait for the user to type **RE** again. See **Auto-arm after PR+LF** below.
 
-3. **Use the script output for the visible case only** (case ID, subject, from, body, full conversation thread) to produce the **full 7-step output** in chat:
-   - 1. Customer summary
-   - 2. Verification
-   - 3. Transfer eligibility (TransferMatrix)
-   - 4a. Backend / agent actions
-   - 4b. Instructions for the agent
-   - 5. German reply (mandatory email template from sprinklr-read-answer-email SKILL.md: salutation, body, survey line, signature block)
-   - 6. Short summary (EN)
-   - Never fuse text, facts, or names from previously processed cases.
-   - Never output a customer-number/phone suffix unless you can map it to the visible case data. If not certain, omit the number reference entirely.
-   - Never output a named salutation if the name cannot be verified from the visible case; use neutral salutation instead.
+### Manual extract (currently open case, no wait)
 
-**Language enforcement (mandatory):**
-- Agent-facing chat output must be **English only** for sections 1, 2, 3, 4a, 4b, and 6.
-- **German is allowed only for the customer reply block** (section 5 / "Your response to customer").
-- Never switch agent explanations or operational guidance to German.
+```powershell
+uv run python .cursor/skills/sprinklr-read-answer-email/run.py --once
+```
 
-4. **Query KnowledgeBase** (TransferMatrix, then relevant KB) as needed for the case type. Apply skill exceptions (e.g. new offer → hotline when SKILL exception applies; English → transfer; Namensänderung → proof required). If KB guidance is thin or post-RE chat instructions lack substance, **web-search** for case-specific self-service/alternatives per `.cursor/rules/reply-customer-solutions-qa.mdc`. **Do not** default-include care hotline in section 6 unless KB/matrix/exception/chat user requires it.
+Use when the case is already open and you do not need Anwenden → auto-open.
 
-5. End by offering: if the user wants this reply in the Sprinklr reply box, they can say **"reply with this"** or **"write that reply in the box"**.
+## Auto-arm after PR + LF (mandatory)
 
-6. PR sync rule:
-   - Store the exact section-5 customer reply generated in RE as the authoritative reply for that case.
-   - If user sends PR next without explicit rewrite instructions, PR must paste exactly that stored RE reply for the same visible case.
-   - If user sends explicit rewrite instructions after RE, PR may paste that user-directed replacement text, but only for the same visible case ID.
+When **both** paste (**PR**) and Case Tracker fill (**LF**) have finished successfully for the **same** Fall #:
 
-Do not ask for confirmation when the user says "RE"/"re" — run the script and produce the 7-step output immediately.
+1. **Immediately** start Anwenden-gated RE (do not ask, do not wait for the user to type **RE**):
+   ```powershell
+   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
+   ```
+2. Confirm in chat briefly: e.g. `Anwenden RE armed for next case.` Expect **`ANWENDEN_RE_ARMED`** in the script output.
+3. User then clicks **Anwenden** in Sprinklr → script waits 3s → opens next case → extract → you output 7-step RE.
+
+**When this fires**
+
+| User command | Arm Anwenden RE when |
+|--------------|----------------------|
+| **PR LF** / **pr lf** | After PR paste+verify **and** LF fill both succeed |
+| **PR** then later **LF** | After **LF** succeeds (PR already done for that Fall #) |
+| **LF** alone with no prior PR for this Fall # | Do **not** auto-arm (incomplete case close-out) |
+| **PR** alone (no LF yet) | Do **not** auto-arm yet — wait until LF finishes |
+
+Do **not** arm twice for the same close-out. If Anwenden RE is already running from a prior arm, do not start a second overlapping process.
+
+## 7-step output
+
+1. Customer summary  
+2. Verification  
+3. Transfer eligibility  
+4a/4b. Backend / instructions  
+5. Instructions on handling case  
+6. Your response to customer (German, code block)  
+7. Summary of response (EN) — **audio after this section (hook)**
+
+## Integrity
+
+- One visible case only; discard prior Fall # context on each new **RE**.
+- PR pastes latest RE for the **same visible Fall #** only.
+- Watch loop must **not** steal browser focus (`bring_to_front`) while waiting.
+- **No monitor fallback:** If Anwenden-gated RE fails, **stop and report**. Do **not** fall into continuous `monitor_emails` / `get_new_emails` loops.
+
+## Rollback
+
+If this experiment fails or you dislike it, in the **instructions** chat type **`revert last`** — restores checkpoint `.cursor/revert-checkpoints/pre-anwenden-re/`.
+
+## Hooks note
+
+Requires project hooks enabled (`.cursor/hooks.json`). View **Output → Hooks** if sound does not play.

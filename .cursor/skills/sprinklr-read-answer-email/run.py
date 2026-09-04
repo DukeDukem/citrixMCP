@@ -1,8 +1,12 @@
 """
-Skill 2: Read email in Sprinklr — script prints the customer email and exits; Cursor then queries KnowledgeBase and writes the suggested reply in chat.
-Requires Skill 1 (login) to have been run first so the browser is logged in.
+Skill 2: Read email in Sprinklr.
 
-  uv run python .cursor/skills/sprinklr-read-answer-email/run.py
+Default (RE): arm Anwenden-gated auto-RE —
+  wait for left-click on Anwenden (validateMacro / UNIVERSAL_CASE) →
+  wait 3s → click collapsed-case-item → extract → exit for 7-step RE.
+
+Manual current case:
+  uv run python .cursor/skills/sprinklr-read-answer-email/run.py --once
 """
 import os
 import subprocess
@@ -12,6 +16,7 @@ from pathlib import Path
 _SKILL_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _SKILL_DIR.parent.parent.parent
 
+
 def main() -> int:
     os.chdir(_REPO_ROOT)
     runner = _REPO_ROOT / ".cursor" / "skills" / "sprinklr-email-automation" / "run_sprinklr_email_automation.py"
@@ -20,12 +25,23 @@ def main() -> int:
         return 1
     env = os.environ.copy()
     env["SPRINKLR_CDP_ENDPOINT"] = "http://127.0.0.1:9222"
-    # Extract-only: script prints the customer email and exits; Cursor then queries KnowledgeBase and writes the suggested reply in chat.
+
+    once = "--once" in sys.argv
+    if once:
+        # Legacy: extract currently open case immediately
+        return subprocess.call(
+            [sys.executable, str(runner), "--process-current-only", "--extract-only"],
+            cwd=str(_REPO_ROOT),
+            env=env,
+        )
+
+    # Default RE: Anwenden click → wait 3s → open next case → extract
     return subprocess.call(
-        [sys.executable, str(runner), "--process-current-only", "--extract-only"],
+        [sys.executable, str(runner), "--watch-anwenden-re"],
         cwd=str(_REPO_ROOT),
         env=env,
     )
+
 
 if __name__ == "__main__":
     sys.exit(main())

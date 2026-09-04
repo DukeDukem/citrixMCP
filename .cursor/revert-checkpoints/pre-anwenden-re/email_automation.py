@@ -4450,63 +4450,6 @@ Use cursor-agent's file reading capabilities to read these files before generati
     # Selectors for "Case abschließen" + "Anwenden" flow (close case → trigger next-email detection)
     _SELECTOR_CASE_ABSCHLIESSEN = 'button[data-entityid="@sprinklr/action/ApplyMacroWithId"]:has-text("Case abschließen"), button:has-text("Case abschließen")'
     _SELECTOR_ANWENDEN = 'button[data-action-id="validateMacro"]:has-text("Anwenden"), button[data-action-id="validateMacro"], button:has-text("Anwenden")'
-    # Universal Case macro Apply (Anwenden) — click-gated auto-RE
-    _SELECTOR_ANWENDEN_UNIVERSAL = (
-        'button[data-action-id="validateMacro"]'
-        '[data-tracker-event-id="@macro/editableMacroBox/UNIVERSAL_CASE"]'
-    )
-    _COLLAPSED_CASE_ITEM_SELECTOR = 'button[data-testid="collapsed-case-item"]'
-    _ANWENDEN_RE_WAIT_SECONDS = 3
-    _WAIT_ANWENDEN_CLICK_JS = """
-() => {
-  if (window.__anwendenReArmed) return true;
-  const cleanup = () => {
-    if (window.__anwendenReClickHandler) {
-      document.removeEventListener('mousedown', window.__anwendenReClickHandler, true);
-      document.removeEventListener('click', window.__anwendenReClickHandler, true);
-      window.__anwendenReClickHandler = null;
-    }
-  };
-  const handler = (e) => {
-    if (typeof e.button === 'number' && e.button !== 0) return;
-    const btn = e.target.closest('button[data-action-id="validateMacro"]');
-    if (!btn) return;
-    const tracker = btn.getAttribute('data-tracker-event-id') || '';
-    const text = (btn.textContent || '').replace(/\\s+/g, ' ').trim();
-    const isUniversal = tracker.indexOf('UNIVERSAL_CASE') !== -1;
-    const isAnwenden = /Anwenden/i.test(text);
-    if (!isUniversal && !isAnwenden) return;
-    window.__anwendenReClickInfo = { tracker: tracker, text: text, isUniversal: isUniversal, at: Date.now() };
-    cleanup();
-  };
-  window.__anwendenReClickHandler = handler;
-  window.__anwendenReClickInfo = null;
-  window.__anwendenReArmed = true;
-  document.addEventListener('mousedown', handler, true);
-  document.addEventListener('click', handler, true);
-  return true;
-}
-"""
-    _POLL_ANWENDEN_CLICK_JS = """
-() => {
-  const info = window.__anwendenReClickInfo;
-  if (!info) return null;
-  window.__anwendenReClickInfo = null;
-  window.__anwendenReArmed = false;
-  return info;
-}
-"""
-    _REMOVE_ANWENDEN_CLICK_JS = """
-() => {
-  if (window.__anwendenReClickHandler) {
-    document.removeEventListener('mousedown', window.__anwendenReClickHandler, true);
-    document.removeEventListener('click', window.__anwendenReClickHandler, true);
-    window.__anwendenReClickHandler = null;
-  }
-  window.__anwendenReArmed = false;
-  window.__anwendenReClickInfo = null;
-}
-"""
     # Externer Transfer -> Weiterleiten (transfer case → user taken to console/c)
     _SELECTOR_EXTERNER_TRANSFER = 'button[data-entityid="@sprinklr/action/GuidedAction"]:has-text("Externer Transfer"), button:has-text("Externer Transfer")'
     _SELECTOR_WEITERLEITEN = 'button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]:has-text("Weiterleiten"), button:has-text("Weiterleiten")'
@@ -4621,169 +4564,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
         logger.warning(f"Timeout waiting for email send (case ID: {case_id})")
         print(f"[WARNING] Timeout waiting for email send. Continuing monitoring anyway...")
         return False
-
-    def _reattach_sprinklr_page_no_steal(self) -> None:
-        """Keep self.page on a Sprinklr tab without bring_to_front (do not steal focus)."""
-        if not self.browser:
-            return
-        sprinklr_hosts = (
-            "telefonica-germany.sprinklr.com",
-            "telefonica-germany-app.sprinklr.com",
-            "sprinklr.com",
-        )
-        pages: list = []
-        for ctx in self.browser.contexts:
-            try:
-                pages.extend(ctx.pages or [])
-            except Exception:
-                continue
-        chosen = None
-        for p in pages:
-            try:
-                u = (p.url or "").lower()
-                if u.startswith("devtools://"):
-                    continue
-                if any(h in u for h in sprinklr_hosts):
-                    chosen = p
-                    break
-            except Exception:
-                continue
-        if chosen is not None:
-            self.page = chosen
-
-    def _wait_for_anwenden_click(self, poll_seconds: float = 0.5) -> Optional[dict]:
-        """Arm Anwenden click listener and poll until left-click (survives navigation better than blocking Promise)."""
-        self._reattach_sprinklr_page_no_steal()
-        try:
-            self.page.evaluate(self._REMOVE_ANWENDEN_CLICK_JS)
-        except Exception:
-            pass
-        try:
-            self.page.evaluate(self._WAIT_ANWENDEN_CLICK_JS)
-        except Exception as e:
-            logger.error(f"Could not arm Anwenden click listener: {e}")
-            print(f"[ERROR] Could not arm Anwenden click listener: {e}")
-            return None
-
-        last_heartbeat = 0.0
-        while True:
-            try:
-                self._reattach_sprinklr_page_no_steal()
-                # Re-arm if page navigated and lost the listener
-                try:
-                    armed = self.page.evaluate("() => !!window.__anwendenReArmed")
-                    if not armed:
-                        self.page.evaluate(self._WAIT_ANWENDEN_CLICK_JS)
-                except Exception:
-                    time.sleep(poll_seconds)
-                    continue
-                info = self.page.evaluate(self._POLL_ANWENDEN_CLICK_JS)
-                if isinstance(info, dict):
-                    return info
-                # Also treat Anwenden button disappearing after it was visible as a click signal
-                # (macro apply often navigates before our mousedown handler resolves)
-            except KeyboardInterrupt:
-                raise
-            except Exception as e:
-                logger.debug(f"Anwenden poll tick: {e}")
-
-            now = time.time()
-            if now - last_heartbeat >= 5:
-                ts = datetime.now().strftime("%H:%M:%S")
-                print(f"[{ts}] Still waiting for Anwenden left-click… (open case → click Anwenden)")
-                last_heartbeat = now
-            time.sleep(poll_seconds)
-
-    def _click_first_collapsed_case_item(self) -> bool:
-        """Click the first visible sidebar collapsed-case-item (next case after Anwenden)."""
-        self._reattach_sprinklr_page_no_steal()
-        try:
-            loc = self.page.locator(self._COLLAPSED_CASE_ITEM_SELECTOR).first
-            loc.wait_for(state="visible", timeout=15000)
-            aria = ""
-            try:
-                aria = loc.get_attribute("aria-label") or ""
-            except Exception:
-                pass
-            loc.click(timeout=8000)
-            print("CASE_ITEM_AUTO_CLICKED")
-            if aria:
-                print(f"aria-label: {aria}")
-            return True
-        except Exception as e:
-            logger.error(f"Could not click collapsed-case-item: {e}")
-            print(f"[ERROR] Could not click collapsed-case-item: {e}")
-            return False
-
-    def monitor_anwenden_then_open_case_for_re(self, wait_seconds: int | None = None) -> bool:
-        """
-        Click-gated auto-RE:
-        1. Wait for user left-click on Anwenden (validateMacro / UNIVERSAL_CASE)
-        2. Wait wait_seconds (default 3)
-        3. Click first visible collapsed-case-item
-        4. Extract current case (extract-only) for 7-step RE
-        """
-        delay = self._ANWENDEN_RE_WAIT_SECONDS if wait_seconds is None else max(0, int(wait_seconds))
-        logger.info("Starting Anwenden-gated auto-RE (wait=%ss after click)", delay)
-        print("\n" + "=" * 80, flush=True)
-        print("ANWENDEN -> AUTO-RE ARMED", flush=True)
-        print("1. Left-click Anwenden on Sprinklr:", flush=True)
-        print('     button[data-action-id="validateMacro"]', flush=True)
-        print('     data-tracker-event-id="@macro/editableMacroBox/UNIVERSAL_CASE"', flush=True)
-        print(f"2. Script waits {delay}s, then clicks:", flush=True)
-        print(f'     {self._COLLAPSED_CASE_ITEM_SELECTOR}', flush=True)
-        print("3. Extract email -> agent runs 7-step RE", flush=True)
-        print("Ctrl+C to cancel. Manual extract: run.py --once", flush=True)
-        print("=" * 80 + "\n", flush=True)
-        print("ANWENDEN_RE_ARMED", flush=True)
-
-        while True:
-            try:
-                self._reattach_sprinklr_page_no_steal()
-                ts = datetime.now().strftime("%H:%M:%S")
-                print(f"[{ts}] Waiting for Anwenden left-click...", flush=True)
-                click_info = self._wait_for_anwenden_click()
-                # _wait_for_anwenden_click blocks until click (or returns None only if arming failed)
-                if not click_info:
-                    print("[WARN] Anwenden listener could not be armed — retrying in 2s…", flush=True)
-                    time.sleep(2)
-                    continue
-
-                print("\n" + "=" * 80, flush=True)
-                print("ANWENDEN_CLICK_DETECTED", flush=True)
-                if click_info.get("tracker"):
-                    print(f"tracker: {click_info.get('tracker')}", flush=True)
-                if click_info.get("text"):
-                    print(f"button text: {click_info.get('text')}", flush=True)
-                print(f"Waiting {delay}s before clicking next case...", flush=True)
-                print("=" * 80 + "\n", flush=True)
-
-                time.sleep(delay)
-
-                if not self._click_first_collapsed_case_item():
-                    print("[WARN] Case item click failed — waiting for another Anwenden click.")
-                    continue
-
-                # Allow case view to load (no focus steal)
-                try:
-                    self.page.wait_for_load_state("domcontentloaded", timeout=10000)
-                except Exception:
-                    pass
-                time.sleep(1.5)
-
-                ok = self.process_current_page_once(chat_only=False, extract_only=True)
-                if ok:
-                    print("ANWENDEN_RE_EXTRACT_DONE")
-                    return True
-                print("[WARN] Extract after Anwenden failed — waiting for another Anwenden click.")
-            except KeyboardInterrupt:
-                print("\n[INFO] Anwenden auto-RE stopped by user (Ctrl+C)")
-                raise
-            except Exception as e:
-                logger.error(f"Anwenden auto-RE loop error: {e}")
-                print(f"[ERROR] Anwenden auto-RE: {e}")
-                time.sleep(2)
-
+    
     def process_current_page_once(self, chat_only: bool = False, extract_only: bool = False) -> bool:
         """
         Process the current page once: if on email content page, extract and optionally reply; if on console, process first visible email. Then exit (no monitoring).
@@ -5178,12 +4959,7 @@ def main():
     write_reply_only = '--write-reply-only' in sys.argv
     wait_next_extract_only = '--wait-next-extract-only' in sys.argv
     no_fill_case_tracker = '--no-fill-case-tracker' in sys.argv
-    watch_anwenden_re = '--watch-anwenden-re' in sys.argv
     reply_file = _get_arg_value('--reply-file')
-    if watch_anwenden_re:
-        print("\n" + "=" * 80)
-        print("MODE: --watch-anwenden-re (Anwenden click → 3s → open case → extract)")
-        print("=" * 80 + "\n")
     # Load configuration
     config = load_config()
     
@@ -5198,11 +4974,10 @@ def main():
     
     try:
         # Connect without navigating: Skill 2 (read email) and write-reply must not reload or change URL
-        # Anwenden-gated RE also must leave the open case tab alone (Anwenden lives on the case page).
         stop_after_login = bool(login_only and not login_then_monitor)
         automation.connect_to_browser(
             CDP_ENDPOINT,
-            leave_page_unchanged=(process_current_only or write_reply_only or watch_anwenden_re),
+            leave_page_unchanged=(process_current_only or write_reply_only),
             stop_after_login=stop_after_login
         )
         
@@ -5339,21 +5114,6 @@ def main():
             finally:
                 automation.cleanup()
             return
-
-        # Anwenden-gated auto-RE: wait for Anwenden click → wait 3s → click case item → extract
-        # Must run BEFORE any monitor_emails / get_new_emails path.
-        if watch_anwenden_re:
-            try:
-                automation.monitor_anwenden_then_open_case_for_re(wait_seconds=3)
-            except KeyboardInterrupt:
-                raise
-            except Exception as e:
-                logger.error(f"Anwenden-gated RE failed: {e}")
-                print(f"\n[ERROR] Anwenden-gated RE failed: {e}")
-                print("[INFO] Tip: open the case, show Anwenden, rerun RE — or use: run.py --once")
-            finally:
-                automation.cleanup()
-            return
         
         # Skill 2: process current page once then exit
         if process_current_only:
@@ -5395,14 +5155,6 @@ def main():
         import traceback
         traceback.print_exc()
         print(f"\n[ERROR] Fatal error: {e}")
-        # Never fall back into continuous monitor_emails for Anwenden-RE / extract-only modes
-        if watch_anwenden_re or process_current_only or write_reply_only or extract_only:
-            print("[INFO] Stopping (no monitor fallback for RE/extract modes).")
-            try:
-                automation.cleanup()
-            except Exception:
-                pass
-            sys.exit(1)
         if automation.page is not None:
             print("[INFO] Attempting to continue...")
             try:

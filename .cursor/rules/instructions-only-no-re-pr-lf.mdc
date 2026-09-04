@@ -7,6 +7,8 @@ alwaysApply: true
 
 Some workspace chats are **rules/configuration only** (agent directives, skill updates, transfer-matrix changes, Case Tracker setup, etc.). **This is not the customer-case processing chat.**
 
+**Live automation runs only in the email processing chat** — open a separate chat with **`EMAIL-PROCESSING-AGENT.md`** (login, manual RE, PR, LF).
+
 ## When this rule applies
 
 Treat the current chat as **instructions-only** when **any** of these is true:
@@ -26,6 +28,8 @@ When in doubt in a mixed thread: if the user sends **only** `RE`, `PR`, `LF`, or
 | **LF** / **lf** | fill_case_tracker.py, log form |
 | **login** | Sprinklr login-only / startup automation |
 
+**Allowed here (not case processing):** **`revert last`** — restore file checkpoint (see `.cursor/rules/revert-last.mdc`).
+
 Also do **not** partially run case steps (no CDP Sprinklr reads "just to check" unless explicitly for **rules/testing documentation** the user asked for in this chat).
 
 ## Mandatory warning (use every time)
@@ -35,7 +39,7 @@ When the user triggers a blocked command in an instructions-only chat, **do not 
 ```
 ⚠️ Wrong chat — this thread is for rules and configuration only, not Sprinklr login or email processing (RE / PR / LF).
 
-Open a separate chat for customer cases, then run your command there.
+Open a separate chat with EMAIL-PROCESSING-AGENT.md for customer cases, then run your command there.
 ```
 
 If the user also asked a rules/config question in the same message, answer that **after** the warning.
@@ -48,4 +52,10 @@ If the user also asked a rules/config question in the same message, answer that 
 
 ## Customer-case chats
 
-Other chats where the user is actively processing a visible Sprinklr case (RE → PR → LF flow) follow the normal RE/PR/LF rules. This file does not disable those chats — only prevents **mistaken** use of an instructions-only thread.
+The **email processing agent chat** (startup: **`EMAIL-PROCESSING-AGENT.md`**) runs live case work:
+
+- **login** — Sprinklr + Case Tracker tab
+- **RE** — Anwenden-gated auto-RE (or `--once`) → 7-step RE
+- **PR** / **LF** — paste reply and log form
+
+This instructions chat must **not** run case scripts or draft live customer replies. **`revert last`** (checkpoint restore) is allowed here.

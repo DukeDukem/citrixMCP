@@ -5,6 +5,8 @@ alwaysApply: true
 
 # PR = Paste Reply (ONE CUSTOMER ONLY)
 
+**Chat scope:** **Email processing agent chat only** (`EMAIL-PROCESSING-AGENT.md`). Instructions dashboard must not run PR — see `.cursor/rules/instructions-only-no-re-pr-lf.mdc`.
+
 CRITICAL: This command MUST output ONE customer reply ONLY. Never merge or combine responses.
 CRITICAL: Paste content must belong ONLY to the currently visible case and the single customer in that case.
 
@@ -76,6 +78,7 @@ When the user prompts with PR/pr:
 - No data leaks
 - User will then send the email and optionally say LF for the form
 - Write-reply flow terminates immediately after one paste + verification step (no repaste loop)
+- **Do not** arm Anwenden RE after PR alone. When the user also runs **LF** (or sent **PR LF**), arm Anwenden RE only **after LF succeeds** — see `.cursor/rules/re-read-email.mdc` → **Auto-arm after PR + LF**.
 
 VIOLATION OF THIS RULE = DATA BREACH. DO NOT PROCEED IF UNCERTAIN.
 

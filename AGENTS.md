@@ -1,13 +1,23 @@
 # AGENTS.md — Citrix Sprinklr workspace
 
-## Model lock (non-negotiable)
+## Two chats (mandatory split)
 
-- Cursor model picker: **Auto only**.
-- **Never** switch to Grok or any named model.
-- If this session is Grok / named model: **STOP**. Tell the user to set picker to **Auto** and resend. Do not run RE/PR/LF.
-- Full rule: `.cursor/rules/ai-model-stay-auto.mdc`
+| Chat | Startup doc | Runs login / RE / PR / LF? |
+|------|-------------|----------------------------|
+| **Instructions dashboard** | `AGENT-INSTRUCTIONS.md` | **No** |
+| **Email processing** | `EMAIL-PROCESSING-AGENT.md` | **Yes** |
 
-## Case commands
+## Model lock
 
-- RE / PR / LF / login: follow `.cursor/rules/` and skills under `.cursor/skills/`.
-- **Instructions-only chats:** Do **not** run RE, PR, LF, or login — warn user to use a separate chat (`.cursor/rules/instructions-only-no-re-pr-lf.mdc`).
+- Cursor picker: **Auto only**. Grok banned.
+
+## Case commands (email processing chat)
+
+- **login** — Sprinklr + Case Tracker tab
+- **RE** — Anwenden-gated auto-RE (wait Anwenden click → 3s → open next case → extract) or `--once`; then 7-step output
+- **PR** / **LF** — paste reply + Case Tracker; **after both succeed**, agent **auto-arms** Anwenden RE again
+- **LF Salcus:** sidebar Kundennummer box only — `.cursor/rules/lf-salcus-kundennummer-exclusive.mdc`
+
+## Instructions dashboard
+
+Rules, skills, TransferMatrix — no live case scripts. **`revert last`** restores Anwenden-RE checkpoint if needed.

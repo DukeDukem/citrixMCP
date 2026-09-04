@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterAgentResponse": [
+      {
+        "command": ".cursor/hooks/re_complete_sound_hook.cmd",
+        "timeout": 15
+      }
+    ]
+  }
+}

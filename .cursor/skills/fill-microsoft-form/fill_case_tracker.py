@@ -6,13 +6,13 @@ optionally logs in, fills Case # + channel + defaults, leaves save to the user u
 
 Usage:
     uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#36698255"
-    uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "36698255" --attachments 2 --submit
     uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --open-only
 """
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -60,11 +60,26 @@ _SALCUS_UNSET = frozenset(
 )
 
 
+# Vertragsnummer in Sprinklr Kundennummer box — NOT a Salcus ID (e.g. Fall #55920431 → C-0026448826).
+_CONTRACT_ID_NOT_SALCUS = re.compile(r"^C-\d", re.IGNORECASE)
+
+
+def _is_contract_id_not_salcus(raw: str | None) -> bool:
+    """True when the sidebar value is a C- Vertragsnummer, not a numeric Kundennummer/Salcus."""
+    value = (raw or "").replace("\u200f", "").replace("\u200e", "").strip()
+    value = " ".join(value.split())
+    return bool(_CONTRACT_ID_NOT_SALCUS.match(value))
+
+
 def _normalise_salcus_value(raw: str | None) -> str:
-    """Return Salcus ID for tracker fill, or empty when unset / placeholder."""
+    """Return Salcus ID for tracker fill, or empty when unset / placeholder / not Salcus."""
     value = (raw or "").replace("\u200f", "").replace("\u200e", "").strip()
     value = " ".join(value.split())
     if value.lower() in _SALCUS_UNSET:
+        return ""
+    if "nicht festgelegt" in value.lower():
+        return ""
+    if _is_contract_id_not_salcus(value):
         return ""
     # Salcus IDs are numeric; reject obvious labels/URLs
     digits = "".join(ch for ch in value if ch.isdigit())
@@ -75,98 +90,59 @@ def _normalise_salcus_value(raw: str | None) -> str:
     return digits[:20]
 
 
+# Exclusive Salcus source: the sidebar box labelled Kundennummer (data-entityid + aria-label).
+# The displayed number changes every Fall #. Do not require data-errorid (can vary).
+# When set, Sprinklr often uses htmlText; "Nicht festgelegt" uses spr-text-03.
+# Never read email body, Webform text, Betreff, or any other Kundennummer mention.
 _EXTRACT_SALCUS_JS = """
 () => {
   const unset = new Set(['', '—', '-', 'nicht festgelegt', 'not set', 'n/a', 'na']);
   const norm = (s) => (s || '').replace(/[\\u200f\\u200e]/g, '').replace(/\\u00a0/g, ' ').replace(/\\s+/g, ' ').trim();
-  const isUnset = (v) => unset.has(norm(v).toLowerCase());
+  const isUnset = (v) => !v || unset.has(v.toLowerCase()) || v.toLowerCase().includes('nicht festgelegt');
   const isLabel = (v) => /^(Kundennummer|Salcus|Customer ID)$/i.test(norm(v));
 
-  const readKundennummerField = (field) => {
-    if (!field) return '';
-    const prefer = field.querySelector('[data-testid="htmlText"]');
-    if (prefer) {
-      const v = norm(prefer.textContent);
+  const fields = [...document.querySelectorAll('div[data-entityid="Kundennummer"][aria-label="Kundennummer"]')];
+  const field = fields.find((el) => el.getAttribute('fieldtype') === 'TEXT') || fields[0];
+  if (!field) return '';
+
+  const valueRoot = field.querySelector('.dont-break-out') || field;
+  const selectors = [
+    '[data-testid="htmlText"]',
+    '[data-testid="linkifiedText"] [data-testid="htmlText"]',
+    '[data-testid="linkifiedText"] span',
+    '.dont-break-out span.spr-text-03',
+    'span.spr-text-03.font-400',
+    'span.spr-text-03',
+  ];
+  for (const sel of selectors) {
+    for (const el of valueRoot.querySelectorAll(sel)) {
+      const v = norm(el.textContent);
       if (v && !isUnset(v) && !isLabel(v)) return v;
     }
-    for (const sel of [
-      '[data-testid="linkifiedText"] [data-testid="htmlText"]',
-      '[data-testid="linkifiedText"] span',
-      'span.spr-text-03',
-      'span[class*="spr-text-03"]',
-      '.font-500 span',
-    ]) {
-      for (const el of field.querySelectorAll(sel)) {
-        const v = norm(el.textContent);
-        if (v && !isUnset(v) && !isLabel(v)) return v;
-      }
-    }
-    return '';
-  };
-
-  // Primary: Sprinklr sidebar "Kundennummer" = Salcus ID for Roberta tracker
-  const knFields = document.querySelectorAll('[data-entityid="Kundennummer"]');
-  for (const field of knFields) {
-    const v = readKundennummerField(field);
-    if (v) return v;
   }
-
-  // Fallback: aria-label on presentation field
-  for (const field of document.querySelectorAll('[aria-label="Kundennummer"]')) {
-    const v = readKundennummerField(field);
-    if (v) return v;
-  }
-
-  const readValueFromBox = (box) => {
-    if (!box) return '';
-    const htmlText = box.querySelector('[data-testid="htmlText"]');
-    if (htmlText) {
-      const v = norm(htmlText.textContent);
-      if (v && !isUnset(v) && !isLabel(v)) return v;
-    }
-    const span = box.querySelector('span.spr-text-03, span[class*="spr-text-03"]');
-    const v = norm(span ? span.textContent : box.textContent);
-    return v && !isLabel(v) ? v : '';
-  };
-
-  // Legacy fallback: explicit "Salcus" label row
-  const boxes = Array.from(document.querySelectorAll('[data-testid="box"]'));
-  for (let i = 0; i < boxes.length; i++) {
-    const label = norm(boxes[i].textContent);
-    if (label === 'Salcus' || /^Salcus\\b/i.test(label)) {
-      let value = readValueFromBox(boxes[i + 1]);
-      if ((!value || isUnset(value)) && boxes[i].parentElement) {
-        value = readValueFromBox(boxes[i].parentElement);
-      }
-      if (value && !isUnset(value) && !/^Salcus/i.test(value)) return value;
-    }
-  }
-
-  // Label/value pair walk for "Kundennummer" text label (no data-entityid)
-  for (let i = 0; i < boxes.length; i++) {
-    const label = norm(boxes[i].textContent);
-    if (label === 'Kundennummer') {
-      const value = readValueFromBox(boxes[i + 1]) || readValueFromBox(boxes[i].parentElement);
-      if (value && !isUnset(value) && !isLabel(value)) return value;
-    }
-  }
-
   return '';
 }
 """
 
 
-def extract_salcus_from_sprinklr(page) -> str:
-    """Read Salcus ID from Sprinklr Kundennummer sidebar field; empty if unset."""
+def extract_salcus_from_sprinklr(page, case_info: dict | None = None) -> str:
+    """Read Salcus only from the Sprinklr sidebar Kundennummer box. Never from email/Webform body."""
     if page is None:
         return ""
+
+    raw = ""
     try:
         raw = page.evaluate(_EXTRACT_SALCUS_JS)
     except Exception:
-        return ""
+        pass
     salcus = _normalise_salcus_value(raw if isinstance(raw, str) else "")
     if salcus:
-        print(f"[CASE TRACKER] Salcus from Sprinklr Kundennummer: {salcus}")
+        print(f"[CASE TRACKER] Salcus from Sprinklr Kundennummer field: {salcus}")
+    elif _is_contract_id_not_salcus(raw if isinstance(raw, str) else ""):
+        print(
+            "[CASE TRACKER] Kundennummer box shows Vertragsnummer (C-…), not Salcus — "
+            "leaving Salcus empty; Ticketstatus → 3-Bot dokumentiert nicht in Salcus"
+        )
     else:
         print("[CASE TRACKER] Kundennummer/Salcus: not set on Sprinklr — leaving empty")
     return salcus
@@ -259,13 +235,13 @@ def resolve_transfer(case_info: dict | None) -> tuple[str, str]:
     case_info = case_info or {}
     quelle = (case_info.get("Quelle") or "").lower()
     ziel = (case_info.get("Ziel") or "").strip()
-    subject = (case_info.get("Subject") or "").lower()
 
-    # Widerruf cases → real transfer to Widerruf queue (not our Care Allgemein team)
-    if "widerruf" in quelle or "widerruf" in subject:
+    # Widerruf transfer ONLY when Quelle is the Widerruf queue (e.g. "Care Widerruf").
+    # Do NOT infer from email/webform Betreff category breadcrumbs (e.g. "...|Widerruf").
+    if "widerruf" in quelle and "webform" not in quelle:
         return "1", "CBC_XF_E_WIDERRUF"
 
-    # Our team (CBC_*_CARE_ALLGEMEIN incl. CBC_XF_E_CARE_ALLGEMEIN) — never Transfer Ja to ourselves
+    # Our team (CBC_*_CARE_ALLGEMEIN incl. CBC_E / CBC_XF_E variants) — never Transfer Ja to ourselves
     if _is_our_care_ziel(ziel):
         return "0", ""
 
@@ -368,7 +344,6 @@ def open_or_reuse_case_tracker_tab(ctx, config: dict | None = None, *, bring_spr
 def fill_case_tracker_fields(
     page,
     case_id: str,
-    attachments: int = 0,
     *,
     salcus: str | None = None,
     channel: str = "em_care",
@@ -442,12 +417,11 @@ def fill_case_tracker_fields(
     tstate_map = {"1": "#tstate1", "2": "#tstate2", "3": "#tstate3"}
     page.locator(tstate_map.get(str(tstate), "#tstate1")).click(force=True)
 
-    if attachments > 0:
-        att_note = f"Anhänge: {attachments}" if attachments < 4 else "Anhänge: mehr als 3"
-        try:
-            page.locator('input[name="note"]').fill(att_note)
-        except Exception:
-            pass
+    # Notiz — always leave empty (never log attachment counts or other notes)
+    try:
+        page.locator('input[name="note"]').fill("")
+    except Exception:
+        pass
 
     page.wait_for_timeout(400)
 
@@ -465,7 +439,6 @@ def main() -> int:
     ap.add_argument("--salcus", help="Salcus ID (optional; auto-read from Sprinklr when omitted)")
     ap.add_argument("--transfer", choices=["0", "1"], help="Transfer Nein/Ja override")
     ap.add_argument("--target", help="Transfer target queue/email override")
-    ap.add_argument("--attachments", type=int, default=0)
     ap.add_argument("--cdp", default=CDP_ENDPOINT)
     ap.add_argument("--open-only", action="store_true", help="Only open/reuse Case Tracker tab (login if needed)")
     ap.add_argument("--submit", action="store_true", help="Click Speichern after fill")
@@ -488,7 +461,7 @@ def main() -> int:
         ctx = browser.contexts[0] if browser.contexts else browser.new_context()
         sprinklr = find_sprinklr_console_page(ctx)
 
-        tracker = open_or_reuse_case_tracker_tab(ctx, config, bring_sprinklr_back=sprinklr)
+        tracker = open_or_reuse_case_tracker_tab(ctx, config, bring_sprinklr_back=None)
         print(f"[CASE TRACKER] Tab ready: {tracker.url}")
 
         if args.open_only:
@@ -505,9 +478,9 @@ def main() -> int:
             try:
                 sprinklr.bring_to_front()
                 sprinklr.wait_for_timeout(400)
-                if not salcus_value:
-                    salcus_value = extract_salcus_from_sprinklr(sprinklr)
                 case_info = extract_case_info_from_sprinklr(sprinklr)
+                if not salcus_value:
+                    salcus_value = extract_salcus_from_sprinklr(sprinklr, case_info)
             except Exception:
                 case_info = {}
 
@@ -519,15 +492,13 @@ def main() -> int:
         fill_case_tracker_fields(
             tracker,
             args.case_id,
-            args.attachments,
             salcus=salcus_value,
             transfer=transfer_flag,
             transfer_target=transfer_target or None,
             submit=args.submit,
         )
 
-        if sprinklr:
-            sprinklr.bring_to_front()
+        print("[CASE TRACKER] Form filled — stay on this tab; Sprinklr is not forced to front.")
 
         if args.close_tab:
             try:

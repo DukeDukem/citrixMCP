@@ -1,0 +1,43 @@
+---
+description: When the user types RE, run read-email extract once and produce full 7-step RE output for the visible case.
+alwaysApply: true
+---
+
+# RE = Read Email (manual, per case)
+
+**Chat scope:** Email processing chat only (`EMAIL-PROCESSING-AGENT.md`).
+
+**Always stick to the processing form:** Full 7-step output from **sprinklr-read-answer-email** SKILL.md.
+
+**AI model (ABSOLUTE):** Model picker stays **Auto**. **Grok is banned.**
+
+## When user sends **RE** / **re**
+
+1. Run extract (visible Sprinklr case only):
+   ```powershell
+   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
+   ```
+2. Script prints **CUSTOMER EMAIL** + **`RE_PENDING_SOUND`** — no audio yet.
+3. Output full **7-step RE** (sections 1–7). Section **7. Summary of response** must be the **last** segment.
+4. **Audio (automatic):** Project hook `.cursor/hooks/re_complete_sound_hook.py` plays **Prowler** when your response includes section 7 after a pending RE extract. Terminal/logs: **`RE_COMPLETE_SOUND`**. You do **not** need to run a separate sound command.
+5. **Manual fallback:** user types **`sound`** → `uv run python .cursor/skills/sprinklr-email-automation/re_complete_sound.py --play`
+6. User sends **PR** / **LF** when ready; next case → **RE** again.
+
+## 7-step output
+
+1. Customer summary  
+2. Verification  
+3. Transfer eligibility  
+4a/4b. Backend / instructions  
+5. Instructions on handling case  
+6. Your response to customer (German, code block)  
+7. Summary of response (EN) — **audio after this section (hook)**
+
+## Integrity
+
+- One visible case only; discard prior Fall # context on each new **RE**.
+- PR pastes latest RE for the **same visible Fall #** only.
+
+## Hooks note
+
+Requires project hooks enabled (`.cursor/hooks.json`). Reload Cursor if hook was just added. View **Output → Hooks** if sound does not play.

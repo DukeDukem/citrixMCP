@@ -1,0 +1,38 @@
+---
+description: Known-good Anwenden-gated RE workflow (verified working). Retain as baseline memory for case agent.
+alwaysApply: true
+---
+
+# Anwenden RE — known-good baseline (verified)
+
+**Status:** Working as of 2026-09-04. User confirmed: “NICE. It worked.”
+
+## Workflow (email processing chat only)
+
+1. **RE** (or auto-arm after PR+LF) runs:
+   `uv run python .cursor/skills/sprinklr-read-answer-email/run.py`
+2. Expect **`ANWENDEN_RE_ARMED`** / **`MODE: --watch-anwenden-re`**
+3. User left-clicks **Anwenden** (`validateMacro` / `UNIVERSAL_CASE`)
+4. Script waits **3s** → clicks `button[data-testid="collapsed-case-item"]` → extract
+5. Agent outputs full **7-step RE**
+6. User **PR** + **LF** (or **PR LF**)
+7. After **both** succeed → agent **immediately re-arms** step 1 (do not wait for typed RE)
+
+Manual open-case extract: `run.py --once`
+
+## Hard constraints that fixed stuck monitor
+
+- Anwenden RE uses **`leave_page_unchanged`** (do not navigate to console list on connect)
+- **Never** fall back into `monitor_emails` / `get_new_emails` for RE modes
+- Do not steal browser focus while waiting
+
+## Related docs
+
+- `.cursor/rules/re-read-email.mdc` — RE + auto-arm after PR+LF
+- `.cursor/rules/lf-log-form.mdc` / `pr-paste-reply.mdc`
+- `EMAIL-PROCESSING-AGENT.md`
+- Rollback of *pre-experiment* manual RE: **`revert last`** → `.cursor/revert-checkpoints/pre-anwenden-re/`
+
+## LF Salcus note (also retained)
+
+Sidebar value like **`C-0026448826`** (e.g. Fall #55920431) is **not** Salcus → leave empty → ticketstatus **3-Bot dokumentiert nicht in Salcus**.

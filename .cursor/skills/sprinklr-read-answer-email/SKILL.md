@@ -5,6 +5,8 @@ description: Reads the current email in Sprinklr Console and prints it to output
 
 # Sprinklr: Read Email (script prints email, Cursor writes reply in chat)
 
+**Chat scope:** **Email processing agent chat only** (`EMAIL-PROCESSING-AGENT.md`). Instructions dashboard does not run RE or produce live 7-step output.
+
 **Shorthand:** The user may type **RE** instead of "read email". Treat **RE** the same as "read email" and run this skill (invoke the script and then follow all agent instructions below).
 
 ---
@@ -52,27 +54,20 @@ If customer is **not verified**: do steps 1, 2, then skip transfer matrix; use u
 
 **Always stick to the processing form:** When you run this skill or respond to the user about a read-email case, you must use the mandatory output structure (sections 1–7) and the verification/case-processing flow defined here. Do not deviate, skip, or reorder. **Do not show or require any "accept", "approve", or similar confirmation pop-ups during the RE output flow; all steps must be executed automatically unless the user explicitly interrupts or overrides them.**
 
-1. **Run the skill.** The script connects to the browser (CDP 9222), extracts the customer email and **full conversation thread** from the **currently visible case only**, and prints **"CUSTOMER EMAIL"** plus **"COMPLETE CONVERSATION THREAD"**. Then the script exits.
-2. **Output sections 1–7 in order** (see Mandatory output structure above; steps 5 and 6 are combined). Use the script output as the source for section 1. **Include date/time context in section 1:** note today's date (e.g. "Today: Friday, 06.03.2026") and flag any dates in the case as past/present/future (e.g. "01.03. mentioned in the email is in the past"; "Deadline 14.03. is in the future"). This is critical for determining if deadlines (withdrawal period, contract changes, refund timelines) have already expired or are still pending.
+1. **Run the skill.** User types **RE**. Default: script arms **Anwenden-gated** watch (`ANWENDEN_RE_ARMED`), waits for left-click on Anwenden (`validateMacro` / `UNIVERSAL_CASE`), waits **3s**, clicks `collapsed-case-item`, prints **CUSTOMER EMAIL** + **`RE_PENDING_SOUND`**, exits. You output sections 1–7. Hook plays sound when section 7 is in your reply (or user types **`sound`**). Manual current-case extract: **`run.py --once`**.
+2. **After script output**, output sections 1–7 in order (see Mandatory output structure). Use the script output as the source for section 1. **Include date/time context in section 1.**
 3. **Verification (section 2):** At least 3 key identifiers (name, Kundennummer, Geburtsdatum, bill/invoice number, last 4 IBAN, home address, or third party with Vollmacht). **Never ask for PKK.** Apply the **2-of-3 exception** (see below) when exactly 2 identifiers are present and neither is the Von: (From:) email address.
 4. **If NOT verified:** Use **only** the premade template for unverified customers (case-specific thank you + sympathy + the fixed security text asking for last 4 IBAN and Kundennummer + tip Mein o2). Do **not** query the KnowledgeBase for substantive handling. Output section 5 briefly, then 6 (full template) and 7.
 5. **If verified** or **Awaiting manual verification:** Query **TransferMatrix.md** (section 3). If **Transfer eligible: Yes** → section 4a (transfer goal and action). If **Transfer eligible: No** → section 4b (query KB for handling). Then **Exceptions** and **Standard premade** as usual. Fill 5 (instructions), draft **case-specific** reply (6), summary (7). For **Awaiting manual verification**, state in section 2 and in section 7 that the user must manually verify; if they confirm verified, use the drafted reply; if they say unverified, reply with the **standard verification inquiry email** (unverified template with security block + Mein o2).
 6. **Section 6** must always show the **full** suggested email reply in German (complete, copyable block). **Section 7** must summarize in English what the reply does and next steps.
 7. **When the user says "reply with …" or "write that reply in the box"**: run the **sprinklr-write-reply** skill with a file containing the reply text.
 
-8. **Monitoring vs. processing new cases:**  
-   - The automation may **monitor Sprinklr for new incoming emails and changed cases in the background**, but it must **not open, process, or reply to any individual case on its own**.  
-   - Actual case handling only starts when the user explicitly issues **RE** (or "read email") for the current case.  
-   - On every RE invocation, the script must **re-read the Fall # (case ID) from the currently visible email page** and treat that as the **authoritative, current case**, ignoring any previously cached or earlier Fall #.  
-   - **If the newly read Fall # differs from the Fall # used in the previous RE run, you must treat this RE as a completely new case:**  
-     - Discard any prior case-specific processing context from the previous Fall # (summaries, KB lookups, transfer decisions, reply drafts).  
-     - Run the full 1–7 flow **fresh** for the new Fall # (new summary, new verification, new transfer eligibility, new reply).  
-     - Under no circumstances may you **repeat or reuse** the previous RE output for the old Fall # on the new case.
+**Iterations and case specificity:** Premade responses (unverified template, router/Schadensersatz, etc.) may be **adapted** to the case. During RE output, **draft the full customer response autonomously** unless the user explicitly overrides.
 
-**Iterations and case specificity:** Any and all suggested responses (including unverified template, exception replies, and standard premade responses such as the router/Schadensersatz reply) may be **iterated or adapted** based on case specificity. Treat premade responses as a **base**; adapt them when the case or explicit user instruction requires it.  
-By default, during the RE output flow you must **apply all required processing and draft the full customer response autonomously, without waiting for the user to manually "accept", "approve" or "allow" individual processing steps or wording changes**. Only pause or modify this flow if the user explicitly corrects or overrides the drafted handling or reply.
+7. **When section 7 (Summary of response) is complete**, audio plays via project hook (`.cursor/hooks/re_complete_sound_hook.py`) if **`RE_PENDING_SOUND`** was set. Manual: **`sound`** or `re_complete_sound.py --play`.
+8. **After both PR and LF succeed** for the same Fall #: **immediately** re-run Anwenden-gated RE (`run.py` without `--once`). Do not wait for the user to type **RE**. See `.cursor/rules/re-read-email.mdc` → Auto-arm after PR + LF.
 
-**No reload or navigation:** The script must **not** reload the page or navigate to any URL. It only reads from the **current tab** (email content page). Run **sprinklr-open-login-status** first. The script processes the current page once (extract-only), prints the email, then exits. It does **not** write to the editor.
+**No reload or navigation:** Script reads the **current tab** only. Run **login** first. Script does **not** write to the editor.
 
 ---
 
@@ -443,7 +438,7 @@ If the user is on the console list (no case open), the script asks them to open 
 uv run python .cursor/skills/sprinklr-read-answer-email/run.py
 ```
 
-The script runs with **`--process-current-only --extract-only`**: reads the email and full thread, prints them, then stops. You must then: (1) **summarize the entire email conversation** in the Cursor chat, (2) query the KnowledgeBase (grep/search), (3) write the suggested reply in the chat. To put that reply into the Sprinklr reply box, use **sprinklr-write-reply** with a file containing the reply.
+Default **RE** runs with **`--watch-anwenden-re`**: waits for Anwenden left-click → 3s → clicks `collapsed-case-item` → extract → sets **`RE_PENDING_SOUND`**. Manual: **`run.py --once`** uses **`--process-current-only --extract-only`**. You output sections 1–7 in chat; hook plays Prowler after section 7. To put the reply into Sprinklr, use **sprinklr-write-reply**.
 
 ## UI mapping (Sprinklr)
 
@@ -454,7 +449,7 @@ The script runs with **`--process-current-only --extract-only`**: reads the emai
 ## Script file
 
 - **Path:** `.cursor/skills/sprinklr-read-answer-email/run.py`
-- **Does:** Invokes the runner with **`--process-current-only --extract-only`**. Script prints the customer email and full conversation thread and exits; **Cursor** summarizes the entire conversation in the chat, queries KnowledgeBase (grep/search), and writes the suggested reply in the chat.
+- **Does (default):** Invokes runner with **`--watch-anwenden-re`** — wait for Anwenden click → 3s → click next `collapsed-case-item` → extract → exit. **`--once`:** **`--process-current-only --extract-only`** on the already-open case. **Cursor** then writes sections 1–7 in chat.
 
 ## Knowledge base
 

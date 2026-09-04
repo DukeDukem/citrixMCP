@@ -1,0 +1,23 @@
+---
+description: User types "revert last" to restore the pre-anwenden-re checkpoint (manual RE before Anwenden auto-RE experiment).
+alwaysApply: true
+---
+
+# revert last — roll back Anwenden auto-RE experiment
+
+**Chat scope:** Instructions / rules chat (this dashboard). Safe to run file restore here.
+
+When the user sends **`revert last`** / **`Revert last`** / **`revert-last`**:
+
+1. Restore all files from `.cursor/revert-checkpoints/pre-anwenden-re/` per that folder’s `MANIFEST.md`:
+   - `run.py` → `.cursor/skills/sprinklr-read-answer-email/run.py`
+   - `email_automation.py` → `.cursor/skills/sprinklr-email-automation/email_automation.py`
+   - `run_sprinklr_email_automation.py` → `.cursor/skills/sprinklr-email-automation/run_sprinklr_email_automation.py`
+   - `fall_watch_state.py` → `.cursor/skills/sprinklr-email-automation/fall_watch_state.py`
+   - `re-read-email.mdc` → `.cursor/rules/re-read-email.mdc`
+   - `EMAIL-PROCESSING-AGENT.md` → repo root `EMAIL-PROCESSING-AGENT.md`
+2. Do **not** delete the checkpoint folder (keep for reference).
+3. Confirm restore with a short list of restored paths.
+4. After revert, default RE is again: **manual** `--process-current-only --extract-only` (no Anwenden watch).
+
+Do **not** treat `revert last` as a Sprinklr case command (not RE/PR/LF).
