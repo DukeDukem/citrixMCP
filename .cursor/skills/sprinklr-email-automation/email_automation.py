@@ -5377,6 +5377,17 @@ def main():
             except Exception as e:
                 logger.warning(f"Could not open Case Tracker tab after login: {e}")
                 print(f"[WARN] Case Tracker tab not opened: {e}")
+            try:
+                if str(_script_dir) not in sys.path:
+                    sys.path.insert(0, str(_script_dir))
+                from first_re_once import set_first_re_once
+
+                set_first_re_once(source="login")
+                print("FIRST_RE_ONCE_PENDING")
+                print("[INFO] Next RE will extract the open case (--once), not arm Anwenden.")
+            except Exception as e:
+                logger.warning(f"Could not set first-RE-once flag: {e}")
+                print(f"[WARN] Could not set first-RE-once flag: {e}")
             print("[INFO] Browser is on the console list; in-page script will auto-open new emails when they appear.")
             automation.cleanup()
             return

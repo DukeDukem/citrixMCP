@@ -20,19 +20,20 @@ Then use commands below as you work each case.
 
 | Step | Command | What |
 |------|---------|------|
-| 1 | **login** | Once per session — Sprinklr + Case Tracker tab |
-| 2 | **RE** (first case / manual) | Arms Anwenden watch → you click Anwenden → next case extract → 7-step RE |
+| 1 | **login** | Once per session — sets **`FIRST_RE_ONCE_PENDING`** + Case Tracker tab |
+| 2 | **RE** (first after login) | **`--once`**: extract the **currently open** case → 7-step RE (not Anwenden arm) |
 | 3 | **PR** | Paste reply |
 | 4 | Send | You send in Sprinklr |
 | 5 | **LF** (or **PR LF**) | Case Tracker |
-| 6 | *(agent, automatic)* | After **both PR + LF** succeed → **auto-arm** Anwenden RE again (no need to type RE) |
+| 6 | *(agent, automatic)* | After **both PR + LF** → **`run.py --arm`** (Anwenden watch) |
 | 7 | You click **Anwenden** | Script waits 3s → opens next case → extract → 7-step RE |
 
-**Manual extract** (case already open):  
-`uv run python .cursor/skills/sprinklr-read-answer-email/run.py --once`
+**Forced modes:**  
+- Open case now: `run.py --once`  
+- Arm Anwenden now: `run.py --arm`
 
-**Mandatory:** After PR and LF are both done for a case, the agent **must** start  
-`uv run python .cursor/skills/sprinklr-read-answer-email/run.py`  
+**Mandatory:** After PR and LF are both done for a case, the agent **must** run  
+`uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm`  
 without waiting for the user to type **RE**.
 
 ---
@@ -42,14 +43,16 @@ without waiting for the user to type **RE**.
 | Command | Script |
 |---------|--------|
 | **login** | `uv run python .cursor/skills/sprinklr-email-automation/run_sprinklr_email_automation.py --login-only` |
-| **RE** | `uv run python .cursor/skills/sprinklr-read-answer-email/run.py` (Anwenden-gated) |
-| **RE once** | `…/run.py --once` (current open case only) |
+| **RE** | `…/run.py` — first after login = **`--once`**; else Anwenden arm |
+| **RE once** | `…/run.py --once` |
+| **RE arm** | `…/run.py --arm` (after PR+LF) |
 | **PR** | sprinklr-write-reply + verify |
 | **LF** | `uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID"` |
+| **DONE** / **Done for today** | Stop Anwenden RE / watches; pause until next login |
 
-Rules: `.cursor/rules/re-read-email.mdc`, `pr-paste-reply.mdc`, `lf-log-form.mdc`, `login-command.mdc`.
+Rules: `.cursor/rules/re-read-email.mdc`, `pr-paste-reply.mdc`, `lf-log-form.mdc`, `login-command.mdc`, `done-for-today.mdc`.
 
-**Rollback:** in instructions chat type **`revert last`** → restores pre-Anwenden-RE checkpoint.
+**End of day:** type **`DONE`** (or **Done for today**) — agent runs `done_for_today.py` and stops automation.
 
 ---
 

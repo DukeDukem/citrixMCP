@@ -1,0 +1,46 @@
+---
+description: User says DONE or "Done for today" — stop Anwenden RE/watches and pause the session until next login.
+alwaysApply: true
+---
+
+# DONE / Done for today (end of day)
+
+**Chat scope:** **Email processing agent chat** (`EMAIL-PROCESSING-AGENT.md`).  
+In the instructions dashboard, do **not** run the stop script; tell the user to send **DONE** in the case chat (or run the script path yourself only if they explicitly ask to test it here).
+
+## Triggers (any of these)
+
+- **`DONE`** / **`done`**
+- **`Done for today`** / **`done for today`**
+
+## Required agent actions (in order)
+
+1. Run the stop script:
+   ```powershell
+   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-email-automation/done_for_today.py
+   ```
+   Expect **`DONE_FOR_TODAY_OK`**. The script stops Anwenden-RE / related watch shells and clears pending RE/Fall-watch flags.
+
+2. If a tool/shell is still visibly running in this chat (waiting on `ANWENDEN_RE_ARMED`), **stop/cancel that tool invocation** as well (same intent as Ctrl+C).
+
+3. **Do not** arm or run **RE**, **PR**, **LF**, or **login** again in this session unless the user explicitly starts work again (e.g. types **login** tomorrow).
+
+4. **Do not** start `monitor_emails`, Fall watch, or any background Sprinklr watch.
+
+5. Confirm to the user in one short reply, exactly this intent:
+   - All automation stopped  
+   - Session paused until next login  
+
+Example confirmation:
+
+```
+All automation stopped. Session paused until next login.
+```
+
+## What DONE does *not* do
+
+- Does **not** close Chrome / Citrix / Sprinklr  
+- Does **not** log out of Sprinklr  
+- Does **not** send customer emails or fill Case Tracker  
+
+Next session: user types **login**, then works cases as usual.

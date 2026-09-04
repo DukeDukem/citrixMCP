@@ -13,9 +13,10 @@
 
 ## Case commands (email processing chat)
 
-- **login** — Sprinklr + Case Tracker tab
-- **RE** — Anwenden-gated auto-RE (wait Anwenden click → 3s → open next case → extract) or `--once`; then 7-step output
-- **PR** / **LF** — paste reply + Case Tracker; **after both succeed**, agent **auto-arms** Anwenden RE again
+- **login** — Sprinklr + Case Tracker tab; sets first-RE **`--once`** gate
+- **RE** — first after login = **`--once`**; later / after PR+LF = **`--arm`** Anwenden; then 7-step output
+- **PR** / **LF** — paste reply + Case Tracker; **after both succeed**, agent runs **`run.py --arm`**
+- **DONE** / **Done for today** — stop Anwenden RE / watches; pause until next login (`.cursor/rules/done-for-today.mdc`)
 - **LF Salcus:** sidebar Kundennummer box only — `.cursor/rules/lf-salcus-kundennummer-exclusive.mdc`
 
 ## Instructions dashboard

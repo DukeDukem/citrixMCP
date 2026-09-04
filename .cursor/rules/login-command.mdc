@@ -5,6 +5,8 @@ alwaysApply: true
 
 # LOGIN command behavior
 
+**Chat scope:** **Email processing agent chat only** (startup: `EMAIL-PROCESSING-AGENT.md`). Do not run login automation in the instructions/rules dashboard — see `.cursor/rules/instructions-only-no-re-pr-lf.mdc`.
+
 When the user input is **"login"** (or clearly requests login/startup login), execute login handling immediately.
 
 ## Required flow
@@ -34,13 +36,15 @@ After Sprinklr login is verified in **login-only** mode, the automation **opens 
 - Reuses an existing Case Tracker tab if already open.
 - If the password gate appears, credentials come from `config.json` (`case_tracker_nq`, `case_tracker_password`).
 
-This is the only extra tab opened during login-only (no monitor, no RE/PR/LF).
+This is the only extra tab opened during login-only (no monitor, no Anwenden arm, no RE extract yet).
+
+After login succeeds, the script sets **`FIRST_RE_ONCE_PENDING`**. The **next** user **RE** must extract the open case via **`--once`** (not Anwenden arm). See `.cursor/rules/re-read-email.mdc`.
 
 ## Stop condition (strict)
 
-- As soon as credentials are submitted and login is verified, complete Case Tracker tab open, then stop.
-- In login-only mode: once the post-submit page opens and the audio-related popup appears (e.g. missing audio), treat Sprinklr login as complete; then open Case Tracker and stop.
-- Do not start email monitoring or case processing after login-only.
+- As soon as credentials are submitted and login is verified, complete Case Tracker tab open, set first-RE-once flag, then stop.
+- In login-only mode: once the post-submit page opens and the audio-related popup appears (e.g. missing audio), treat Sprinklr login as complete; then open Case Tracker, set **`FIRST_RE_ONCE_PENDING`**, and stop.
+- Do not start email monitoring, Anwenden watch, or case extract during login-only.
 
 ## Safety
 

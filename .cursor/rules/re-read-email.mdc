@@ -1,9 +1,9 @@
 ---
-description: When the user types RE, arm Anwenden-gated auto-RE (or --once for current case) and produce full 7-step RE output.
+description: When the user types RE, run post-login --once extract or Anwenden-gated arm; produce full 7-step RE output.
 alwaysApply: true
 ---
 
-# RE = Read Email (Anwenden-gated auto + manual fallback)
+# RE = Read Email (post-login --once + Anwenden arm)
 
 **Chat scope:** Email processing chat only (`EMAIL-PROCESSING-AGENT.md`).
 
@@ -13,38 +13,46 @@ alwaysApply: true
 
 ## When user sends **RE** / **re**
 
-1. Run default extract arm (Anwenden-gated):
+1. Run default RE entrypoint (mode chosen by script):
    ```powershell
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
    ```
-2. Script prints **`ANWENDEN_RE_ARMED`** and waits for a **left-click** on Sprinklr **Anwenden**:
-   - `button[data-action-id="validateMacro"]`
-   - preferably `data-tracker-event-id="@macro/editableMacroBox/UNIVERSAL_CASE"`
-3. On that click: script waits **3 seconds**, then clicks the first visible  
-   `button[data-testid="collapsed-case-item"]`, extracts the case, prints **CUSTOMER EMAIL** + **`RE_PENDING_SOUND`**.
-4. Output full **7-step RE** (sections 1–7). Section **7. Summary of response** must be the **last** segment.
-5. **Audio (automatic):** Project hook plays Prowler after section 7 when pending. Manual: **`sound`**.
-6. User sends **PR** / **LF** when ready.
-7. **Mandatory after PR + LF both complete** for that Fall #: **immediately re-arm** Anwenden-gated RE (same command as step 1). Do **not** wait for the user to type **RE** again. See **Auto-arm after PR+LF** below.
+2. **Mode A — post-login first RE (mandatory):** After a successful **login**, the script sets **`FIRST_RE_ONCE_PENDING`**. The next `run.py` **consumes** that flag and runs **`--once`** (extract the **currently open** case). Expect:
+   - `FIRST_RE_ONCE_CONSUMED (post-login initial RE → --once)`
+   - `MODE: --once`
+   - **CUSTOMER EMAIL** + **`RE_PENDING_SOUND`**
+   - Then output full **7-step RE**. **Do not** wait for Anwenden on this first RE.
+3. **Mode B — Anwenden-gated (later cases):** If the first-RE flag is **not** pending, default `run.py` arms Anwenden:
+   - prints **`ANWENDEN_RE_ARMED`** / `MODE: --watch-anwenden-re`
+   - waits for left-click on **Anwenden** (`validateMacro` / `UNIVERSAL_CASE`)
+   - waits **3 seconds**, clicks `button[data-testid="collapsed-case-item"]`, extracts
+   - then you output full **7-step RE**
+4. **Audio (automatic):** Project hook plays Prowler after section 7 when pending. Manual: **`sound`**.
+5. User sends **PR** / **LF** when ready.
+6. **Mandatory after PR + LF both complete** for that Fall #: **immediately re-arm Anwenden** with **`--arm`** (never rely on default if a first-RE flag could linger):
+   ```powershell
+   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
+   ```
+   Do **not** wait for the user to type **RE**. See **Auto-arm after PR+LF** below.
 
-### Manual extract (currently open case, no wait)
+### Explicit modes
 
-```powershell
-uv run python .cursor/skills/sprinklr-read-answer-email/run.py --once
-```
-
-Use when the case is already open and you do not need Anwenden → auto-open.
+| Command | Behavior |
+|---------|----------|
+| `run.py` | Post-login pending → **`--once`**; else Anwenden arm |
+| `run.py --once` | Always extract open case now |
+| `run.py --arm` | Always arm Anwenden (used after PR+LF) |
 
 ## Auto-arm after PR + LF (mandatory)
 
 When **both** paste (**PR**) and Case Tracker fill (**LF**) have finished successfully for the **same** Fall #:
 
-1. **Immediately** start Anwenden-gated RE (do not ask, do not wait for the user to type **RE**):
+1. **Immediately** arm Anwenden RE:
    ```powershell
-   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
+   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
    ```
-2. Confirm in chat briefly: e.g. `Anwenden RE armed for next case.` Expect **`ANWENDEN_RE_ARMED`** in the script output.
-3. User then clicks **Anwenden** in Sprinklr → script waits 3s → opens next case → extract → you output 7-step RE.
+2. Confirm briefly: e.g. `Anwenden RE armed for next case.` Expect **`ANWENDEN_RE_ARMED`**.
+3. User clicks **Anwenden** → 3s → next case → extract → 7-step RE.
 
 **When this fires**
 
@@ -52,10 +60,10 @@ When **both** paste (**PR**) and Case Tracker fill (**LF**) have finished succes
 |--------------|----------------------|
 | **PR LF** / **pr lf** | After PR paste+verify **and** LF fill both succeed |
 | **PR** then later **LF** | After **LF** succeeds (PR already done for that Fall #) |
-| **LF** alone with no prior PR for this Fall # | Do **not** auto-arm (incomplete case close-out) |
-| **PR** alone (no LF yet) | Do **not** auto-arm yet — wait until LF finishes |
+| **LF** alone with no prior PR for this Fall # | Do **not** auto-arm |
+| **PR** alone (no LF yet) | Do **not** auto-arm yet |
 
-Do **not** arm twice for the same close-out. If Anwenden RE is already running from a prior arm, do not start a second overlapping process.
+Do **not** arm twice for the same close-out. If Anwenden RE is already running, do not start a second overlapping process.
 
 ## 7-step output
 

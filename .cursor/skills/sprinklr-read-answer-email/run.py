@@ -1,12 +1,13 @@
 """
 Skill 2: Read email in Sprinklr.
 
-Default (RE): arm Anwenden-gated auto-RE —
-  wait for left-click on Anwenden (validateMacro / UNIVERSAL_CASE) →
-  wait 3s → click collapsed-case-item → extract → exit for 7-step RE.
+Default RE:
+  - After login (first RE of session): extract currently open case (--once)
+  - Otherwise / after PR+LF: arm Anwenden-gated watch
 
-Manual current case:
-  uv run python .cursor/skills/sprinklr-read-answer-email/run.py --once
+Explicit flags:
+  --once                 extract open case now
+  --arm / --watch-anwenden-re   arm Anwenden watch (skip first-RE-once gate)
 """
 import os
 import subprocess
@@ -15,27 +16,53 @@ from pathlib import Path
 
 _SKILL_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _SKILL_DIR.parent.parent.parent
+_AUTO_DIR = _REPO_ROOT / ".cursor" / "skills" / "sprinklr-email-automation"
 
 
 def main() -> int:
     os.chdir(_REPO_ROOT)
-    runner = _REPO_ROOT / ".cursor" / "skills" / "sprinklr-email-automation" / "run_sprinklr_email_automation.py"
+    runner = _AUTO_DIR / "run_sprinklr_email_automation.py"
     if not runner.exists():
         print(f"Runner not found: {runner}", file=sys.stderr)
         return 1
     env = os.environ.copy()
     env["SPRINKLR_CDP_ENDPOINT"] = "http://127.0.0.1:9222"
 
-    once = "--once" in sys.argv
-    if once:
-        # Legacy: extract currently open case immediately
+    argv = sys.argv[1:]
+    if "--help" in argv or "-h" in argv:
+        print(__doc__ or "run.py [--once | --arm]")
+        return 0
+
+    force_once = "--once" in argv
+    force_arm = "--arm" in argv or "--watch-anwenden-re" in argv
+
+    if force_once and force_arm:
+        print("[ERROR] Use either --once or --arm, not both.", file=sys.stderr)
+        return 2
+
+    use_once = force_once
+    if not force_once and not force_arm:
+        # Post-login gate: first RE extracts open case; later default is Anwenden arm
+        if str(_AUTO_DIR) not in sys.path:
+            sys.path.insert(0, str(_AUTO_DIR))
+        try:
+            from first_re_once import consume_first_re_once
+
+            if consume_first_re_once():
+                use_once = True
+                print("FIRST_RE_ONCE_CONSUMED (post-login initial RE → --once)")
+        except Exception as e:
+            print(f"[WARN] first_re_once gate failed: {e}", file=sys.stderr)
+
+    if use_once:
+        print("MODE: --once (extract currently open case)")
         return subprocess.call(
             [sys.executable, str(runner), "--process-current-only", "--extract-only"],
             cwd=str(_REPO_ROOT),
             env=env,
         )
 
-    # Default RE: Anwenden click → wait 3s → open next case → extract
+    print("MODE: --watch-anwenden-re (Anwenden arm)")
     return subprocess.call(
         [sys.executable, str(runner), "--watch-anwenden-re"],
         cwd=str(_REPO_ROOT),

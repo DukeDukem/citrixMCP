@@ -130,7 +130,7 @@ Routing rules will be extended case-by-case in chat; script default lives in `fi
 If **PR** (paste + post-paste verify CLEAN) already completed for this **same** Fall # in this close-out — including when the user sent **PR LF** — then **immediately** after LF succeeds:
 
 ```powershell
-Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
+Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
 ```
 
 Do **not** wait for the user to type **RE**. Full rule: `.cursor/rules/re-read-email.mdc` → **Auto-arm after PR + LF**.

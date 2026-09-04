@@ -17,7 +17,7 @@ Treat the current chat as **instructions-only** when **any** of these is true:
 2. The conversation is **clearly** about rules, skills, config, or automation design — **not** an active Sprinklr case thread (no visible-case RE workflow in progress for paste/send).
 3. The user is asking to **retain/update rules** or agent behaviour (like this directive).
 
-When in doubt in a mixed thread: if the user sends **only** `RE`, `PR`, `LF`, or `login` without rules context → **warn and refuse** case processing.
+When in doubt in a mixed thread: if the user sends **only** `RE`, `PR`, `LF`, `login`, or `DONE` without rules context → **warn and refuse** case processing (for **DONE**, point them to the email processing chat).
 
 ## Blocked commands (do not run scripts or automation)
 
@@ -27,6 +27,7 @@ When in doubt in a mixed thread: if the user sends **only** `RE`, `PR`, `LF`, or
 | **PR** / **pr** | paste reply, write-reply script |
 | **LF** / **lf** | fill_case_tracker.py, log form |
 | **login** | Sprinklr login-only / startup automation |
+| **DONE** / **Done for today** | `done_for_today.py` stop script (run in case chat) |
 
 **Allowed here (not case processing):** **`revert last`** — restore file checkpoint (see `.cursor/rules/revert-last.mdc`).
 
