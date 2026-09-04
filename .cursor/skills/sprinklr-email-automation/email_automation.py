@@ -4507,7 +4507,8 @@ Use cursor-agent's file reading capabilities to read these files before generati
   window.__anwendenReClickInfo = null;
 }
 """
-    # Transfer workflow confirm: "Weiter" (also Weiterleiten / Weiteleiten) — LF TR gated auto-RE
+    # Transfer workflow FINAL confirm only: exact label "Weiter" (step 4/4).
+    # Do NOT match Weiterleiten / Weiteleiten (steps 2–3) — those fire too early.
     _WAIT_WEITER_CLICK_JS = """
 () => {
   if (window.__weiterReArmed) return true;
@@ -4526,8 +4527,8 @@ Use cursor-agent's file reading capabilities to read these files before generati
     if (!btn) return;
     const tracker = btn.getAttribute('data-tracker-event-id') || '';
     const text = (btn.textContent || '').replace(/\\s+/g, ' ').trim();
-    // Exact Weiter, or transfer confirms Weiterleiten / Weiteleiten
-    if (!/^(Weiter|Weiterleiten|Weiteleiten)$/i.test(text)) return;
+    // Exact final step only: "Weiter" — NOT Weiterleiten / Weiteleiten
+    if (!/^Weiter$/i.test(text)) return;
     window.__weiterReClickInfo = { tracker: tracker, text: text, at: Date.now() };
     cleanup();
   };
@@ -4872,28 +4873,34 @@ Use cursor-agent's file reading capabilities to read these files before generati
             now = time.time()
             if now - last_heartbeat >= 5:
                 ts = datetime.now().strftime("%H:%M:%S")
-                print(f"[{ts}] Still waiting for Weiter left-click... (transfer confirm → click Weiter)")
+                print(f"[{ts}] Still waiting for final Weiter left-click (step 4/4; ignore Weiterleiten/Weiteleiten)...")
                 last_heartbeat = now
             time.sleep(poll_seconds)
 
     def monitor_weiter_then_open_case_for_re(self, wait_seconds: int | None = None) -> bool:
         """
         Transfer-gated auto-RE (LF TR):
-        1. Wait for user left-click on Weiter (guidedWorkflow/runner/screenButton)
+        User completes transfer UI clicks 1–3 manually; script reacts only to final "Weiter" (4/4).
+        1. Wait for user left-click on exact label Weiter (guidedWorkflow/runner/screenButton)
         2. Wait wait_seconds (default 3)
         3. Click first visible collapsed-case-item
         4. Extract current case (extract-only) for 7-step RE
         """
         delay = self._ANWENDEN_RE_WAIT_SECONDS if wait_seconds is None else max(0, int(wait_seconds))
-        logger.info("Starting Weiter-gated auto-RE (wait=%ss after click)", delay)
+        logger.info("Starting Weiter-gated auto-RE (wait=%ss after final Weiter)", delay)
         print("\n" + "=" * 80, flush=True)
         print("WEITER -> AUTO-RE ARMED (transfer / LF TR)", flush=True)
-        print("1. Left-click Weiter on Sprinklr transfer workflow:", flush=True)
+        print("You click the transfer path yourself (script ignores steps 1-3):", flush=True)
+        print("  1/4 Transfer   (GuidedAction)", flush=True)
+        print("  2/4 Weiterleiten", flush=True)
+        print("  3/4 Weiteleiten  (UI typo)", flush=True)
+        print("  4/4 Weiter       <-- ONLY this click arms the next-case extract", flush=True)
+        print("Trigger button:", flush=True)
         print('     button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]', flush=True)
-        print('     label: Weiter (also Weiterleiten / Weiteleiten)', flush=True)
-        print(f"2. Script waits {delay}s, then clicks:", flush=True)
+        print('     exact label: Weiter  (NOT Weiterleiten / Weiteleiten)', flush=True)
+        print(f"After final Weiter: wait {delay}s, then click:", flush=True)
         print(f'     {self._COLLAPSED_CASE_ITEM_SELECTOR}', flush=True)
-        print("3. Extract email -> agent runs 7-step RE", flush=True)
+        print("Then extract email -> agent runs 7-step RE", flush=True)
         print("Ctrl+C to cancel. Manual extract: run.py --once", flush=True)
         print("=" * 80 + "\n", flush=True)
         print("WEITER_RE_ARMED", flush=True)

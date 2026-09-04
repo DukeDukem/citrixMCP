@@ -34,7 +34,7 @@ alwaysApply: true
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
    ```
    Do **not** wait for the user to type **RE**. See **Auto-arm after PR+LF** below.
-7. **Transfer close-out (no PR):** user sends **LF TR** → Transfer Ja LF → arm **`--arm-weiter`** (Weiter click). See `.cursor/rules/lf-tr-transfer.mdc`.
+7. **Transfer close-out (no PR):** user sends **LF TR** → Transfer Ja LF → arm **`--arm-weiter`**. User clicks Transfer → Weiterleiten → Weiteleiten → exact **Weiter** (4/4 only; earlier steps ignored). See `.cursor/rules/lf-tr-transfer.mdc`.
 
 ### Explicit modes
 

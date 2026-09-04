@@ -46,14 +46,24 @@ Use for **transfer-eligible** cases where you **do not** paste a customer reply 
    ```
    Expect **`WEITER_RE_ARMED`** / `MODE: --watch-weiter-re`.
 
-5. User left-clicks **Weiter** in Sprinklr:
+5. User completes the transfer UI manually (script does **not** react to steps 1–3):
+
+| Step | Button | Notes |
+|------|--------|--------|
+| **1/4** | **Transfer** | `data-entityid="@sprinklr/action/GuidedAction"` |
+| **2/4** | **Weiterleiten** | `screenButton` — **ignored** by arm |
+| **3/4** | **Weiteleiten** | UI typo; `screenButton` — **ignored** by arm |
+| **4/4** | **Weiter** | Exact label only — **this** left-click triggers next-case RE |
+
+6. On final **Weiter** only:
    - `button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]`
-   - label **Weiter** (also accepts Weiterleiten / Weiteleiten)
-6. Script waits **3 seconds**, clicks `collapsed-case-item`, extracts → agent outputs full **7-step RE**.
+   - text must be exactly **Weiter** (not Weiterleiten / Weiteleiten)
+7. Script waits **3 seconds**, clicks `collapsed-case-item`, extracts → agent outputs full **7-step RE**.
 
 ## Integrity
 
 - ONE Fall # only; target must match this case’s RE (or explicit user override).  
 - Do not arm Anwenden after LF TR.  
 - Do not arm Weiter after normal PR+LF / PR LF.  
+- Weiter arm must **not** fire on Weiterleiten or Weiteleiten.  
 - No `monitor_emails` fallback.

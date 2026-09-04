@@ -30,8 +30,10 @@ Then use commands below as you work each case.
 | 1 | **login** | Once per session — sets **`FIRST_RE_ONCE_PENDING`** + Case Tracker tab |
 | 2 | **RE** (first after login) | **`--once`**: extract the **currently open** case → 7-step RE (not Anwenden arm) |
 | 3a | **PR LF** | Non-transfer: paste + log → **`--arm`** (Anwenden) |
-| 3b | **LF TR** | Transfer: log Transfer Ja, no PR → **`--arm-weiter`** (Weiter) |
-| 4 | You click Anwenden / Weiter | 3s → next case → extract → 7-step RE |
+| 3b | **LF TR** | Transfer: log Transfer Ja, no PR → **`--arm-weiter`**; you click Transfer → Weiterleiten → Weiteleiten → **Weiter** (final) |
+| 4 | Final **Anwenden** / **Weiter** | 3s → next case → extract → 7-step RE |
+
+**LF TR note:** Arm listens only for exact label **Weiter** (step 4/4). Clicks on Weiterleiten / Weiteleiten are ignored.
 
 **Forced modes:**  
 - Open case now: `run.py --once`  

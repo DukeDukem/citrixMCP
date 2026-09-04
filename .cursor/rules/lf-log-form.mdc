@@ -158,6 +158,7 @@ When the user sent **LF TR** / **lf tr** (transfer, no PR):
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-weiter
    ```
 3. Expect **`WEITER_RE_ARMED`**. Do **not** use `--arm` (Anwenden) for this path.
+User then clicks Transfer → Weiterleiten → Weiteleiten → **Weiter** (final only). Script reacts only to exact **Weiter**.
 
 Full rule: `.cursor/rules/lf-tr-transfer.mdc`.
 

@@ -25,7 +25,9 @@ alwaysApply: true
 5. Agent outputs full **7-step RE**
 6. User **PR** + **LF** (or **PR LF**)
 7. After **both** succeed → agent **immediately** runs `run.py --arm` (do not wait for typed RE)
-8. **LF TR** (transfer, no PR) → Transfer Ja LF → **`run.py --arm-weiter`** → user clicks **Weiter** → same 3s → next case extract
+8. **LF TR** (transfer, no PR) → Transfer Ja LF → **`run.py --arm-weiter`** → user clicks Transfer → Weiterleiten → Weiteleiten → exact **Weiter** (4/4 only) → same 3s → next case extract
+
+**Weiter arm:** ignore Weiterleiten / Weiteleiten; trigger only on exact **Weiter**.
 
 Manual open-case extract anytime: `run.py --once`
 
