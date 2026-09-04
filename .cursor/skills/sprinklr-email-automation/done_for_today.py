@@ -20,6 +20,7 @@ _REPO = _SCRIPT_DIR.parent.parent.parent
 _KILL_CMDLINE_MARKERS = (
     "watch-anwenden-re",
     "watch-weiter-re",
+    "watch-extern-re",
     "sprinklr-read-answer-email" + os.sep + "run.py",
     "sprinklr-read-answer-email/run.py",
     "run_sprinklr_email_automation.py",

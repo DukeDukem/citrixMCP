@@ -25,16 +25,23 @@ alwaysApply: true
 3. **Mode B — Anwenden-gated (later cases):** If the first-RE flag is **not** pending, default `run.py` arms Anwenden:
    - prints **`ANWENDEN_RE_ARMED`** / `MODE: --watch-anwenden-re`
    - waits for left-click on **Anwenden** (`validateMacro` / `UNIVERSAL_CASE`)
-   - waits **3 seconds**, clicks `button[data-testid="collapsed-case-item"]`, extracts
+   - waits **4 seconds**, clicks `button[data-testid="collapsed-case-item"]`, extracts
    - then you output full **7-step RE**
-4. **Audio (automatic):** Project hook plays Prowler after section 7 when pending. Manual: **`sound`**.
+4. **Audio:**
+   - **Armed auto-RE start:** After Anwenden / Weiter / Extern → 4s wait → case open → extract begins → Prowler (`ARMED_RE_START_SOUND`).
+   - **RE ready (after section 7):** Hook plays book-opening cue (`RE_READY_SOUND`) when `RE_PENDING_SOUND` was set — case is ready to read.
+   - **PR LF done:** Finishing quote `PR LF done for #FALL_ID` → Dexter (`PR_LF_DONE_SOUND`).
+   - Manual: **`sound`** → `--play-ready`.
 5. User sends **PR** / **LF** when ready.
 6. **Mandatory after PR + LF both complete** for that Fall #: **immediately re-arm Anwenden** with **`--arm`**:
    ```powershell
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
    ```
    Do **not** wait for the user to type **RE**. See **Auto-arm after PR+LF** below.
-7. **Transfer close-out (no PR):** user sends **LF TR** → Transfer Ja LF → arm **`--arm-weiter`**. User clicks Transfer → Weiterleiten → Weiteleiten → exact **Weiter** (4/4 only; earlier steps ignored). See `.cursor/rules/lf-tr-transfer.mdc`.
+7. **Transfer close-out (no PR):** user sends **LF TR** → Transfer Ja LF → arm by target type:
+   - **Queue** (no `@`) → **`--arm-weiter`** (Transfer → Weiterleiten → Weiteleiten → exact **Weiter** 4/4)
+   - **Email** (contains `@`) → **`--arm-extern`** (Externer Transfer → exact **Weiterleiten** 2/3)
+   See `.cursor/rules/lf-tr-transfer.mdc`.
 
 ### Explicit modes
 
@@ -43,20 +50,27 @@ alwaysApply: true
 | `run.py` | Post-login pending → **`--once`**; else Anwenden arm |
 | `run.py --once` | Always extract open case now |
 | `run.py --arm` | Always arm Anwenden (after PR+LF) |
-| `run.py --arm-weiter` | Always arm Weiter (after LF TR) |
+| `run.py --arm-weiter` | Always arm Weiter (after LF TR **queue** target) |
+| `run.py --arm-extern` | Always arm Extern (after LF TR **email** target) |
 
 ## Auto-arm after PR + LF (mandatory) — **non-transfer / Anwenden**
 
-When **both** paste (**PR**) and Case Tracker fill (**LF**) have finished successfully for the **same** Fall # (typical command: **PR LF**):
+When **both** paste (**PR**) and Case Tracker fill (**LF**) have finished successfully for the **same** Fall #:
 
-1. **Immediately** arm Anwenden RE:
+1. **Immediately** arm Anwenden RE (blocking watch — do **not** cancel it):
    ```powershell
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
    ```
-2. Confirm briefly: e.g. `Anwenden RE armed for next case.` Expect **`ANWENDEN_RE_ARMED`**.
-3. User clicks **Anwenden** → 3s → next case → extract → 7-step RE.
+2. Expect **`ANWENDEN_RE_ARMED`**. Confirm briefly: `Anwenden RE armed for next case.`
+3. End with finishing quote: **`PR LF done for #FALL_ID`** (Dexter via hook).
+4. **HARD — keep the arm process alive** until extract finishes:
+   - Do **not** abort / kill / Ctrl+C the `--arm` shell.
+   - Do **not** start a second `--arm` / `--arm-weiter` / `--arm-extern` while one is waiting.
+   - Do **not** treat “PR LF done” as permission to stop the watch.
+5. User clicks **Anwenden** → script: 4s → case open → **CUSTOMER EMAIL** extract → **`ANWENDEN_RE_EXTRACT_DONE`**.
+6. **Only then** (after extract output is in the terminal): output full **7-step RE**. If the arm shell died before extract (`exit` with no `ANWENDEN_CLICK_DETECTED` / no `CUSTOMER EMAIL`), report `ERROR: ANWENDEN WATCH DIED BEFORE EXTRACT` and run `run.py --once` on the visible case (or re-arm if still needed).
 
-**PR LF = non-transfer answered case → Anwenden only.** Do **not** use `--arm-weiter` after PR LF.
+**PR LF = non-transfer answered case → Anwenden only.** Do **not** use `--arm-weiter` or `--arm-extern` after PR LF.
 
 **When this fires**
 
@@ -64,11 +78,12 @@ When **both** paste (**PR**) and Case Tracker fill (**LF**) have finished succes
 |--------------|----------|------------|
 | **PR LF** / **pr lf** | After PR + LF both succeed | **`--arm`** (Anwenden) |
 | **PR** then later **LF** | After LF succeeds | **`--arm`** (Anwenden) |
-| **LF TR** / **lf tr** | After transfer LF succeeds | **`--arm-weiter`** (Weiter) — see `lf-tr-transfer.mdc` |
+| **LF TR** / **lf tr** (queue target) | After transfer LF succeeds | **`--arm-weiter`** (Weiter) |
+| **LF TR** / **lf tr** (email target) | After transfer LF succeeds | **`--arm-extern`** (Extern Weiterleiten) |
 | **LF** alone with no prior PR | Do **not** auto-arm Anwenden | — |
 | **PR** alone (no LF yet) | Do **not** auto-arm yet | — |
 
-Do **not** arm twice for the same close-out. If Anwenden/Weiter RE is already running, do not start a second overlapping process.
+Do **not** arm twice for the same close-out. If Anwenden/Weiter/Extern RE is already running, do not start a second overlapping process.
 
 ## 7-step output
 

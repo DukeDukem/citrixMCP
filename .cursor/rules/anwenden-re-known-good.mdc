@@ -12,7 +12,8 @@ alwaysApply: true
 | Command | Meaning | Arm |
 |---------|---------|-----|
 | **PR LF** | Non-transfer (answered) | **Anwenden** (`--arm`) |
-| **LF TR** | Transfer (no reply) | **Weiter** (`--arm-weiter`) |
+| **LF TR** (queue) | Transfer (no reply) | **Weiter** (`--arm-weiter`) |
+| **LF TR** (email) | External email transfer | **Extern** (`--arm-extern`) |
 
 ## Workflow (email processing chat only)
 
@@ -21,13 +22,16 @@ alwaysApply: true
    - **Later / after PR+LF:** `run.py --arm` → **`ANWENDEN_RE_ARMED`**
 2. For Anwenden mode: expect **`ANWENDEN_RE_ARMED`** / **`MODE: --watch-anwenden-re`**
 3. User left-clicks **Anwenden** (`validateMacro` / `UNIVERSAL_CASE`)
-4. Script waits **3s** → clicks `button[data-testid="collapsed-case-item"]` → extract
+4. Script waits **4s** → clicks `button[data-testid="collapsed-case-item"]` → extract
 5. Agent outputs full **7-step RE**
 6. User **PR** + **LF** (or **PR LF**)
-7. After **both** succeed → agent **immediately** runs `run.py --arm` (do not wait for typed RE)
-8. **LF TR** (transfer, no PR) → Transfer Ja LF → **`run.py --arm-weiter`** → user clicks Transfer → Weiterleiten → Weiteleiten → exact **Weiter** (4/4 only) → same 3s → next case extract
+7. After **both** succeed → agent **immediately** runs `run.py --arm` (do not wait for typed RE). **Keep the watch alive** until extract finishes, then 7-step RE. Never abort after `PR LF done`. If watch dies with no extract → `--once` recovery.
+8. **LF TR** queue target → Transfer Ja LF → **`run.py --arm-weiter`** → Transfer → Weiterleiten → Weiteleiten → exact **Weiter** (4/4)
+9. **LF TR** email target → Transfer Ja LF → **`run.py --arm-extern`** → Externer Transfer → exact **Weiterleiten** (2/3) → same 4s → next case extract
 
-**Weiter arm:** ignore Weiterleiten / Weiteleiten; trigger only on exact **Weiter**.
+**Weiter arm:** ignore Weiterleiten / Weiteleiten; trigger only on exact **Weiter**.  
+**Extern arm:** ignore Externer Transfer; trigger only on exact **Weiterleiten**.  
+**Prowler:** only after CUSTOMER EMAIL extract fully printed (not after the 4s wait).
 
 Manual open-case extract anytime: `run.py --once`
 

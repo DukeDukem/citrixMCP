@@ -54,7 +54,7 @@ If customer is **not verified**: do steps 1, 2, then skip transfer matrix; use u
 
 **Always stick to the processing form:** When you run this skill or respond to the user about a read-email case, you must use the mandatory output structure (sections 1–7) and the verification/case-processing flow defined here. Do not deviate, skip, or reorder. **Do not show or require any "accept", "approve", or similar confirmation pop-ups during the RE output flow; all steps must be executed automatically unless the user explicitly interrupts or overrides them.**
 
-1. **Run the skill.** User types **RE**. After **login**, first RE is **`--once`** (open-case extract). After **PR LF**, use **`run.py --arm`** (Anwenden). After **LF TR**, use **`run.py --arm-weiter`** (exact **Weiter** only, step 4/4). Default `run.py` consumes **`FIRST_RE_ONCE_PENDING`** when set. You output sections 1–7. Hook plays sound when section 7 is in your reply (or user types **`sound`**).
+1. **Run the skill.** User types **RE**. After **login**, first RE is **`--once`** (open-case extract). After **PR LF**, use **`run.py --arm`** (Anwenden). After **LF TR**, use **`run.py --arm-weiter`** (queue → exact **Weiter** 4/4) or **`run.py --arm-extern`** (email → exact **Weiterleiten** 2/3). Default `run.py` consumes **`FIRST_RE_ONCE_PENDING`** when set. You output sections 1–7. Hook plays sound when section 7 is in your reply (or user types **`sound`**).
 2. **After script output**, output sections 1–7 in order (see Mandatory output structure). Use the script output as the source for section 1. **Include date/time context in section 1.**
 3. **Verification (section 2):** At least 3 key identifiers (name, Kundennummer, Geburtsdatum, bill/invoice number, last 4 IBAN, home address, or third party with Vollmacht). **Never ask for PKK.** Apply the **2-of-3 exception** (see below) when exactly 2 identifiers are present and neither is the Von: (From:) email address.
 4. **If NOT verified:** Use **only** the premade template for unverified customers (case-specific thank you + sympathy + the fixed security text asking for last 4 IBAN and Kundennummer + tip Mein o2). Do **not** query the KnowledgeBase for substantive handling. Output section 5 briefly, then 6 (full template) and 7.
@@ -64,9 +64,9 @@ If customer is **not verified**: do steps 1, 2, then skip transfer matrix; use u
 
 **Iterations and case specificity:** Premade responses (unverified template, router/Schadensersatz, etc.) may be **adapted** to the case. During RE output, **draft the full customer response autonomously** unless the user explicitly overrides.
 
-7. **When section 7 (Summary of response) is complete**, audio plays via project hook (`.cursor/hooks/re_complete_sound_hook.py`) if **`RE_PENDING_SOUND`** was set. Manual: **`sound`** or `re_complete_sound.py --play`.
-8. **After both PR and LF succeed** (**PR LF**, non-transfer): **immediately** run **`run.py --arm`** (Anwenden). Do not wait for typed **RE**.
-9. **LF TR** (transfer, no PR): Transfer Ja LF, then **immediately** run **`run.py --arm-weiter`**. User clicks Transfer → Weiterleiten → Weiteleiten → exact **Weiter** (4/4 only). Never swap arms with PR LF.
+7. **When section 7 (Summary of response) is complete**, book-opening audio plays via project hook (`.cursor/hooks/re_complete_sound_hook.py`) if **`RE_PENDING_SOUND`** was set (`RE_READY_SOUND`). Manual: **`sound`** or `re_complete_sound.py --play-ready`.
+8. **After both PR and LF succeed** (**PR LF**, non-transfer): **immediately** run **`run.py --arm`** (Anwenden). Keep that process alive until **`ANWENDEN_RE_EXTRACT_DONE`** / **CUSTOMER EMAIL**, then write full 7-step RE. Do **not** abort the watch after `PR LF done`. If the watch dies with no extract → `ERROR: ANWENDEN WATCH DIED BEFORE EXTRACT` → **`run.py --once`** on the visible case.
+9. **LF TR** (transfer, no PR): Transfer Ja LF, then **immediately** arm by target — queue → **`run.py --arm-weiter`** (Transfer → … → exact **Weiter**); email → **`run.py --arm-extern`** (Externer Transfer → exact **Weiterleiten**). Never swap arms with PR LF.
 
 **No reload or navigation:** Script reads the **current tab** only. Run **login** first. Script does **not** write to the editor.
 
@@ -439,7 +439,7 @@ If the user is on the console list (no case open), the script asks them to open 
 uv run python .cursor/skills/sprinklr-read-answer-email/run.py
 ```
 
-Default **`run.py`**: if **`FIRST_RE_ONCE_PENDING`** (set by login) → consume flag and run **`--once`** (extract open case). Otherwise → Anwenden arm. Explicit: **`run.py --once`**, **`run.py --arm`** (after PR LF), **`run.py --arm-weiter`** (after LF TR; exact Weiter only). You output sections 1–7 in chat; hook plays Prowler after section 7. To put the reply into Sprinklr, use **sprinklr-write-reply**.
+Default **`run.py`**: if **`FIRST_RE_ONCE_PENDING`** (set by login) → consume flag and run **`--once`** (extract open case). Otherwise → Anwenden arm. Explicit: **`run.py --once`**, **`run.py --arm`** (after PR LF), **`run.py --arm-weiter`** (LF TR queue), **`run.py --arm-extern`** (LF TR email). You output sections 1–7 in chat; hook plays Prowler after section 7. To put the reply into Sprinklr, use **sprinklr-write-reply**.
 
 ## UI mapping (Sprinklr)
 
@@ -450,7 +450,7 @@ Default **`run.py`**: if **`FIRST_RE_ONCE_PENDING`** (set by login) → consume 
 ## Script file
 
 - **Path:** `.cursor/skills/sprinklr-read-answer-email/run.py`
-- **Does:** Post-login first RE → **`--once`**. **`--arm`** → Anwenden watch (PR LF). **`--arm-weiter`** → Weiter watch (LF TR; exact **Weiter** step 4/4 only). **Cursor** then writes sections 1–7 in chat.
+- **Does:** Post-login first RE → **`--once`**. **`--arm`** → Anwenden watch (PR LF). **`--arm-weiter`** → Weiter watch (LF TR queue; exact **Weiter** 4/4). **`--arm-extern`** → Extern watch (LF TR email; exact **Weiterleiten** 2/3). **Cursor** then writes sections 1–7 in chat.
 
 ## Knowledge base
 

@@ -14,10 +14,10 @@
 ## Case commands (email processing chat)
 
 - **login** — Sprinklr + Case Tracker; sets first-RE **`--once`** gate
-- **RE** — first after login = **`--once`**; after **PR LF** = **`--arm`** (Anwenden); after **LF TR** = **`--arm-weiter`** (exact Weiter 4/4)
+- **RE** — first after login = **`--once`**; after **PR LF** = **`--arm`** (Anwenden); after **LF TR** = **`--arm-weiter`** (queue) or **`--arm-extern`** (email)
 - **PR LF** — non-transfer answered case → **`run.py --arm`** (Anwenden only)
-- **LF TR** — transfer, no PR → Transfer Ja LF → **`run.py --arm-weiter`** (Weiter only; ignore Weiterleiten/Weiteleiten)
-- Never swap: PR LF ≠ Weiter; LF TR ≠ Anwenden
+- **LF TR** — transfer, no PR → Transfer Ja LF → queue → **`--arm-weiter`** (Weiter 4/4); email → **`--arm-extern`** (Externer Transfer → Weiterleiten)
+- Never swap: PR LF ≠ Weiter/Extern; LF TR ≠ Anwenden; queue ≠ email arm
 - **DONE** — stop watches; pause until next login
 - **LF Salcus:** Kundennummer sidebar only; **`C-…`** is not Salcus → empty → ticketstatus **3**
 

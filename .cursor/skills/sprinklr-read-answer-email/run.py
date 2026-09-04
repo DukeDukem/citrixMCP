@@ -8,7 +8,8 @@ Default RE:
 Explicit flags:
   --once                 extract open case now
   --arm / --watch-anwenden-re   arm Anwenden watch (after PR+LF)
-  --arm-weiter / --watch-weiter-re   arm Weiter watch (after LF TR)
+  --arm-weiter / --watch-weiter-re   arm Weiter watch (after LF TR queue target)
+  --arm-extern / --watch-extern-re   arm Extern Weiterleiten watch (after LF TR email target)
 """
 import os
 import subprocess
@@ -31,20 +32,24 @@ def main() -> int:
 
     argv = sys.argv[1:]
     if "--help" in argv or "-h" in argv:
-        print(__doc__ or "run.py [--once | --arm | --arm-weiter]")
+        print(__doc__ or "run.py [--once | --arm | --arm-weiter | --arm-extern]")
         return 0
 
     force_once = "--once" in argv
     force_arm = "--arm" in argv or "--watch-anwenden-re" in argv
     force_weiter = "--arm-weiter" in argv or "--watch-weiter-re" in argv
+    force_extern = "--arm-extern" in argv or "--watch-extern-re" in argv
 
-    modes = sum(bool(x) for x in (force_once, force_arm, force_weiter))
+    modes = sum(bool(x) for x in (force_once, force_arm, force_weiter, force_extern))
     if modes > 1:
-        print("[ERROR] Use only one of --once, --arm, or --arm-weiter.", file=sys.stderr)
+        print(
+            "[ERROR] Use only one of --once, --arm, --arm-weiter, or --arm-extern.",
+            file=sys.stderr,
+        )
         return 2
 
     use_once = force_once
-    if not force_once and not force_arm and not force_weiter:
+    if not force_once and not force_arm and not force_weiter and not force_extern:
         if str(_AUTO_DIR) not in sys.path:
             sys.path.insert(0, str(_AUTO_DIR))
         try:
@@ -65,9 +70,17 @@ def main() -> int:
         )
 
     if force_weiter:
-        print("MODE: --watch-weiter-re (Weiter arm / LF TR)")
+        print("MODE: --watch-weiter-re (Weiter arm / LF TR queue)")
         return subprocess.call(
             [sys.executable, str(runner), "--watch-weiter-re"],
+            cwd=str(_REPO_ROOT),
+            env=env,
+        )
+
+    if force_extern:
+        print("MODE: --watch-extern-re (Extern arm / LF TR email)")
+        return subprocess.call(
+            [sys.executable, str(runner), "--watch-extern-re"],
             cwd=str(_REPO_ROOT),
             env=env,
         )
