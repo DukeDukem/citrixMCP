@@ -11,10 +11,13 @@ alwaysApply: true
 
 | Command | Meaning | Arm | Then |
 |---------|---------|-----|------|
-| **PR LF** | Non-transfer (answered) | **Anwenden** (`--arm`) | **`--await-arm`** |
-| **LF** alone | Logged without PR | **Anwenden** (`--arm`) | **`--await-arm`** |
+| **PR LF** | Non-transfer EMAIL answered | **Anwenden** (`--arm`) | **`--await-arm`** |
+| **LF** alone (EMAIL) | Logged without PR | **Anwenden** (`--arm`) | **`--await-arm`** |
+| **LF** alone (**CALL**) | Voice logged (`--channel voice`) | **Next** (`--arm-next`) | **`--await-arm`** |
 | **LF TR** (queue) | Transfer (no reply) | **Weiter** (`--arm-weiter`) | **`--await-arm`** |
 | **LF TR** (email) | External email transfer | **Extern** (`--arm-extern`) | **`--await-arm`** |
+
+**CALL Next arm:** exact label **Next** on `button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]` only (not Back / Weiter / Weiterleiten).
 
 ## Typed RE vs arm
 

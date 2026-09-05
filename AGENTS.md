@@ -15,15 +15,10 @@
 
 - **login** — Sprinklr + Case Tracker; sets first-RE marker
 - **RE** (typed) — **always `--once`** extract open case (first case of day / fresh agent push-start, or manual re-read). Never Anwenden arm on typed RE.
-- **PR LF** / **LF alone** — non-transfer → **`--arm`** (detached) → Dexter / READY_FOR_YOUR_CLICK → finishing quote → **`--await-arm`**
-- **LF TR** — transfer, no PR → queue **`--arm-weiter`** or email **`--arm-extern`**, then **`--await-arm`**
-- Arms are **detached** (`CREATE_NO_WINDOW`); click-ready = Dexter, not await spinner; re-run `--await-arm` if poll aborted
-- Next-case open skips closed Fall #; fail → `ERROR: NEXT CASE NOT OPEN` → **`--once`**
-- After section 7 → `re_complete_sound.py --play-ready` (book)
-- Never swap: PR LF / LF ≠ Weiter/Extern; LF TR ≠ Anwenden; queue ≠ email arm
-- **DONE** — stop watches (including detached); pause until next login
-- **LF Salcus:** Kundennummer sidebar only; **`C-…`** is not Salcus → empty → ticketstatus **3**
-- **CALL vs EMAIL:** After every case open (RE or await-arm), classify via Sprinklr overlay. **CALL** → wait for user’s voice brief text → analyze/handle (no email PR unless asked); LF with **`--channel voice`** (ticketstatus **3**). **EMAIL** → normal 7-step RE/PR/LF. Rule: `sprinklr-call-vs-email.mdc`
+- **PR LF** / **LF** (EMAIL) — **`--arm`** → Anwenden → **`--await-arm`**
+- **LF** (**CALL**) — `--channel voice` then **`--arm-next`** → exact **Next** → **`--await-arm`** (never Anwenden after a call)
+- **LF TR** — queue **`--arm-weiter`** or email **`--arm-extern`**, then **`--await-arm`**
+- **CALL vs EMAIL:** After every case open, classify via overlay. CALL → wait for voice brief → handle; LF voice + **`--arm-next`**. EMAIL → 7-step RE/PR/LF + **`--arm`**. Rule: `sprinklr-call-vs-email.mdc`
 
 ## Instructions dashboard
 

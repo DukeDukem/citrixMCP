@@ -71,9 +71,10 @@ Typical workday start:
 |---------|----------|
 | `run.py` / typed **RE** | **Always `--once`** — extract open case now (first case of day, fresh agent, or re-read) |
 | `run.py --once` | Same as above (explicit) |
-| `run.py --arm` | Arm Anwenden (**detached**; **only** after LF / PR LF) |
+| `run.py --arm` | Arm Anwenden (**detached**; **EMAIL** LF / PR LF only) |
 | `run.py --arm-weiter` | Arm Weiter (**detached**; after LF TR **queue**) |
 | `run.py --arm-extern` | Arm Extern (**detached**; after LF TR **email**) |
+| `run.py --arm-next` | Arm call disposition **Next** (**detached**; after **CALL** LF) |
 | `run.py --await-arm` | Poll `arm_watch.log` until extract done |
 | `run.py --foreground` | Debug only: blocking in-shell watch |
 
@@ -104,9 +105,9 @@ When Case Tracker fill (**LF**) has finished successfully for the visible Fall #
 
 | User command | Arm when | Arm script | Then |
 |--------------|----------|------------|------|
-| **PR LF** / **pr lf** | After PR + LF both succeed | **`--arm`** | **`--await-arm`** |
-| **PR** then later **LF** | After LF succeeds | **`--arm`** | **`--await-arm`** |
-| **LF** alone | After LF succeeds | **`--arm`** | **`--await-arm`** |
+| **PR LF** / **pr lf** (EMAIL) | After PR + LF both succeed | **`--arm`** | **`--await-arm`** |
+| **LF** alone (EMAIL) | After LF succeeds | **`--arm`** | **`--await-arm`** |
+| **LF** alone (**CALL**) | After voice LF (`--channel voice`) | **`--arm-next`** | **`--await-arm`** |
 | **LF TR** / **lf tr** (queue) | After transfer LF | **`--arm-weiter`** | **`--await-arm`** |
 | **LF TR** / **lf tr** (email) | After transfer LF | **`--arm-extern`** | **`--await-arm`** |
 | **PR** alone (no LF yet) | Do **not** auto-arm yet | — | — |

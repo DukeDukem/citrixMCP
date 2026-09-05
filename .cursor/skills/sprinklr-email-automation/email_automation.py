@@ -4621,6 +4621,59 @@ Use cursor-agent's file reading capabilities to read these files before generati
   window.__externReClickInfo = null;
 }
 """
+    # Call disposition FINAL: exact English label "Next" on guidedWorkflow screenButton.
+    # Do NOT match Weiter / Weiterleiten / Weiteleiten / Back.
+    _WAIT_NEXT_CLICK_JS = """
+() => {
+  if (window.__nextReArmed) return true;
+  const cleanup = () => {
+    if (window.__nextReClickHandler) {
+      document.removeEventListener('mousedown', window.__nextReClickHandler, true);
+      document.removeEventListener('click', window.__nextReClickHandler, true);
+      window.__nextReClickHandler = null;
+    }
+  };
+  const handler = (e) => {
+    if (typeof e.button === 'number' && e.button !== 0) return;
+    const btn = e.target.closest(
+      'button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]'
+    );
+    if (!btn) return;
+    const tracker = btn.getAttribute('data-tracker-event-id') || '';
+    const text = (btn.textContent || '').replace(/\\s+/g, ' ').trim();
+    // Exact call disposition confirm only: "Next"
+    if (!/^Next$/i.test(text)) return;
+    window.__nextReClickInfo = { tracker: tracker, text: text, at: Date.now() };
+    cleanup();
+  };
+  window.__nextReClickHandler = handler;
+  window.__nextReClickInfo = null;
+  window.__nextReArmed = true;
+  document.addEventListener('mousedown', handler, true);
+  document.addEventListener('click', handler, true);
+  return true;
+}
+"""
+    _POLL_NEXT_CLICK_JS = """
+() => {
+  const info = window.__nextReClickInfo;
+  if (!info) return null;
+  window.__nextReClickInfo = null;
+  window.__nextReArmed = false;
+  return info;
+}
+"""
+    _REMOVE_NEXT_CLICK_JS = """
+() => {
+  if (window.__nextReClickHandler) {
+    document.removeEventListener('mousedown', window.__nextReClickHandler, true);
+    document.removeEventListener('click', window.__nextReClickHandler, true);
+    window.__nextReClickHandler = null;
+  }
+  window.__nextReArmed = false;
+  window.__nextReClickInfo = null;
+}
+"""
     # Externer Transfer -> Weiterleiten (transfer case → user taken to console/c)
     _SELECTOR_EXTERNER_TRANSFER = 'button[data-entityid="@sprinklr/action/GuidedAction"]:has-text("Externer Transfer"), button:has-text("Externer Transfer")'
     _SELECTOR_WEITERLEITEN = 'button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]:has-text("Weiterleiten"), button:has-text("Weiterleiten")'
@@ -5295,6 +5348,115 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 print(f"[ERROR] Extern auto-RE: {e}", flush=True)
                 time.sleep(2)
 
+    def _wait_for_next_click(self, poll_seconds: float = 0.5) -> Optional[dict]:
+        """Arm call-disposition Next (guidedWorkflow screenButton) click listener."""
+        self._reattach_sprinklr_page_no_steal()
+        try:
+            self.page.evaluate(self._REMOVE_NEXT_CLICK_JS)
+        except Exception:
+            pass
+        try:
+            self.page.evaluate(self._WAIT_NEXT_CLICK_JS)
+        except Exception as e:
+            logger.error(f"Could not arm Next click listener: {e}")
+            print(f"[ERROR] Could not arm Next click listener: {e}", flush=True)
+            return None
+
+        last_heartbeat = 0.0
+        while True:
+            try:
+                self._reattach_sprinklr_page_no_steal()
+                try:
+                    armed = self.page.evaluate("() => !!window.__nextReArmed")
+                    if not armed:
+                        self.page.evaluate(self._WAIT_NEXT_CLICK_JS)
+                except Exception:
+                    time.sleep(poll_seconds)
+                    continue
+                info = self.page.evaluate(self._POLL_NEXT_CLICK_JS)
+                if isinstance(info, dict):
+                    return info
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                logger.debug(f"Next poll tick: {e}")
+
+            now = time.time()
+            if now - last_heartbeat >= 5:
+                ts = datetime.now().strftime("%H:%M:%S")
+                print(
+                    f"[{ts}] Still waiting for call disposition Next left-click "
+                    "(exact label Next; ignore Back / Weiter / Weiterleiten)...",
+                    flush=True,
+                )
+                last_heartbeat = now
+            time.sleep(poll_seconds)
+
+    def monitor_next_then_open_case_for_re(self, wait_seconds: int | None = None) -> bool:
+        """
+        Call-disposition-gated auto-RE (after CALL LF):
+        User finishes disposition UI; script reacts only to exact label "Next"
+        on button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"].
+        """
+        delay = self._ANWENDEN_RE_WAIT_SECONDS if wait_seconds is None else max(0, int(wait_seconds))
+        logger.info("Starting Next-gated auto-RE (wait=%ss after Next)", delay)
+        print("\n" + "=" * 80, flush=True)
+        print("NEXT -> AUTO-RE ARMED (call disposition / CALL LF)", flush=True)
+        print("Trigger button (left-click):", flush=True)
+        print('     button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]', flush=True)
+        print('     data-testid="button"', flush=True)
+        print('     exact label: Next  (NOT Back / Weiter / Weiterleiten)', flush=True)
+        print(f"After Next: wait {delay}s, then click next case (skip closed Fall):", flush=True)
+        print(f'     {self._COLLAPSED_CASE_ITEM_SELECTOR}', flush=True)
+        print("Then extract -> agent CHANNEL detect (CALL vs EMAIL)", flush=True)
+        print("Ctrl+C to cancel. Manual extract: run.py --once", flush=True)
+        print("=" * 80 + "\n", flush=True)
+        print("NEXT_RE_ARMED", flush=True)
+        closed_fall_remembered: Optional[str] = None
+
+        while True:
+            try:
+                self._reattach_sprinklr_page_no_steal()
+                try:
+                    live = self._get_case_id_from_page_header()
+                    if live:
+                        closed_fall_remembered = live
+                except Exception:
+                    pass
+                ts = datetime.now().strftime("%H:%M:%S")
+                print(f"[{ts}] Waiting for disposition Next left-click...", flush=True)
+                click_info = self._wait_for_next_click()
+                if not click_info:
+                    print("[WARN] Next listener could not be armed — retrying in 2s…", flush=True)
+                    time.sleep(2)
+                    continue
+
+                print("\n" + "=" * 80, flush=True)
+                print("NEXT_CLICK_DETECTED", flush=True)
+                if click_info.get("tracker"):
+                    print(f"tracker: {click_info.get('tracker')}", flush=True)
+                if click_info.get("text"):
+                    print(f"button text: {click_info.get('text')}", flush=True)
+                if closed_fall_remembered:
+                    print(f"closed_fall: {closed_fall_remembered}", flush=True)
+                print("=" * 80 + "\n", flush=True)
+
+                if self._open_next_case_and_extract(
+                    closed_fall=closed_fall_remembered,
+                    delay_s=delay,
+                    mode_label="Next",
+                    extract_done_marker="NEXT_RE_EXTRACT_DONE",
+                ):
+                    return True
+                return False
+            except KeyboardInterrupt:
+                print("\n[INFO] Next auto-RE stopped by user (Ctrl+C)")
+                raise
+            except Exception as e:
+                logger.error(f"Next auto-RE loop error: {e}")
+                print(f"[ERROR] Next auto-RE: {e}", flush=True)
+                time.sleep(2)
+
     def process_current_page_once(
         self,
         chat_only: bool = False,
@@ -5711,6 +5873,7 @@ def main():
     watch_anwenden_re = '--watch-anwenden-re' in sys.argv
     watch_weiter_re = '--watch-weiter-re' in sys.argv
     watch_extern_re = '--watch-extern-re' in sys.argv
+    watch_next_re = '--watch-next-re' in sys.argv
     reply_file = _get_arg_value('--reply-file')
     if watch_anwenden_re:
         print("\n" + "=" * 80)
@@ -5723,6 +5886,10 @@ def main():
     if watch_extern_re:
         print("\n" + "=" * 80)
         print("MODE: --watch-extern-re (Extern Weiterleiten click → 4s → open case → extract)")
+        print("=" * 80 + "\n")
+    if watch_next_re:
+        print("\n" + "=" * 80)
+        print("MODE: --watch-next-re (call disposition Next click → 4s → open case → extract)")
         print("=" * 80 + "\n")
     # Load configuration
     config = load_config()
@@ -5748,6 +5915,7 @@ def main():
                 or watch_anwenden_re
                 or watch_weiter_re
                 or watch_extern_re
+                or watch_next_re
             ),
             stop_after_login=stop_after_login
         )
@@ -5931,6 +6099,23 @@ def main():
             finally:
                 automation.cleanup()
             return
+
+        # Next-gated auto-RE (CALL LF disposition close-out)
+        if watch_next_re:
+            try:
+                automation.monitor_next_then_open_case_for_re(wait_seconds=4)
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                logger.error(f"Next-gated RE failed: {e}")
+                print(f"\n[ERROR] Next-gated RE failed: {e}")
+                print(
+                    "[INFO] Tip: finish call disposition, show Next, "
+                    "rerun --arm-next — or use: run.py --once"
+                )
+            finally:
+                automation.cleanup()
+            return
         
         # Skill 2: process current page once then exit
         if process_current_only:
@@ -5988,6 +6173,7 @@ def main():
             watch_anwenden_re
             or watch_weiter_re
             or watch_extern_re
+            or watch_next_re
             or process_current_only
             or write_reply_only
             or extract_only

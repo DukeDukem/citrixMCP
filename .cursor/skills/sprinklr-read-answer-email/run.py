@@ -7,13 +7,14 @@ Default RE (typed RE / bare run.py):
 
 Explicit flags:
   --once                 extract open case now (same as default)
-  --arm / --watch-anwenden-re   arm Anwenden watch (after LF / PR LF only)
+  --arm / --watch-anwenden-re   arm Anwenden watch (after EMAIL LF / PR LF)
   --arm-weiter / --watch-weiter-re   arm Weiter watch (after LF TR queue)
   --arm-extern / --watch-extern-re   arm Extern watch (after LF TR email)
+  --arm-next / --watch-next-re   arm call disposition Next watch (after CALL LF)
   --await-arm            poll detached arm log until extract done (then exit 0)
   --foreground           do NOT detach (legacy blocking watch in this shell)
 
-Detached by default on Windows for --arm / --arm-weiter / --arm-extern so Cursor
+Detached by default on Windows for --arm / --arm-weiter / --arm-extern / --arm-next so Cursor
 aborting the agent shell does not kill the watch (common cause of
 ANWENDEN WATCH DIED BEFORE EXTRACT).
 """
@@ -36,6 +37,7 @@ _EXTRACT_MARKERS = (
     "ANWENDEN_RE_EXTRACT_DONE",
     "WEITER_RE_EXTRACT_DONE",
     "EXTERN_RE_EXTRACT_DONE",
+    "NEXT_RE_EXTRACT_DONE",
     "CUSTOMER EMAIL (for Cursor to read",
     "RE_PENDING_SOUND",
 )
@@ -112,6 +114,10 @@ def _spawn_detached(runner: Path, watch_flag: str, env: dict) -> int:
         print("EXTERN_RE_ARMED")
         print("READY_FOR_YOUR_CLICK: Weiterleiten (after Externer Transfer)", flush=True)
         print(">>> After Externer Transfer, CLICK Weiterleiten NOW — watch is armed <<<", flush=True)
+    elif "next" in watch_flag:
+        print("NEXT_RE_ARMED")
+        print("READY_FOR_YOUR_CLICK: Next (call disposition)", flush=True)
+        print(">>> CLICK exact Next NOW — watch is armed <<<", flush=True)
     print(
         "Watch runs outside this shell (no console window). "
         "You may click now. Agent will await extract with: run.py --await-arm",
@@ -136,7 +142,7 @@ def _await_arm(timeout_s: float = 1800.0, poll_s: float = 1.0) -> int:
     print(f"MODE: --await-arm (polling {_ARM_LOG})")
     print("AWAITING_ARM_EXTRACT", flush=True)
     print(
-        "Watch already armed — you may click Anwenden/Weiter/Weiterleiten anytime. "
+        "Watch already armed — you may click Anwenden / Weiter / Weiterleiten / Next anytime. "
         "This poll stays open until extract finishes.",
         flush=True,
     )
@@ -209,22 +215,25 @@ def main() -> int:
     force_arm = "--arm" in argv or "--watch-anwenden-re" in argv
     force_weiter = "--arm-weiter" in argv or "--watch-weiter-re" in argv
     force_extern = "--arm-extern" in argv or "--watch-extern-re" in argv
+    force_next = "--arm-next" in argv or "--watch-next-re" in argv
     foreground = "--foreground" in argv
 
-    modes = sum(bool(x) for x in (force_once, force_arm, force_weiter, force_extern))
+    modes = sum(
+        bool(x) for x in (force_once, force_arm, force_weiter, force_extern, force_next)
+    )
     if modes > 1:
         print(
-            "[ERROR] Use only one of --once, --arm, --arm-weiter, or --arm-extern.",
+            "[ERROR] Use only one of --once, --arm, --arm-weiter, --arm-extern, or --arm-next.",
             file=sys.stderr,
         )
         return 2
 
     # Typed RE / bare run.py = always extract open case now.
-    # Anwenden/Weiter/Extern ONLY via explicit --arm* after LF close-out.
-    # Do NOT fall through to Anwenden when FIRST_RE_ONCE_PENDING is missing
-    # (fresh agent, mid-day restart, flag already consumed).
-    use_once = force_once or not (force_arm or force_weiter or force_extern)
-    if use_once and not (force_arm or force_weiter or force_extern):
+    # Anwenden/Weiter/Extern/Next ONLY via explicit --arm* after LF close-out.
+    use_once = force_once or not (
+        force_arm or force_weiter or force_extern or force_next
+    )
+    if use_once and not (force_arm or force_weiter or force_extern or force_next):
         if str(_AUTO_DIR) not in sys.path:
             sys.path.insert(0, str(_AUTO_DIR))
         try:
@@ -252,6 +261,8 @@ def main() -> int:
         watch_flag, label = "--watch-weiter-re", "Weiter arm / LF TR queue"
     elif force_extern:
         watch_flag, label = "--watch-extern-re", "Extern arm / LF TR email"
+    elif force_next:
+        watch_flag, label = "--watch-next-re", "Next arm / CALL LF disposition"
     elif force_arm:
         watch_flag, label = "--watch-anwenden-re", "Anwenden arm"
     else:

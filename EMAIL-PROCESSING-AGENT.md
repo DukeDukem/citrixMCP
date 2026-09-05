@@ -42,10 +42,18 @@ POST-LOGIN / FIRST CASE (push-start):
 
 CLOSE-OUT ARMS (do not mix):
 | Command | Case type | Arm then await |
-| PR LF | Non-transfer (we answered) | --arm (detached) -> --await-arm -> I click Anwenden |
-| LF alone | Logged without PR | --arm (detached) -> --await-arm -> I click Anwenden |
-| LF TR (queue) | Internal transfer | --arm-weiter (detached) -> --await-arm -> Transfer -> ... -> Weiter |
-| LF TR (email) | External email transfer | --arm-extern (detached) -> --await-arm -> Externer Transfer -> Weiterleiten |
+| PR LF / LF (EMAIL) | Non-transfer email answered/logged | --arm (Anwenden) -> --await-arm -> I click Anwenden |
+| LF (CALL) | Voice call logged | --channel voice LF, then --arm-next -> --await-arm -> I click exact Next |
+| LF alone (EMAIL) | Logged without PR | --arm -> --await-arm -> Anwenden |
+| LF TR (queue) | Internal transfer | --arm-weiter -> --await-arm -> Transfer -> ... -> Weiter |
+| LF TR (email) | External email transfer | --arm-extern -> --await-arm -> Externer Transfer -> Weiterleiten |
+
+CALL LF ARM (disposition Next — not Anwenden):
+- After CALL LF (--channel voice): IMMEDIATELY run.py --arm-next (NOT --arm).
+- Expect NEXT_RE_ARMED + ARM_WATCH_DETACHED + READY_FOR_YOUR_CLICK: Next + Dexter.
+- Finishing quote: LF done for #FALL_ID
+- Then --await-arm. I left-click exact label Next on screenButton (ignore Back/Weiter/Weiterleiten).
+- After extract: CHANNEL detect again.
 
 DETACHED ARM (mandatory — fixes false "watch died"):
 - After LF / PR LF: run.py --arm → expect ARM_WATCH_DETACHED + READY_FOR_YOUR_CLICK: Anwenden + Dexter → say "Armed — click Anwenden now" + finishing quote → THEN run.py --await-arm.
