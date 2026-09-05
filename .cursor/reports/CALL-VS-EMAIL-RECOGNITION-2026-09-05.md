@@ -55,11 +55,13 @@ This is a **voice CALL**, not an inbound email.
 
 ---
 
-## LF for CALL cases
+## CALL handling (agent)
 
-| Field | Value |
-|-------|--------|
-| Kanal | **Voice (Tel.)** (`#channel_voice`, `--channel voice`) |
-| Ticketstatus Salcus | **Always** **3-Bot dokumentiert nicht in Salcus** |
+After arm/`--once` opens a case and **CHANNEL: CALL**:
 
-Do not log calls as E-Mail Care.
+1. Agent waits (does not email-RE).
+2. You listen to the customer, then paste their issue as text.
+3. Agent analyzes (KB/TransferMatrix) and gives phone handling + optional talk track.
+4. LF with `--channel voice` (ticketstatus always 3), then arm next case.
+
+See `.cursor/rules/sprinklr-call-vs-email.mdc`.

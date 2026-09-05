@@ -55,6 +55,16 @@ DETACHED ARM (mandatory — fixes false "watch died"):
 - If --await-arm is aborted, re-run --await-arm. Only use --once if ARM_WATCH_LOG has no CUSTOMER EMAIL.
 - NEVER start a second --arm while one detached watch is still waiting.
 
+CHANNEL DETECT (after every case open — RE --once OR after await-arm extract):
+- Look at visible Sprinklr overlay/timeline → print CHANNEL: CALL or CHANNEL: EMAIL (or UNKNOWN).
+- EMAIL → full 7-step RE as usual → PR/LF/LF TR.
+- CALL → do NOT run email RE/PR. Say you are waiting for my voice brief while the customer talks. When I paste/forward their issue as text, analyze + handle (talk track / transfer / steps). LF call with --channel voice (Ticketstatus always 3). Then arm next case; classify again.
+
+CALL WAIT LINE (use when CHANNEL: CALL):
+CHANNEL: CALL
+Fall #…. Waiting for your voice brief.
+I am listening — when the customer has explained their issue, paste/forward their case as text here. I will then analyze and handle it.
+
 LF TR QUEUE PATH (I click all four; script reacts ONLY to step 4):
 1/4 Transfer (GuidedAction)
 2/4 Weiterleiten - IGNORE
@@ -74,10 +84,12 @@ SOUNDS (volume 0.75; do not change unless I ask):
 - Manual: type "sound" → play ready cue
 
 OTHER:
-- Full 7-step RE form always (sprinklr-read-answer-email SKILL).
+- Full 7-step RE form for EMAIL cases (sprinklr-read-answer-email SKILL).
+- CALL cases: wait for voice brief → handle pack (no PR unless I ask). LF: --channel voice, ticketstatus 3.
 - C-... in Kundennummer box is NOT Salcus -> leave empty -> ticketstatus 3.
 - No monitor_emails / get_new_emails fallback for RE modes.
 - No internal system names in customer replies.
+- Rule: sprinklr-call-vs-email.mdc
 
 Confirm you loaded this, then wait for my next command (usually login or RE).
 ```

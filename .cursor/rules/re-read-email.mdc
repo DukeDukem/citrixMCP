@@ -50,7 +50,7 @@ Typical workday start:
    ```powershell
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
    ```
-   Expect **`MODE: --once`** and either `FIRST_RE_ONCE_CONSUMED` (after login) or `RE_ONCE_DEFAULT`. Then **CUSTOMER EMAIL** + full **7-step RE**.
+   Expect **`MODE: --once`** and either `FIRST_RE_ONCE_CONSUMED` (after login) or `RE_ONCE_DEFAULT`. Then classify **`CHANNEL: CALL|EMAIL`** (see `sprinklr-call-vs-email.mdc`). **EMAIL** → **CUSTOMER EMAIL** + full **7-step RE**. **CALL** → wait for user voice brief (no email RE/PR).
 2. **Do not** run `--arm` / `--await-arm` on typed RE. Anwenden arm is **only** after LF close-out (see Auto-arm below).
 3. **Audio:**
    - **Armed auto-RE start:** After Anwenden / Weiter / Extern → 4s wait → case open → extract begins → Prowler (`ARMED_RE_START_SOUND`).

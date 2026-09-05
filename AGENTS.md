@@ -23,7 +23,7 @@
 - Never swap: PR LF / LF ≠ Weiter/Extern; LF TR ≠ Anwenden; queue ≠ email arm
 - **DONE** — stop watches (including detached); pause until next login
 - **LF Salcus:** Kundennummer sidebar only; **`C-…`** is not Salcus → empty → ticketstatus **3**
-- **CALL LF:** Kanal **Voice (Tel.)** (`--channel voice`); Ticketstatus Salcus **always 3** (Bot dokumentiert nicht in Salcus). See `sprinklr-call-vs-email.mdc`
+- **CALL vs EMAIL:** After every case open (RE or await-arm), classify via Sprinklr overlay. **CALL** → wait for user’s voice brief text → analyze/handle (no email PR unless asked); LF with **`--channel voice`** (ticketstatus **3**). **EMAIL** → normal 7-step RE/PR/LF. Rule: `sprinklr-call-vs-email.mdc`
 
 ## Instructions dashboard
 

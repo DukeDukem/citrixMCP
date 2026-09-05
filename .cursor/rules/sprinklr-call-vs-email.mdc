@@ -1,116 +1,154 @@
 ---
-description: Differentiate Sprinklr voice CALL cases from EMAIL cases using overlay/DOM markers (snapshot 2026-09-05 Fall #57114650).
+description: Recognize CALL vs EMAIL after case open; CALL wait-for-voice-brief then analyze/handle; EMAIL uses normal RE/PR/LF.
 alwaysApply: true
 ---
 
-# Sprinklr channel recognition — CALL vs EMAIL
+# Sprinklr CALL vs EMAIL — recognition + CALL handling
 
-**Chat scope:** Email processing agent. Use before treating an open Fall as an email RE/PR case.
+**Chat scope:** Email processing agent (`EMAIL-PROCESSING-AGENT.md`).
 
 **Reference snapshot (call):** Fall **#57114650** (Uwe Kommer), 2026-09-05  
 Artifacts: `.cursor/reports/sprinklr-call-overlay-2026-09-05.png`, `sprinklr-call-overlay-dom-2026-09-05.json`, `sprinklr-call-vs-email-selectors-2026-09-05.json`, `CALL-VS-EMAIL-RECOGNITION-2026-09-05.md`
 
 ---
 
-## Hard rule
+## When to classify (mandatory)
 
-If the visible case is a **CALL** (voice), do **not** run the normal email RE → PR → LF email path as if it were Care Webform email.
+After **any** of these, **before** drafting an email 7-step RE / PR:
 
-- Do **not** draft a customer email reply for a live/disposition call unless the user explicitly asks.
-- Prefer: identify channel → ask user / skip / document only.
+1. Typed **RE** / `run.py --once` extract finishes  
+2. Armed path: `--await-arm` returns extract / case is open after Anwenden / Weiter / Weiterleiten  
+3. User opens a case and asks you to handle it  
 
-### LF for CALL cases (mandatory when logging)
-
-When the user logs a **call** in Roberta Case Tracker (**LF**):
-
-| Field | Value |
-|-------|--------|
-| **Kanal** | **Voice (Tel.)** — radio `#channel_voice` / `--channel voice` |
-| **Ticketstatus Salcus** | **Always** **3-Bot dokumentiert nicht in Salcus** (`#tstate3`) — even if a Kundennummer/Salcus is present |
-
-Do **not** use Kanal **E-Mail Care** (`#channel_em_care`) for call cases.
-
-```powershell
-uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --channel voice
-```
-
----
-
-## CALL markers (any strong set → treat as CALL)
-
-### A) Live / voice overlays (strongest)
-
-Visible UI widgets (bottom of Care Console):
-
-| Marker | Meaning |
-|--------|---------|
-| **Im Gespräch** | Agent in call status (timer, e.g. `08:26`) |
-| **Mikrofon angeschlossen** | Mic connected |
-| **VOIP Nailed Up Leitung: Verbunden** (or similar VOIP line status) | Voice path up |
-| **Medienauslagerung fehlgeschlagen** (optional warning) | Media offload status on call UI |
-| Floating **Case #…** widget with **o2 Disposition Plan** / **Disposition Codes** / Next | Call disposition overlay |
-| Green **phone handset** icon next to MSISDN in disposition card | Voice contact |
-
-### B) Timeline / conversation (strong)
-
-| Marker | Example |
-|--------|---------|
-| **Eingehender Anruf** | Incoming call thread title |
-| Timeline labels **Anruf** | Call events |
-| **Anruf beendet – X Mins Y Sekunden** | Call ended duration |
-| **Aufzeichnung gestartet** / recording UI | Call recording |
-| **Anruf wurde getrennt** / TIMEOUT | Disconnect events |
-| Audio bubbles / waveforms (`0:09`, `3:57`, play bars) | Not email body text |
-| DOM testids (when present) | `audio_pres`, `call-button`, `omniMedia`, `mediaItems`, `mediaList-OMNI_TEMPLATE_*` |
-
-### C) Case Informationen (supporting)
-
-Verified on snapshot Fall #57114650:
-
-| Field | Call example |
-|-------|----------------|
-| **Quelle** | `Aura Care Shared` (not Care Webform) |
-| **Ziel** | e.g. `Sales Beratung - Mobile Pilot 2` |
-
-Quelle/Ziel alone are not enough (queues vary) — combine with A/B.
-
-### D) Negative email signals on a call
-
-| Signal | Call snapshot |
-|--------|----------------|
-| `[data-testid="html-message-content"]` count | **0** (no classic email HTML bodies) |
-| TinyMCE / `body#tinymce` | Often absent during live call |
-| `section[aria-label="Nachricht verfassen"]` | May still exist in shell — **do not** treat as proof of email |
-
----
-
-## EMAIL markers (treat as EMAIL)
-
-| Marker | Notes |
-|--------|--------|
-| Care Webform / email **Quelle** typical of inbound mail | e.g. Care Webform (not Aura Care Shared call) |
-| Visible email thread with **html-message-content** / readable mail bodies | Fan/brand messages with text |
-| Subject / Von: / Betreff email structure | Classic mail |
-| No **Im Gespräch** / Disposition Plan / Anruf timeline | Absence of call overlays |
-| RE extract prints normal **CUSTOMER EMAIL** body text | Not only Anruf/audio events |
-
----
-
-## Detection order (agent / scripts)
-
-1. If **Im Gespräch** or Disposition Plan overlay visible → **CALL**.
-2. Else if timeline has **Eingehender Anruf** / **Anruf beendet** / audio media testids → **CALL**.
-3. Else if `html-message-content` present and no call overlays → **EMAIL**.
-4. Else if ambiguous → ask user; do not PR an email reply.
-
-Suggested log lines:
+**First line of analysis must state channel:**
 
 - `CHANNEL: CALL`  
 - `CHANNEL: EMAIL`  
 - `CHANNEL: UNKNOWN — confirm before RE/PR`
 
+Use **visible Sprinklr overlay + timeline + Case Informationen** (see markers below). Prefer overlay (**Im Gespräch**, Disposition) over Quelle alone.
+
+| Channel | Next step |
+|---------|-----------|
+| **EMAIL** | Normal **7-step RE** → **PR** / **LF** / **LF TR** as today |
+| **CALL** | **Do not** run email RE→PR. Enter **CALL wait → voice brief → handle** flow below |
+| **UNKNOWN** | Ask user; do not PR |
+
 ---
 
-## Operator note
+## CALL handling workflow (after recognition)
 
-This rule is for **recognition**. Call handling / disposition codes are out of scope for the email RE/PR/LF pipeline unless explicitly extended later.
+### Step 0 — Announce and wait
+
+When `CHANNEL: CALL`:
+
+1. Print short identity: Fall #, customer name if visible, Quelle/Ziel if useful.  
+2. **Stop.** Do **not** invent the customer’s concern from Anruf/audio timeline alone.  
+3. Tell the user clearly:
+
+```
+CHANNEL: CALL
+Fall #…. Waiting for your voice brief.
+
+I am listening — when the customer has explained their issue, paste/forward their case as text here. I will then analyze and handle it.
+```
+
+4. Remain idle until the user sends the **voice brief** (typed summary / transcript of what the customer said).
+
+### Step 1 — Receive voice brief
+
+Treat the user’s next substantive message (case content, not `LF` / `DONE` / `PR`) as the **customer voice brief**.
+
+- Combine: Sprinklr sidebar/case facts (name, Kundennummer, MSISDN, Quelle, Ziel, visible IDs) **+** voice brief text.  
+- Do **not** mix in another Fall’s data.
+
+### Step 2 — Analyze and handle (CALL output)
+
+Output a **CALL handling pack** (not the email section-6 reply unless the user asks for an email):
+
+1. **Channel + Fall # + customer** (one line)  
+2. **Case summary** — problem + what they want (from voice brief; ~35–60 words)  
+3. **Verification** — identifiers from Sprinklr + brief; same 3-Eckdaten / matrix rules as email where applicable; never ask for PKK by chat as if emailing  
+4. **Transfer eligibility** — TransferMatrix / KB as for the topic  
+5. **Handling instructions for you (agent on the phone)** — what to do/say, self-service paths, whether to transfer, disposition notes if known — **no** uninvited backend promises  
+6. **Talk track (optional German bullets)** — short phrases you can say to the customer (not a full email unless asked)  
+7. **Close-out** — recommend **LF** with Voice channel, or **LF TR** if transfer; no **PR** unless user explicitly wants an email  
+
+Do **not** paste into Sprinklr email editor (**PR**) for a call unless the user explicitly requests an email.
+
+### Step 3 — LF after call
+
+When logging the call:
+
+```powershell
+uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --channel voice
+```
+
+| Field | Value |
+|-------|--------|
+| **Kanal** | **Voice (Tel.)** (`#channel_voice`) |
+| **Ticketstatus Salcus** | **Always** **3-Bot dokumentiert nicht in Salcus** |
+
+Then arm next case as usual (**`--arm`** / **`--arm-weiter`** / **`--arm-extern`** + **`--await-arm`**). On the **next** open case, classify **CALL vs EMAIL** again before handling.
+
+---
+
+## Hard bans (CALL)
+
+- No automatic email **7-step section 6** + **PR** for live/disposition calls  
+- No treating Anruf timeline / audio bars as a substitute for the user’s voice brief  
+- No Kanal **E-Mail Care** when LF’ing a call  
+
+---
+
+## CALL markers (any strong set → CALL)
+
+### A) Live / voice overlays (strongest)
+
+| Marker | Meaning |
+|--------|---------|
+| **Im Gespräch** | In-call status + timer |
+| **Mikrofon angeschlossen** | Mic connected |
+| **VOIP Nailed Up Leitung: Verbunden** (or similar) | Voice path up |
+| **Medienauslagerung fehlgeschlagen** (optional) | Media status on call UI |
+| Floating **Case #…** + **o2 Disposition Plan** / **Disposition Codes** | Call disposition overlay |
+| Green **phone** icon next to MSISDN on disposition card | Voice contact |
+
+### B) Timeline (strong)
+
+| Marker | Example |
+|--------|---------|
+| **Eingehender Anruf** | Incoming call |
+| **Anruf** / **Anruf beendet** / **Aufzeichnung** | Call events / recording |
+| Audio bubbles / waveforms | Not email body |
+| DOM testids | `audio_pres`, `call-button`, `omniMedia`, `mediaItems`, … |
+
+### C) Supporting Case Informationen
+
+| Field | Call example (snapshot) |
+|-------|-------------------------|
+| **Quelle** | `Aura Care Shared` (not Care Webform) |
+| **Ziel** | e.g. `Sales Beratung - Mobile Pilot 2` |
+
+### D) Negative email signals
+
+| Signal | On call snapshot |
+|--------|------------------|
+| `html-message-content` | Often **0** |
+| TinyMCE | Often absent during live call |
+| `Nachricht verfassen` | May exist in shell — **not** proof of email |
+
+---
+
+## EMAIL markers
+
+Care Webform / mail Quelle, readable **html-message-content** bodies, no Im Gespräch / Disposition / Anruf-audio timeline → **EMAIL** → normal RE/PR/LF.
+
+---
+
+## Detection order
+
+1. **Im Gespräch** or Disposition overlay → **CALL**  
+2. **Eingehender Anruf** / **Anruf beendet** / audio testids → **CALL**  
+3. `html-message-content` + no call overlays → **EMAIL**  
+4. Else → **UNKNOWN**
