@@ -126,7 +126,7 @@ Confirm you loaded this, then wait for my next command (usually login or RE).
 | **LF TR** | Transfer LF then `--arm-weiter` or `--arm-extern` + `--await-arm` |
 | **DONE** | `done_for_today.py` |
 
-Rules: `re-read-email.mdc`, `pr-paste-reply.mdc`, `lf-log-form.mdc`, `lf-tr-transfer.mdc`, `login-command.mdc`, `done-for-today.mdc`, `anwenden-re-known-good.mdc`.
+Rules: `re-read-email.mdc`, `pr-paste-reply.mdc`, `lf-log-form.mdc`, `lf-tr-transfer.mdc`, `login-command.mdc`, `done-for-today.mdc`, `anwenden-re-known-good.mdc`, `sprinklr-call-vs-email.mdc`.
 
 ---
 

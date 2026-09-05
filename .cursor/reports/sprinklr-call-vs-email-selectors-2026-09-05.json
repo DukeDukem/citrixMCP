@@ -1,0 +1,342 @@
+{
+  "fields": {
+    "Quelle": {
+      "text": "Quelle Aura Care Shared",
+      "htmlText": "Aura Care Shared",
+      "sprText": ""
+    },
+    "Ziel": {
+      "text": "Ziel Sales Beratung - Mobile Pilot 2",
+      "htmlText": "Sales Beratung - Mobile Pilot 2",
+      "sprText": ""
+    },
+    "Sprache": {
+      "text": "Sprache German",
+      "htmlText": "German",
+      "sprText": ""
+    },
+    "Fallnummer": {
+      "text": "Fallnummer 57114650",
+      "htmlText": "57114650",
+      "sprText": ""
+    },
+    "Kundennummer": {
+      "text": "Kundennummer 8176834",
+      "htmlText": "8176834",
+      "sprText": ""
+    }
+  },
+  "anrufNodes": [
+    {
+      "testid": null,
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Auf Hauptinhalt übergehen U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8mi"
+    },
+    {
+      "testid": null,
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Auf Hauptinhalt übergehen U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8mi"
+    },
+    {
+      "testid": "theme-provider-container",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Auf Hauptinhalt übergehen U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8mi"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Auf Hauptinhalt übergehen U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8mi"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Auf Hauptinhalt übergehen U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8mi"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Auf Hauptinhalt übergehen U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8mi"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": null,
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "theme-provider-container",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U H Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Im Gespräch"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Im Gespräch"
+    },
+    {
+      "testid": null,
+      "entity": null,
+      "aria": "Im Gespräch, User availability status.",
+      "role": null,
+      "text": "Im Gespräch"
+    },
+    {
+      "testid": null,
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Im Gespräch"
+    },
+    {
+      "testid": null,
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Im Gespräch"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O Anr"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O Anr"
+    },
+    {
+      "testid": "case-record-page",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O Anr"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "Fall #57114650 000825 Offen Blacklist Transfer U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O Anr"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O Anruf • 8min U TIMEOUT Anruf • 8min U Anruf angeno"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O Anruf • 8min U TIMEOUT Anruf • 8min U Anruf angeno"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O Anruf • 8min U TIMEOUT Anruf • 8min U Anruf angeno"
+    },
+    {
+      "testid": "box",
+      "entity": null,
+      "aria": null,
+      "role": null,
+      "text": "U Uwe Kommer Heute U Eingehender Anruf... +491795179001 Anruf • 10min O Anruf • 8min U TIMEOUT Anruf • 8min O Anruf • 8min U TIMEOUT Anruf • 8min U Anruf angeno"
+    }
+  ],
+  "callishTestids": [
+    "audio_pres",
+    "call-button",
+    "mediaItems",
+    "mediaList-OMNI_TEMPLATE_0",
+    "omniMedia"
+  ],
+  "shortWidgets": [
+    "Assigned to meTEF Agent Basic CasesAktualisierenWeitere AktionensearchFälle suchenSortierenFilter0Alle Tickets (1)#57114650UUwe KommerInhalt redigiert.4388min10minHIm Gespräch",
+    "HIm Gespräch",
+    "Im Gespräch",
+    "Im Gespräch Zeit im Im Gespräch Status: 8 Minuten 26 Sekunden. 08:26 Medienauslagerung fehlgeschlagen Mikrofon angeschlossen VOIP Nailed Up Leitung Verbunden",
+    "Im Gespräch Zeit im Im Gespräch Status: 8 Minuten 26 Sekunden. 08:26",
+    "Zeit im Im Gespräch Status: 8 Minuten 26 Sekunden. 08:26",
+    "Medienauslagerung fehlgeschlagen",
+    "Mikrofon angeschlossen"
+  ],
+  "composer": {
+    "nachrichtVerfassen": true,
+    "baseEditor": false
+  },
+  "conversationItems": {
+    "fan": 6,
+    "brand": 11,
+    "htmlMessage": 0
+  },
+  "bodyHas": {
+    "EingehenderAnruf": true,
+    "AnrufBeendet": true,
+    "ImGespraech": true
+  }
+}

@@ -1,0 +1,101 @@
+---
+description: Differentiate Sprinklr voice CALL cases from EMAIL cases using overlay/DOM markers (snapshot 2026-09-05 Fall #57114650).
+alwaysApply: true
+---
+
+# Sprinklr channel recognition — CALL vs EMAIL
+
+**Chat scope:** Email processing agent. Use before treating an open Fall as an email RE/PR case.
+
+**Reference snapshot (call):** Fall **#57114650** (Uwe Kommer), 2026-09-05  
+Artifacts: `.cursor/reports/sprinklr-call-overlay-2026-09-05.png`, `sprinklr-call-overlay-dom-2026-09-05.json`, `sprinklr-call-vs-email-selectors-2026-09-05.json`, `CALL-VS-EMAIL-RECOGNITION-2026-09-05.md`
+
+---
+
+## Hard rule
+
+If the visible case is a **CALL** (voice), do **not** run the normal email RE → PR → LF email path as if it were Care Webform email.
+
+- Do **not** draft a customer email reply for a live/disposition call unless the user explicitly asks.
+- Prefer: identify channel → ask user / skip / document only.
+
+---
+
+## CALL markers (any strong set → treat as CALL)
+
+### A) Live / voice overlays (strongest)
+
+Visible UI widgets (bottom of Care Console):
+
+| Marker | Meaning |
+|--------|---------|
+| **Im Gespräch** | Agent in call status (timer, e.g. `08:26`) |
+| **Mikrofon angeschlossen** | Mic connected |
+| **VOIP Nailed Up Leitung: Verbunden** (or similar VOIP line status) | Voice path up |
+| **Medienauslagerung fehlgeschlagen** (optional warning) | Media offload status on call UI |
+| Floating **Case #…** widget with **o2 Disposition Plan** / **Disposition Codes** / Next | Call disposition overlay |
+| Green **phone handset** icon next to MSISDN in disposition card | Voice contact |
+
+### B) Timeline / conversation (strong)
+
+| Marker | Example |
+|--------|---------|
+| **Eingehender Anruf** | Incoming call thread title |
+| Timeline labels **Anruf** | Call events |
+| **Anruf beendet – X Mins Y Sekunden** | Call ended duration |
+| **Aufzeichnung gestartet** / recording UI | Call recording |
+| **Anruf wurde getrennt** / TIMEOUT | Disconnect events |
+| Audio bubbles / waveforms (`0:09`, `3:57`, play bars) | Not email body text |
+| DOM testids (when present) | `audio_pres`, `call-button`, `omniMedia`, `mediaItems`, `mediaList-OMNI_TEMPLATE_*` |
+
+### C) Case Informationen (supporting)
+
+Verified on snapshot Fall #57114650:
+
+| Field | Call example |
+|-------|----------------|
+| **Quelle** | `Aura Care Shared` (not Care Webform) |
+| **Ziel** | e.g. `Sales Beratung - Mobile Pilot 2` |
+
+Quelle/Ziel alone are not enough (queues vary) — combine with A/B.
+
+### D) Negative email signals on a call
+
+| Signal | Call snapshot |
+|--------|----------------|
+| `[data-testid="html-message-content"]` count | **0** (no classic email HTML bodies) |
+| TinyMCE / `body#tinymce` | Often absent during live call |
+| `section[aria-label="Nachricht verfassen"]` | May still exist in shell — **do not** treat as proof of email |
+
+---
+
+## EMAIL markers (treat as EMAIL)
+
+| Marker | Notes |
+|--------|--------|
+| Care Webform / email **Quelle** typical of inbound mail | e.g. Care Webform (not Aura Care Shared call) |
+| Visible email thread with **html-message-content** / readable mail bodies | Fan/brand messages with text |
+| Subject / Von: / Betreff email structure | Classic mail |
+| No **Im Gespräch** / Disposition Plan / Anruf timeline | Absence of call overlays |
+| RE extract prints normal **CUSTOMER EMAIL** body text | Not only Anruf/audio events |
+
+---
+
+## Detection order (agent / scripts)
+
+1. If **Im Gespräch** or Disposition Plan overlay visible → **CALL**.
+2. Else if timeline has **Eingehender Anruf** / **Anruf beendet** / audio media testids → **CALL**.
+3. Else if `html-message-content` present and no call overlays → **EMAIL**.
+4. Else if ambiguous → ask user; do not PR an email reply.
+
+Suggested log lines:
+
+- `CHANNEL: CALL`  
+- `CHANNEL: EMAIL`  
+- `CHANNEL: UNKNOWN — confirm before RE/PR`
+
+---
+
+## Operator note
+
+This rule is for **recognition**. Call handling / disposition codes are out of scope for the email RE/PR/LF pipeline unless explicitly extended later.
