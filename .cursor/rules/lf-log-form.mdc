@@ -58,10 +58,10 @@ Script auto-reads **Ziel / Quelle** for Transfer when `--transfer` / `--target` 
 |---------------|----------|-------------------|------|
 | Case # | `input[name="sikas"]` | Fall # (visible case) | Digits only; `#` optional |
 | Salcus | `input[name="salcus"]` | **Exclusive:** sidebar box `div[data-entityid="Kundennummer"][aria-label="Kundennummer"]`. Re-read every Fall. Value via `htmlText` or `span.spr-text-03`. **Nicht festgelegt** / missing → empty. | **Never** from email body, Webform, Betreff, Freitext, or any other DOM location. |
-| Kanal | `#channel_em_care` | Default | E-Mail Care |
+| Kanal | `#channel_em_care` / `#channel_voice` | **EMAIL** default: E-Mail Care. **CALL**: **Voice (Tel.)** (`#channel_voice`) | |
 | Transfer | `#transfer0` / `#transfer1` | See transfer rules below | |
 | Target | `input[name="target"]` | Sprinklr **Ziel** or routing rule | Only when Transfer = Ja |
-| Ticketstatus Salcus | `#tstate1` / `#tstate3` | Derived — see below | |
+| Ticketstatus Salcus | `#tstate1` / `#tstate3` | Derived — see below. **CALL always `#tstate3`** | |
 | Notiz | `input[name="note"]` | — | **Always empty.** Never fill attachment counts or any other text. |
 
 ### Salcus (mandatory — exclusive source)
@@ -112,9 +112,22 @@ If this exclusive field is missing or unset → Salcus empty. **Do not search an
 
 | Condition | Select |
 |-----------|--------|
+| **CALL / Voice (Tel.)** | **3-Bot dokumentiert nicht in Salcus** (`#tstate3`) — **always**, even if Kundennummer is present |
 | **Transfer = Ja** | **3-Bot dokumentiert nicht in Salcus** (`#tstate3`) — always, even if Kundennummer is present |
 | **Transfer = Nein** + exclusive Kundennummer field has **valid numeric** Salcus | **1-Erfolgreich** (`#tstate1`) |
 | **Transfer = Nein** + exclusive field **Nicht festgelegt** / empty / **`C-…` Vertragsnummer** | **3-Bot dokumentiert nicht in Salcus** (`#tstate3`) |
+
+### CALL LF (Voice)
+
+When the open Sprinklr case is a **call** (see `.cursor/rules/sprinklr-call-vs-email.mdc`):
+
+```powershell
+uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --channel voice
+```
+
+- Kanal = **Voice (Tel.)** (`#channel_voice`)
+- Ticketstatus Salcus = **3-Bot dokumentiert nicht in Salcus** always
+- Do not use `--channel em_care` / E-Mail Care for calls
 
 ### Transfer (mandatory)
 

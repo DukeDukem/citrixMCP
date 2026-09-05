@@ -55,7 +55,11 @@ This is a **voice CALL**, not an inbound email.
 
 ---
 
-## Next steps (optional)
+## LF for CALL cases
 
-- Add `CHANNEL: CALL|EMAIL` print to `run.py --once` extract header  
-- Hard-stop PR when CHANNEL=CALL unless user override  
+| Field | Value |
+|-------|--------|
+| Kanal | **Voice (Tel.)** (`#channel_voice`, `--channel voice`) |
+| Ticketstatus Salcus | **Always** **3-Bot dokumentiert nicht in Salcus** |
+
+Do not log calls as E-Mail Care.

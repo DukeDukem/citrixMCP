@@ -49,9 +49,9 @@ After fill succeeds: `run.py --arm` → `ARM_WATCH_DETACHED` → finishing quote
 |---------|-----------------|------|
 | `sikas` (Case #) | Fall # | Digits only |
 | `salcus` | **Exclusive:** `div[data-entityid="Kundennummer"][aria-label="Kundennummer"]`. Re-read every Fall. Prefer `htmlText` when a number is shown; `spr-text-03` only if **Nicht festgelegt**. | Empty if unset/missing. **Never** from email/Webform body or other DOM. |
-| Kanal | — | E-Mail Care |
+| Kanal | — | **EMAIL:** E-Mail Care. **CALL:** Voice (Tel.) (`--channel voice`) |
 | Transfer / target | Quelle, Ziel, Subject | See below |
-| Ticketstatus Salcus | Derived | See below |
+| Ticketstatus Salcus | Derived | See below — **CALL always 3** |
 | Notiz | — | **Always empty** — never log attachment counts or other notes |
 
 ### Salcus (mandatory — exclusive source)
@@ -66,11 +66,18 @@ The number **changes every Fall #**. Prefer `[data-testid="htmlText"]` when a nu
 
 | Condition | Value |
 |-----------|--------|
+| **CALL / Voice (Tel.)** | **3-Bot dokumentiert nicht in Salcus** (**always**) |
 | Transfer **Ja** | **3-Bot dokumentiert nicht in Salcus** (always) |
 | Transfer **Nein** + valid numeric Kundennummer/Salcus | **1-Erfolgreich** |
 | Transfer **Nein** + no Kundennummer / **`C-…` Vertragsnummer** | **3-Bot dokumentiert nicht in Salcus** |
 
 **`C-` IDs are not Salcus:** e.g. Fall #55920431 — Kundennummer box shows `C-0026448826` → Salcus empty → ticketstatus **3**.
+
+**Call LF example:**
+
+```powershell
+uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#57114650" --channel voice
+```
 
 ### Transfer
 

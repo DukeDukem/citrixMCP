@@ -355,6 +355,7 @@ def fill_case_tracker_fields(
     """Fill Roberta Case Tracker fields.
 
     Ticketstatus Salcus (tstate) defaults:
+    - Voice (Tel.) / channel voice → 3-Bot dokumentiert nicht in Salcus (#tstate3) always
     - Transfer Ja → 3-Bot dokumentiert nicht in Salcus (#tstate3) always
     - Transfer Nein + Salcus provided → 1-Erfolgreich (#tstate1)
     - Transfer Nein + Salcus empty → 3-Bot dokumentiert nicht in Salcus (#tstate3)
@@ -384,11 +385,24 @@ def fill_case_tracker_fields(
         transfer = "1" if transfer_target else "0"
     transfer_flag = "1" if str(transfer) == "1" else "0"
 
+    channel_key = (channel or "em_care").strip()
+    is_voice = channel_key.lower() in {
+        "voice",
+        "voice_tel",
+        "voice (tel.)",
+        "voice (tel)",
+        "tel",
+        "call",
+    }
+
     if tstate is None:
-        if transfer_flag == "1":
+        if is_voice or transfer_flag == "1":
             tstate = "3"
         else:
             tstate = "1" if salcus_value else "3"
+    # Voice/call LF: Ticketstatus Salcus is ALWAYS 3 (Bot dokumentiert nicht in Salcus)
+    if is_voice:
+        tstate = "3"
     tstate_labels = {
         "1": "1-Erfolgreich",
         "2": "2-Nicht Erfolgreich",
@@ -400,10 +414,20 @@ def fill_case_tracker_fields(
         "em_care": "#channel_em_care",
         "E-Mail Care": "#channel_em_care",
         "email_care": "#channel_em_care",
+        "voice": "#channel_voice",
+        "voice_tel": "#channel_voice",
+        "Voice (Tel.)": "#channel_voice",
+        "Voice (Tel)": "#channel_voice",
+        "tel": "#channel_voice",
+        "call": "#channel_voice",
     }
-    channel_sel = channel_map.get(channel, "#channel_em_care")
+    channel_sel = channel_map.get(channel_key, channel_map.get(channel_key.lower(), "#channel_em_care"))
+    if is_voice:
+        channel_sel = "#channel_voice"
     page.locator(channel_sel).click(force=True)
-
+    print(
+        f"[CASE TRACKER] Kanal: {'Voice (Tel.)' if is_voice or channel_sel == '#channel_voice' else channel_key}"
+    )
     transfer_sel = "#transfer1" if transfer_flag == "1" else "#transfer0"
     page.locator(transfer_sel).click(force=True)
     if transfer_flag == "1" and transfer_target:
@@ -437,6 +461,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Open/fill Roberta O2 Case Tracker")
     ap.add_argument("--case-id", help='Sprinklr Case ID, e.g. "#36698255"')
     ap.add_argument("--salcus", help="Salcus ID (optional; auto-read from Sprinklr when omitted)")
+    ap.add_argument(
+        "--channel",
+        default="em_care",
+        help='Kanal: em_care (E-Mail Care, default) or voice / "Voice (Tel.)" for call cases',
+    )
     ap.add_argument("--transfer", choices=["0", "1"], help="Transfer Nein/Ja override")
     ap.add_argument("--target", help="Transfer target queue/email override")
     ap.add_argument("--cdp", default=CDP_ENDPOINT)
@@ -493,6 +522,7 @@ def main() -> int:
             tracker,
             args.case_id,
             salcus=salcus_value,
+            channel=args.channel or "em_care",
             transfer=transfer_flag,
             transfer_target=transfer_target or None,
             submit=args.submit,

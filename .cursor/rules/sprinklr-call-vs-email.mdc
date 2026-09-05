@@ -19,6 +19,21 @@ If the visible case is a **CALL** (voice), do **not** run the normal email RE �
 - Do **not** draft a customer email reply for a live/disposition call unless the user explicitly asks.
 - Prefer: identify channel → ask user / skip / document only.
 
+### LF for CALL cases (mandatory when logging)
+
+When the user logs a **call** in Roberta Case Tracker (**LF**):
+
+| Field | Value |
+|-------|--------|
+| **Kanal** | **Voice (Tel.)** — radio `#channel_voice` / `--channel voice` |
+| **Ticketstatus Salcus** | **Always** **3-Bot dokumentiert nicht in Salcus** (`#tstate3`) — even if a Kundennummer/Salcus is present |
+
+Do **not** use Kanal **E-Mail Care** (`#channel_em_care`) for call cases.
+
+```powershell
+uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --channel voice
+```
+
 ---
 
 ## CALL markers (any strong set → treat as CALL)

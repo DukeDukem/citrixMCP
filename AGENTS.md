@@ -23,6 +23,7 @@
 - Never swap: PR LF / LF ≠ Weiter/Extern; LF TR ≠ Anwenden; queue ≠ email arm
 - **DONE** — stop watches (including detached); pause until next login
 - **LF Salcus:** Kundennummer sidebar only; **`C-…`** is not Salcus → empty → ticketstatus **3**
+- **CALL LF:** Kanal **Voice (Tel.)** (`--channel voice`); Ticketstatus Salcus **always 3** (Bot dokumentiert nicht in Salcus). See `sprinklr-call-vs-email.mdc`
 
 ## Instructions dashboard
 
