@@ -78,9 +78,9 @@ Typical workday start:
 | `run.py --await-arm` | Poll `arm_watch.log` until extract done |
 | `run.py --foreground` | Debug only: blocking in-shell watch |
 
-## Auto-arm after LF / PR LF (mandatory) — **non-transfer / Anwenden**
+## Auto-arm after LF / PR LF (mandatory) — **EMAIL non-transfer / Anwenden**
 
-When Case Tracker fill (**LF**) has finished successfully for the visible Fall # — including **LF alone**, **PR then LF**, or **PR LF**:
+When Case Tracker fill (**LF**) has finished successfully for an **EMAIL** Fall # — including **LF alone**, **PR then LF**, or **PR LF**:
 
 1. **Immediately** arm Anwenden (detached):
    ```powershell
@@ -95,13 +95,26 @@ When Case Tracker fill (**LF**) has finished successfully for the visible Fall #
    ```
    Expect **`AWAIT_ARM_EXTRACT_DONE`** / **CUSTOMER EMAIL**.
 4. User may click **Anwenden** as soon as Dexter / `READY_FOR_YOUR_CLICK` appears — **do not wait** for await to finish before clicking. Await only waits for extract *after* the click.
-5. After extract: full **7-step RE**. Then play book cue (hooks often get empty stdin on Windows):
+5. After extract: full **7-step RE** (if EMAIL) or CALL wait line. Then play book cue when section 7 applies:
    ```powershell
    uv run python .cursor/skills/sprinklr-email-automation/re_complete_sound.py --play-ready
    ```
 6. If await times out and log has no extract → `ERROR: ANWENDEN WATCH DIED BEFORE EXTRACT` → `run.py --once`.
 
 **Click-ready = Dexter + READY_FOR_YOUR_CLICK.** The await spinner is not a “not ready yet” signal.
+
+### Auto-arm after **CALL LF** — disposition **Next**
+
+When LF used **`--channel voice`** for a call Fall #:
+
+1. **Immediately** arm Next (detached) — **not** Anwenden:
+   ```powershell
+   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-next
+   ```
+   Expect **`NEXT_RE_ARMED`** + **`ARM_WATCH_DETACHED`** + **`READY_FOR_YOUR_CLICK: Next`** + Dexter.
+2. In chat: `Armed — click Next now.` + `LF done for #FALL_ID`.
+3. Then **`--await-arm`**. User left-clicks exact **Next** on `button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]` (ignore Back / Weiter / Weiterleiten).
+4. After extract: **CHANNEL: CALL|EMAIL** again.
 
 | User command | Arm when | Arm script | Then |
 |--------------|----------|------------|------|
