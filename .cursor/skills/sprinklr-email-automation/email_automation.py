@@ -4623,32 +4623,58 @@ Use cursor-agent's file reading capabilities to read these files before generati
 """
     # Call disposition FINAL: exact English label "Next" on guidedWorkflow screenButton.
     # Do NOT match Weiter / Weiterleiten / Weiteleiten / Back.
+    # Detection is DOM/event-based (not screen coordinates) — tray position does not matter.
+    # Always rebind: SPA / movable disposition tray can drop stale listeners.
     _WAIT_NEXT_CLICK_JS = """
 () => {
-  if (window.__nextReArmed) return true;
   const cleanup = () => {
     if (window.__nextReClickHandler) {
+      document.removeEventListener('pointerdown', window.__nextReClickHandler, true);
       document.removeEventListener('mousedown', window.__nextReClickHandler, true);
       document.removeEventListener('click', window.__nextReClickHandler, true);
       window.__nextReClickHandler = null;
     }
   };
+  cleanup();
+  const findNextBtn = (e) => {
+    const sel = 'button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]';
+    const isNext = (el) => {
+      if (!el || !el.getAttribute) return false;
+      if (el.getAttribute('data-tracker-event-id') !== '@guidedWorkflow/runner/screenButton') return false;
+      const text = (el.textContent || '').replace(/\\s+/g, ' ').trim();
+      return /^Next$/i.test(text);
+    };
+    let btn = null;
+    try {
+      const t = e.target;
+      if (t && t.closest) btn = t.closest(sel);
+    } catch (err) {}
+    if (btn && isNext(btn)) return btn;
+    try {
+      const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+      for (const n of path) {
+        if (isNext(n)) return n;
+        if (n && n.closest) {
+          const c = n.closest(sel);
+          if (c && isNext(c)) return c;
+        }
+      }
+    } catch (err) {}
+    return null;
+  };
   const handler = (e) => {
     if (typeof e.button === 'number' && e.button !== 0) return;
-    const btn = e.target.closest(
-      'button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]'
-    );
+    const btn = findNextBtn(e);
     if (!btn) return;
     const tracker = btn.getAttribute('data-tracker-event-id') || '';
     const text = (btn.textContent || '').replace(/\\s+/g, ' ').trim();
-    // Exact call disposition confirm only: "Next"
-    if (!/^Next$/i.test(text)) return;
     window.__nextReClickInfo = { tracker: tracker, text: text, at: Date.now() };
     cleanup();
   };
   window.__nextReClickHandler = handler;
   window.__nextReClickInfo = null;
   window.__nextReArmed = true;
+  document.addEventListener('pointerdown', handler, true);
   document.addEventListener('mousedown', handler, true);
   document.addEventListener('click', handler, true);
   return true;
@@ -4666,12 +4692,28 @@ Use cursor-agent's file reading capabilities to read these files before generati
     _REMOVE_NEXT_CLICK_JS = """
 () => {
   if (window.__nextReClickHandler) {
+    document.removeEventListener('pointerdown', window.__nextReClickHandler, true);
     document.removeEventListener('mousedown', window.__nextReClickHandler, true);
     document.removeEventListener('click', window.__nextReClickHandler, true);
     window.__nextReClickHandler = null;
   }
   window.__nextReArmed = false;
   window.__nextReClickInfo = null;
+}
+"""
+    # True if disposition Next screenButton is visible in this frame (tray may move; selector is fixed).
+    _NEXT_BUTTON_VISIBLE_JS = """
+() => {
+  const nodes = document.querySelectorAll(
+    'button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]'
+  );
+  for (const btn of nodes) {
+    const text = (btn.textContent || '').replace(/\\s+/g, ' ').trim();
+    if (!/^Next$/i.test(text)) continue;
+    const r = btn.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) return true;
+  }
+  return false;
 }
 """
     # Externer Transfer -> Weiterleiten (transfer case → user taken to console/c)
@@ -5348,34 +5390,94 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 print(f"[ERROR] Extern auto-RE: {e}", flush=True)
                 time.sleep(2)
 
-    def _wait_for_next_click(self, poll_seconds: float = 0.5) -> Optional[dict]:
-        """Arm call-disposition Next (guidedWorkflow screenButton) click listener."""
+    def _iter_sprinklr_eval_targets(self):
+        """Main page + child frames (disposition tray may live in a nested frame)."""
         self._reattach_sprinklr_page_no_steal()
+        if not self.page:
+            return
+        yield self.page
         try:
-            self.page.evaluate(self._REMOVE_NEXT_CLICK_JS)
+            frames = list(self.page.frames or [])
         except Exception:
-            pass
-        try:
-            self.page.evaluate(self._WAIT_NEXT_CLICK_JS)
-        except Exception as e:
-            logger.error(f"Could not arm Next click listener: {e}")
-            print(f"[ERROR] Could not arm Next click listener: {e}", flush=True)
+            frames = []
+        for fr in frames:
+            try:
+                if fr == self.page.main_frame:
+                    continue
+            except Exception:
+                pass
+            yield fr
+
+    def _arm_next_listeners_all_frames(self) -> bool:
+        """Install Next click listeners on main document and all iframes."""
+        ok = False
+        for target in self._iter_sprinklr_eval_targets():
+            try:
+                target.evaluate(self._REMOVE_NEXT_CLICK_JS)
+            except Exception:
+                pass
+            try:
+                target.evaluate(self._WAIT_NEXT_CLICK_JS)
+                ok = True
+            except Exception as e:
+                logger.debug(f"Next arm on frame skipped: {e}")
+        return ok
+
+    def _poll_next_click_all_frames(self) -> Optional[dict]:
+        for target in self._iter_sprinklr_eval_targets():
+            try:
+                info = target.evaluate(self._POLL_NEXT_CLICK_JS)
+                if isinstance(info, dict):
+                    return info
+            except Exception:
+                continue
+        return None
+
+    def _next_button_visible_any_frame(self) -> bool:
+        for target in self._iter_sprinklr_eval_targets():
+            try:
+                if target.evaluate(self._NEXT_BUTTON_VISIBLE_JS):
+                    return True
+            except Exception:
+                continue
+        return False
+
+    def _wait_for_next_click(self, poll_seconds: float = 0.5) -> Optional[dict]:
+        """Arm call-disposition Next click listener (all frames) + visibility fallback."""
+        if not self._arm_next_listeners_all_frames():
+            logger.error("Could not arm Next click listener on any frame")
+            print("[ERROR] Could not arm Next click listener on any frame", flush=True)
             return None
 
         last_heartbeat = 0.0
+        last_rebind = time.time()
+        saw_next = False
         while True:
             try:
-                self._reattach_sprinklr_page_no_steal()
-                try:
-                    armed = self.page.evaluate("() => !!window.__nextReArmed")
-                    if not armed:
-                        self.page.evaluate(self._WAIT_NEXT_CLICK_JS)
-                except Exception:
-                    time.sleep(poll_seconds)
-                    continue
-                info = self.page.evaluate(self._POLL_NEXT_CLICK_JS)
+                # Periodic rebind — tray/SPA can drop listeners without clearing window flags
+                if time.time() - last_rebind >= 8:
+                    self._arm_next_listeners_all_frames()
+                    last_rebind = time.time()
+
+                info = self._poll_next_click_all_frames()
                 if isinstance(info, dict):
                     return info
+
+                visible = self._next_button_visible_any_frame()
+                if visible:
+                    saw_next = True
+                elif saw_next:
+                    # Tray dismissed / Next gone after it was visible → treat as click
+                    print(
+                        "NEXT_CLICK_INFERRED (Next button was visible, then disappeared)",
+                        flush=True,
+                    )
+                    return {
+                        "tracker": "@guidedWorkflow/runner/screenButton",
+                        "text": "Next",
+                        "inferred": True,
+                        "at": int(time.time() * 1000),
+                    }
             except KeyboardInterrupt:
                 raise
             except Exception as e:
@@ -5386,7 +5488,8 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 ts = datetime.now().strftime("%H:%M:%S")
                 print(
                     f"[{ts}] Still waiting for call disposition Next left-click "
-                    "(exact label Next; ignore Back / Weiter / Weiterleiten)...",
+                    "(DOM: screenButton label Next — not coordinates; "
+                    "close DevTools Inspect; ignore Back / Weiter / Weiterleiten)...",
                     flush=True,
                 )
                 last_heartbeat = now

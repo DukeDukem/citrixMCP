@@ -108,6 +108,8 @@ User left-clicks exact **Next** on:
 `button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]` with label **Next**  
 (ignore Back / Weiter / Weiterleiten)
 
+Detection is DOM-based (not coordinates). Close DevTools Inspect before the click. Tray may move; selector stays the same.
+
 After Next → 4s → next case extract → **CHANNEL: CALL|EMAIL** again.
 
 ---
