@@ -25,8 +25,11 @@ After every PR (paste reply) command, run a data leak verification scan.
 ## If script returns CLEAN:
 
 - Reply is safe to send
-- User can manually send the email in Sprinklr
-- Then say "LF" to fill the form
+- User clicks **Senden** manually in Sprinklr (`button[data-testid="replyBox-sendBtn"]` / `@replyBox/primaryAction/replyButton`)
+- After **Senden**, the reply box often goes **empty** — that means the mail **was sent**, not that PR failed
+- Do **not** re-scan an empty editor after Senden and report paste/verification failure
+- Do **not** treat Senden as an arm trigger (Anwenden is separate, after PR success)
+- Auto-LF already ran at RE; agent arms Anwenden after PR (see `lf-log-form.mdc`)
 
 ## If script returns DATA LEAK DETECTED:
 
@@ -40,6 +43,14 @@ After every PR (paste reply) command, run a data leak verification scan.
 - Then require fresh RE for current visible case, then PR
 - Mark current draft as contaminated and discard it (do not reuse any part)
 - Require a brand-new reply build from current case only before any further PR attempt
+
+### Empty editor timing (important)
+
+| When editor is empty | Meaning |
+|----------------------|---------|
+| **Before** PR paste completes / before CLEAN verify | Problem — do not claim success |
+| **Right after** CLEAN verify + user **Senden** | **Success** — email sent; ignore empty box |
+| After agent intentional clear due to leak | Cleanup state — need fresh RE/PR |
 
 ## After any detected leak (even if recovered):
 

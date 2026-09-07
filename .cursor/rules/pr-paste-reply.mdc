@@ -76,11 +76,30 @@ When the user prompts with PR/pr:
 
 - ONE and only ONE customer reply has been pasted into Sprinklr
 - No data leaks
-- User will then send the email and optionally say LF for the form
+- **User sends manually** via Sprinklr **Senden** (see below) — agent does **not** click Senden and does **not** treat post-send empty editor as a paste failure
 - Write-reply flow terminates immediately after one paste + verification step (no repaste loop)
 - **After PR succeeds (EMAIL non-transfer):** Auto-LF already ran at RE time. **Immediately** arm Anwenden with **`run.py --arm`** then **`run.py --await-arm`**. Finishing quote: `PR done for #FALL_ID`. See `.cursor/rules/re-read-email.mdc` and `.cursor/rules/lf-log-form.mdc`.
 - **PR LF** remains a valid **recovery** command (PR then LF then arm) if Auto-LF was skipped.
 - Transfer cases: no PR; Auto-LF Transfer Ja at RE already armed Weiter/Extern.
+
+### User clicks **Senden** (not an arm; not a paste error)
+
+After a **CLEAN** post-paste verification, the user often clicks **Senden** immediately:
+
+```html
+button[data-testid="replyBox-sendBtn"]
+data-tracker-event-id="@replyBox/primaryAction/replyButton"
+```
+
+Label: **Senden**.
+
+**Meaning for the agent:**
+
+1. The email **was sent** by the user — PR paste **succeeded**.
+2. The reply editor / TinyMCE box becoming **empty** (or the compose UI resetting) is **expected** after Senden — **not** `ERROR: POST-PASTE VERIFICATION FAILED`, not “paste didn’t stick”, not a reason to re-PR or clear/re-paste.
+3. **Senden is not part of any arming process** (not Anwenden / Next / Weiter / Weiterleiten). Do **not** watch for Senden to trigger `--arm*`. Arm Anwenden only after PR paste+verify succeeded (per Auto-LF rules), independent of when the user clicks Senden.
+4. Do **not** re-run leak verification against an empty box after Senden and treat emptiness as failure.
+5. If CLEAN was already returned for this PR, proceed with Anwenden arm / await as usual even if the editor is empty because the user already sent.
 
 VIOLATION OF THIS RULE = DATA BREACH. DO NOT PROCEED IF UNCERTAIN.
 

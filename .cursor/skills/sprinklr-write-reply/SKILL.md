@@ -16,7 +16,7 @@ description: Writes the suggested email reply into the Sprinklr reply box. Clear
 3. **Preformats** the reply text from the file: normalizes line endings, trims each line, and enforces consistent paragraph spacing (one blank line between paragraphs, no leading/trailing blank lines) so the email displays correctly in the editor.
 4. **Clears** all existing content in the editor (including placeholder like `[Antwort]` and signature blocks).
 5. **Writes** the preformatted reply into the editor (plain text is converted to HTML paragraphs for TinyMCE).
-6. **Fills the Roberta Case Tracker** (unless `--no-fill-case-tracker`): Case #, **Salcus from Sprinklr Kundennummer**, Kanal E-Mail Care, Transfer/target per `.cursor/rules/lf-log-form.mdc`, Ticketstatus Salcus (transfer → always 3). **Speichern** not clicked — use **LF** separately if PR runs with `--no-fill-case-tracker`.
+6. **Fills the Roberta Case Tracker** (unless `--no-fill-case-tracker`): Case #, **Salcus only from** Sprinklr Kundennummer box `data-entityid="Kundennummer"` + `aria-label="Kundennummer"` (re-read every Fall; prefer `htmlText` when a number is shown; empty if Nicht festgelegt; never from email body), Kanal E-Mail Care, Transfer/target per `.cursor/rules/lf-log-form.mdc`, Ticketstatus Salcus (transfer → always 3). **Speichern** not clicked — use **LF** separately if PR runs with `--no-fill-case-tracker`.
 
 By default the script **exits after writing the reply and filling the form**; it does **not** wait for you to send or monitor for the next email. To enable that behaviour (wait for send, then open and print the next new email once), run with `--wait-next-extract-only`.
 
@@ -53,7 +53,7 @@ uv run python .cursor/skills/sprinklr-write-reply/run.py --reply-file=path/to/re
    - Clear the editor content completely.
    - STOP immediately. Do not repaste automatically.
    - Report failure and require fresh RE-based rebuild before next PR.
-7. After CLEAN verification, terminate the write flow immediately (no repaste loop). The reply box in Sprinklr will contain the text and the Roberta case tracker will be filled (in a tab, not saved). The user can edit the reply, send the email, then click Speichern in Case Tracker. To skip filling the form, add `--no-fill-case-tracker` when invoking the automation.
+7. After CLEAN verification, terminate the write flow immediately (no repaste loop). The user clicks **Senden** (`button[data-testid="replyBox-sendBtn"]`) — an empty editor after Senden means the mail was **sent**, not a failed paste. Do not re-verify emptiness as an error. Senden is not an arm trigger. Auto-LF already ran at RE; after PR success arm Anwenden. Speichern on Case Tracker stays manual.
 
 ## Reply content (standard template)
 
