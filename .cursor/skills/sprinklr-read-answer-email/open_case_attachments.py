@@ -27,6 +27,25 @@ DOWNLOAD_DIR = Path(r"C:\Users\PC ENTER\Downloads\yoummday temporaries")
 CARD = 'section[data-tracker-event-id="@conversation/chatItemsList/mediaPreviewCard"]'
 VIEW_BTN = 'button[data-testid="VIEW_DETAIL-iconBtn-with-tooltip"], button[data-entityid="VIEW_DETAIL"]'
 DL_BTN = 'button[data-testid="DOWNLOAD-iconBtn-with-tooltip"], button[data-entityid="DOWNLOAD"]'
+CLOSE_BTN = (
+    'button[data-testid="@media/preview/close"], '
+    'button[data-tracker-event-id="@media/preview/close"], '
+    'button[aria-label="Schließen"]'
+)
+
+
+def _close_preview(page) -> bool:
+    """Close media preview lightbox (Schließen) if open."""
+    try:
+        btn = page.locator(CLOSE_BTN).first
+        if btn.count() and btn.is_visible(timeout=1500):
+            btn.click(timeout=3000)
+            print("ATTACHMENT_PREVIEW_CLOSED")
+            time.sleep(0.3)
+            return True
+    except Exception as e:
+        print(f"ATTACHMENT_PREVIEW_CLOSE_FAIL err={e}")
+    return False
 
 
 def _sprinklr_page(browser):
@@ -103,7 +122,8 @@ def cmd_view(page) -> int:
             if lower.endswith(".png"):
                 card.click(timeout=5000)
                 print(f"ATTACHMENT_CLICKED index={i} name={name} mode=png_direct")
-                time.sleep(0.8)
+                time.sleep(1.0)  # allow agent/UI time to read preview
+                _close_preview(page)
                 continue
             card.hover(timeout=3000)
             time.sleep(0.35)
@@ -112,7 +132,8 @@ def cmd_view(page) -> int:
                 btn = page.locator(VIEW_BTN).nth(i)
             btn.click(timeout=5000)
             print(f"ATTACHMENT_VIEWED index={i} name={name} mode=view_detail")
-            time.sleep(0.8)
+            time.sleep(1.0)
+            _close_preview(page)
         except Exception as e:
             print(f"ATTACHMENT_VIEW_FAIL index={i} name={name} err={e}")
     return 0

@@ -27,7 +27,15 @@ When an EMAIL case shows **Anhang** / **Anhänge**, review those files as part o
 | **`.pdf`** and other types that do not open on plain click | Hover card → **View Detail** (`VIEW_DETAIL-iconBtn-with-tooltip` / `data-entityid="VIEW_DETAIL"`) |
 | Need a local copy | Hover → **Download** (`DOWNLOAD-iconBtn-with-tooltip`) → **yoummday temporaries** only |
 
-**`.png`:** Prefer a direct click on the media preview card so the image opens in-place for the agent to read. Skip View Detail / Download unless the direct click fails.
+**`.png`:** Prefer a direct click on the media preview card so the image opens in-place for the agent to read. Skip View Detail / Download unless the direct click fails. **After reading, close the preview** with:
+
+```html
+button[data-testid="@media/preview/close"]
+aria-label="Schließen"
+data-tracker-event-id="@media/preview/close"
+```
+
+Do not leave the PNG lightbox open when moving on with RE.
 
 **PDFs / stubborn files:** A plain click often does nothing — use **View Detail** after hover.
 
