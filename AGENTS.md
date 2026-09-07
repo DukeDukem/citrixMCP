@@ -18,7 +18,7 @@
 - **PR LF** / **LF** (EMAIL) — **`--arm`** → Anwenden → **`--await-arm`**
 - **LF** (**CALL**) — `--channel voice` then **`--arm-next`** → exact **Next** → **`--await-arm`** (never Anwenden after a call)
 - **LF TR** — queue **`--arm-weiter`** or email **`--arm-extern`**, then **`--await-arm`**
-- **CALL vs EMAIL:** After every case open, classify via overlay. CALL → wait for voice brief → handle; LF voice + **`--arm-next`**. EMAIL → 7-step RE/PR/LF + **`--arm`**. Rule: `sprinklr-call-vs-email.mdc`
+- **CALL vs EMAIL:** After every case open, classify via overlay. **CALL** → `call_listen.py --arm` (local STT) → **BRIEF** / paste → handle; LF voice + stop listen + **`--arm-next`**. **EMAIL** → 7-step RE/PR/LF + **`--arm`**. Rule: `sprinklr-call-vs-email.mdc`
 
 ## Instructions dashboard
 

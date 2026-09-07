@@ -1,0 +1,6 @@
+# Optional deps for CALL listen STT
+faster-whisper>=1.0.0
+vosk>=0.3.45
+# Optional Windows loopback fallback:
+# sounddevice>=0.4.6
+# numpy>=1.26.0

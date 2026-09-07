@@ -29,6 +29,9 @@ _KILL_CMDLINE_MARKERS = (
     "monitor_emails",
     "wait-next-extract-only",
     "watch-fall-re",
+    "sprinklr-call-listen" + os.sep + "call_listen.py",
+    "sprinklr-call-listen/call_listen.py",
+    "call_listen.py",
 )
 
 # Never kill ourselves or the Cursor host by broad matches alone.
@@ -46,6 +49,9 @@ def _clear_session_flags() -> None:
         "first_re_once.json",
         "arm_watch.json",
         "arm_watch.log",
+        "call_listen.json",
+        "call_listen.log",
+        "call_listen_stop",
     ):
         path = state_dir / name
         if path.exists():
@@ -100,6 +106,22 @@ def _should_kill(cmdline: str) -> bool:
 
 def stop_automation() -> int:
     print("DONE_FOR_TODAY: stopping Anwenden RE / watch / related shells...")
+    # Stop CALL listen watch first (writes stop file + kills meta pid)
+    try:
+        listen = _REPO / ".cursor" / "skills" / "sprinklr-call-listen" / "call_listen.py"
+        if listen.exists():
+            subprocess.run(
+                [sys.executable, str(listen), "--stop"],
+                cwd=str(_REPO),
+                capture_output=True,
+                text=True,
+                timeout=20,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+            print("CALL_LISTEN_STOP attempted")
+    except Exception as e:
+        print(f"[WARN] call_listen --stop: {e}")
+
     killed = 0
     my_pid = os.getpid()
     if sys.platform == "win32":

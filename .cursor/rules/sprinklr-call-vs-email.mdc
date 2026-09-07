@@ -38,29 +38,49 @@ Use **visible Sprinklr overlay + timeline + Case Informationen** (see markers be
 
 ## CALL handling workflow (after recognition)
 
-### Step 0 — Announce and wait
+### Step 0 — Announce, start listen, wait for brief
 
 When `CHANNEL: CALL`:
 
 1. Print short identity: Fall #, customer name if visible, Quelle/Ziel if useful.  
 2. **Stop.** Do **not** invent the customer’s concern from Anruf/audio timeline alone.  
-3. Tell the user clearly:
+3. **Start local CALL listen** (detached STT — agent cannot hear audio in chat):
+
+```powershell
+uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --arm
+```
+
+Expect **`CALL_LISTEN_ARMED`** / **`CALL_LISTEN_DETACHED`**. Transcript builds at `.cursor/state/call_brief_{FALL}.txt`.
+
+4. Tell the user clearly:
 
 ```
 CHANNEL: CALL
-Fall #…. Waiting for your voice brief.
+Fall #…. Listening — transcript building.
 
-I am listening — when the customer has explained their issue, paste/forward their case as text here. I will then analyze and handle it.
+I started local call listen (speech-to-text). When the customer has explained their issue, type BRIEF (I will read call_brief_{FALL}.txt) or paste/forward a correction. I will then analyze and handle it.
+STOP LISTEN — stops transcription early.
 ```
 
-4. Remain idle until the user sends the **voice brief** (typed summary / transcript of what the customer said).
+5. Remain idle until: user sends **BRIEF** / a typed voice brief / or enough transcript exists and user asks to handle.
+
+On **LF**, **DONE**, or user **STOP LISTEN**:
+
+```powershell
+uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --stop
+```
+
+(`done_for_today.py` also stops call listen.)
 
 ### Step 1 — Receive voice brief
 
-Treat the user’s next substantive message (case content, not `LF` / `DONE` / `PR`) as the **customer voice brief**.
+**Prefer** `.cursor/state/call_brief_{FALL}.txt` when the user types **BRIEF** or when that file has substantive content and the user asks to proceed.
 
-- Combine: Sprinklr sidebar/case facts (name, Kundennummer, MSISDN, Quelle, Ziel, visible IDs) **+** voice brief text.  
+Treat the user’s next substantive message (case content, not `LF` / `DONE` / `PR`) as an override **customer voice brief** (manual paste wins over STT).
+
+- Combine: Sprinklr sidebar/case facts (name, Kundennummer, MSISDN, Quelle, Ziel, visible IDs) **+** brief text.  
 - Do **not** mix in another Fall’s data.
+- Do **not** claim “I heard the call” — say **transcript received** / STT brief.
 
 ### Step 2 — Analyze and handle (CALL output)
 
@@ -89,9 +109,10 @@ uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id 
 | **Kanal** | **Voice (Tel.)** (`#channel_voice`) |
 | **Ticketstatus Salcus** | **Always** **3-Bot dokumentiert nicht in Salcus** |
 
-**After CALL LF succeeds — do NOT `--arm` (Anwenden).** Arm disposition **Next** instead:
+**After CALL LF succeeds — do NOT `--arm` (Anwenden).** Stop listen if still running, then arm disposition **Next**:
 
 ```powershell
+uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --stop
 uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-next
 ```
 
@@ -108,7 +129,12 @@ User left-clicks exact **Next** on:
 `button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]` with label **Next**  
 (ignore Back / Weiter / Weiterleiten)
 
-Detection is DOM-based (not coordinates). Close DevTools Inspect before the click. Tray may move; selector stays the same.
+**Next detection (hardened):**
+- **DOM only** — `screenButton` + exact label `"Next"` (event/listener). **Not** pixel coordinates.
+- Disposition **tray position does not matter** (listeners on page + frames; periodic rebind).
+- **Close DevTools Inspect** before clicking Next (Inspect can swallow the click so the arm never fires).
+- If a live `--arm-next` watch is **stale** (missed click / long wait / prior bug): **kill that arm process** (do **not** need full `DONE` unless ending the day), then fresh **`run.py --arm-next`** → Dexter → **`--await-arm`**.
+- If Next was pressed but extract still missed → **`run.py --once`** on the newly opened case, then **CHANNEL: CALL|EMAIL**.
 
 After Next → 4s → next case extract → **CHANNEL: CALL|EMAIL** again.
 
@@ -117,8 +143,9 @@ After Next → 4s → next case extract → **CHANNEL: CALL|EMAIL** again.
 ## Hard bans (CALL)
 
 - No automatic email **7-step section 6** + **PR** for live/disposition calls  
-- No treating Anruf timeline / audio bars as a substitute for the user’s voice brief  
-- No Kanal **E-Mail Care** when LF’ing a call  
+- No treating Anruf timeline / audio bars as a substitute for the user’s voice brief **or** STT `call_brief_*.txt`  
+- No claiming the agent “heard” the call — only **transcript received** from local STT  
+- No Kanal **E-Mail Care** when LF’ing a call 
 
 ---
 

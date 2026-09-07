@@ -54,6 +54,8 @@ CALL LF ARM (disposition Next — not Anwenden):
 - Expect NEXT_RE_ARMED + ARM_WATCH_DETACHED + READY_FOR_YOUR_CLICK: Next + Dexter.
 - Finishing quote: LF done for #FALL_ID
 - Then --await-arm. I left-click exact label Next on screenButton (ignore Back/Weiter/Weiterleiten).
+- Detection = DOM (screenButton + exact "Next"), NOT pixel coordinates. Tray position does not matter. Close DevTools Inspect before clicking Next.
+- Stale live --arm-next: kill that arm watch (not full DONE unless ending day) → fresh --arm-next → await. If Next still missed → run.py --once on the opened case.
 - After extract: CHANNEL detect again.
 
 DETACHED ARM (mandatory — fixes false "watch died"):
@@ -68,12 +70,19 @@ DETACHED ARM (mandatory — fixes false "watch died"):
 CHANNEL DETECT (after every case open — RE --once OR after await-arm extract):
 - Look at visible Sprinklr overlay/timeline → print CHANNEL: CALL or CHANNEL: EMAIL (or UNKNOWN).
 - EMAIL → full 7-step RE as usual → PR/LF/LF TR.
-- CALL → do NOT run email RE/PR. Say you are waiting for my voice brief while the customer talks. When I paste/forward their issue as text, analyze + handle (talk track / transfer / steps). LF call with --channel voice (Ticketstatus always 3). Then --arm-next (not Anwenden); classify again.
+- CALL → do NOT run email RE/PR. IMMEDIATELY: uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --arm (local STT). Say transcript is building. When I type BRIEF, read .cursor/state/call_brief_{FALL}.txt (or use my paste override). Then analyze + handle. LF --channel voice (ticketstatus 3) → call_listen --stop → --arm-next.
 
 CALL WAIT LINE (use when CHANNEL: CALL):
 CHANNEL: CALL
-Fall #…. Waiting for your voice brief.
-I am listening — when the customer has explained their issue, paste/forward their case as text here. I will then analyze and handle it.
+Fall #…. Listening — transcript building.
+I started local call listen (speech-to-text). Type BRIEF when ready (I read call_brief_{FALL}.txt), or paste a correction. STOP LISTEN to stop STT early.
+
+CALL LISTEN:
+- Arm: call_listen.py --arm → CALL_LISTEN_ARMED / DETACHED
+- Brief file: .cursor/state/call_brief_{FALL}.txt
+- Stop: call_listen.py --stop (also on LF / DONE)
+- First live CALL: also run probe_call_audio.py --lock to confirm WebRTC tracks
+- Agent cannot hear audio in chat — only the transcript file
 
 LF TR QUEUE PATH (I click all four; script reacts ONLY to step 4):
 1/4 Transfer (GuidedAction)
@@ -100,7 +109,7 @@ SOUNDS (volume 0.75; do not change unless I ask):
 
 OTHER:
 - Full 7-step RE form for EMAIL cases (sprinklr-read-answer-email SKILL).
-- CALL cases: wait for voice brief → handle pack (no PR unless I ask). LF: --channel voice, ticketstatus 3.
+- CALL cases: start call_listen.py --arm → BRIEF / paste → handle pack (no PR unless I ask). LF: --channel voice, ticketstatus 3, then call_listen --stop + --arm-next.
 - C-... in Kundennummer box is NOT Salcus -> leave empty -> ticketstatus 3.
 - No monitor_emails / get_new_emails fallback for RE modes.
 - No internal system names in customer replies.

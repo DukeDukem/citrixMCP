@@ -26,3 +26,12 @@ Thumbs.db
 .cursor/skills/sprinklr-email-automation/chrome_debug_profile/
 .cursor/skills/**/email_automation.log
 processed_case_ids.json
+
+# CALL listen — local audio + transcripts (PII)
+.cursor/state/call_audio_chunks/
+.cursor/state/call_brief_*.txt
+.cursor/state/call_listen.log
+.cursor/state/call_listen.json
+.cursor/state/call_listen_stop
+.cursor/reports/call-audio-probe-*.json
+.cursor/state/stt_models/

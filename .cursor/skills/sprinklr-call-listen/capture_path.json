@@ -1,0 +1,14 @@
+{
+  "capture_path": "webrtc_hook",
+  "fallback": "windows_loopback",
+  "locked_at": "2026-09-07T10:51:00+00:00",
+  "locked_from_probe": "C:\\Users\\PC ENTER\\Desktop\\Citrix\\.cursor\\reports\\call-audio-probe-56820474.json",
+  "fall_at_lock": "56820474",
+  "live_call_confirmed": false,
+  "live_im_gespraech_confirmed": false,
+  "stt": "faster-whisper",
+  "stt_fallback": "vosk",
+  "stt_language": "de",
+  "stt_model": "small",
+  "notes": "Defender cleared — faster-whisper+av OK; model small cached. Re-run probe --lock during Im Gespräch for remoteAudioTracks. Vosk remains fallback."
+}
