@@ -29,6 +29,34 @@ KnowledgeBase/
 
 ## Query Procedure
 
+### Step 0 — Transfer Matrix FIRST (authoritative handling path)
+
+**Before** grepping knowledgebase1–7.md, determine routing via the Transfer Matrix:
+
+```
+Grep(pattern="<case_topic>", path="KnowledgeBase/TransferMatrix.md", -i=True)
+```
+
+Read **Ziel-Kontakt** + **Action** (handling hint).
+
+| Matrix result | Meaning |
+|---------------|---------|
+| **CBC_CARE_ALLGEMEIN** / **HANDLE DIRECTLY** | We handle. Action column = primary handling advice. Then query KB for compatible detail only. |
+| **Other queue / coding** | Transfer in Sprinklr to that Ziel-Kontakt. Do **not** let KB send you elsewhere. |
+| **Email (`@…`)** | External forward / LF TR extern. |
+| **"Kein Transfer"** | No Sprinklr transfer; follow **Action** instructions. |
+| **Ticket instruction** | Create the specified ticket per Action. |
+
+**Conflict rule:** If a KB article says to transfer/handle differently than the matrix → **Transfer Matrix wins**. See `.cursor/rules/transfer-matrix-priority.mdc`.
+
+**Collections (Sprinklr queue):**
+- Ziel-Kontakt for collections/dunning/payment cases is **`CBC_XF_E_COLLECTIONS`**.
+- Action: **Transfer in Sprinklr** (not email forward).
+- In agent instructions and RE sections, state the destination as **`CBC_XF_E_COLLECTIONS`**. Do not use retired names `collection_webform@cc.o2online.de` or `CBC_XF_Collections`.
+- Customer reply: do **not** paste this internal email address unless KB/chat user explicitly requires it; use customer-safe wording (e.g. responsible team) per `.cursor/rules/reply-no-internal-systems.mdc`.
+
+Only proceed to query the general KB articles (knowledgebase1-7.md) if the Transfer Matrix says we handle (or Kein Transfer with process-in-place), **and** only for steps that support the matrix Action.
+
 ### Step 1 - Identify topic keywords
 Extract 2-4 German keywords from the customer case. Examples:
 - "Kündigung" → search for Kuendigung, Kündigung, Storno, Vertragsende
@@ -44,7 +72,7 @@ Search all KB markdown files for the keyword:
 ```
 Grep(pattern="<keyword>", path="KnowledgeBase/", -i=True)
 ```
-Use case-insensitive search. Try multiple keyword variants if the first returns nothing.
+Use case-insensitive search. Try multiple keyword variants if the first returns nothing. Prefer hits that support the matrix Action already chosen.
 
 ### Step 3 - Read the relevant section
 Once you have matching files and line numbers, read those sections:
@@ -59,25 +87,6 @@ If the text references a diagram or screenshot (marked `![...]`), read the image
 Read(path="KnowledgeBase/images/<docname>/img_NNN.png")
 ```
 This may show a form, system screen, or flow diagram.
-
-### Step 5 - Check Transfer Matrix FIRST
-**Before anything else**, determine routing via the Transfer Matrix:
-```
-Grep(pattern="<case_topic>", path="KnowledgeBase/TransferMatrix.md", -i=True)
-```
-The Transfer Matrix has 20 Thema (topic) sections with 150+ case routes.
-- **CBC_CARE_ALLGEMEIN** = us. Handle the case directly.
-- **Any other Ziel-Kontakt** = transfer to that team in Sprinklr (or forward to the listed email address).
-- **"Kein Transfer"** = follow the specific handling instructions noted in the Action column.
-- **Ticket instructions** = create the specified ticket (e.g., "Ticket Themen-ID 653 an NP-Desk").
-
-**Collections (email destination):**
-- Ziel-Kontakt for collections/dunning/payment cases is **`collection_webform@cc.o2online.de`**.
-- Action: **Forward to email** (not Sprinklr queue transfer).
-- In agent instructions and RE sections, state the destination as **`collection_webform@cc.o2online.de`**. Do not use the retired name `CBC_XF_Collections`.
-- Customer reply: do **not** paste this internal email address unless KB/chat user explicitly requires it; use customer-safe wording (e.g. responsible team) per `.cursor/rules/reply-no-internal-systems.mdc`.
-
-Only proceed to query the general KB articles (knowledgebase1-7.md) if the Transfer Matrix confirms the case stays with us.
 
 ## Output Rules (always follow these for agent responses)
 
@@ -97,10 +106,10 @@ Only proceed to query the general KB articles (knowledgebase1-7.md) if the Trans
 
 Customer email: "Ich moechte meinen Vertrag kuendigen."
 
-1. Keywords: Kündigung, Vertrag, Kuendigung
-2. Grep: `Grep(pattern="Kündigung|Kuendigung", path="KnowledgeBase/", -i=True)`
-3. Read matching section in e.g. knowledgebase3.md
-4. Produce step-by-step agent instructions:
+1. TransferMatrix first: Fall Kündigung → Ziel-Kontakt + Action (HANDLE DIRECTLY vs transfer queue)
+2. Keywords: Kündigung, Vertrag, Kuendigung
+3. Grep KB only if matrix says we handle / Kein Transfer with process: `Grep(pattern="Kündigung|Kuendigung", path="KnowledgeBase/", -i=True)`
+4. Produce step-by-step agent instructions starting from matrix Action, then KB detail:
    - "Open SalCus -> Navigate to 'VERTRAGSDETAILS' -> Select ticket [ID] 'Kündigung'"
    - "Fill in: Kündigungsdatum = [date], Grund = [reason from email]"
    - "Confirm via 'Speichern'"

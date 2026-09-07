@@ -6,14 +6,18 @@
 
 ## How to use this document
 
+**Priority:** This Transfer Matrix is the **authoritative handling path** for every case. If Knowledge Base articles disagree on transfer vs handle-directly, **this matrix wins**. KB is used afterward for process detail that fits the matrix Action — not to re-route.
+
 1. **Identify the Thema** (topic) from the customer email.
 2. **Identify the Fall** (case type) that matches.
-3. **Look up the Ziel-Kontakt** (transfer goal).
-4. **If Ziel-Kontakt = CBC_CARE_ALLGEMEIN**: Handle the case directly -- summarize, query KnowledgeBase, advise agent, draft reply.
-5. **If Ziel-Kontakt = another team/queue**: Transfer the case to that team in Sprinklr. Inform customer the case has been forwarded.
-6. **If Ziel-Kontakt = an email address**: Forward the case/documents to that email address.
-7. **If Ziel-Kontakt = "Kein Transfer"**: Follow the specific handling instructions in the notes column (refer to hotline, use text block, handle per knowledge base, etc.).
-8. **If Ziel-Kontakt = a ticket instruction**: Create the specified ticket (e.g., "Ticket Themen-ID 653 an NP-Desk").
+3. **Look up the Ziel-Kontakt** (transfer goal) and read the **Action** column (handling hint).
+4. **If Ziel-Kontakt = CBC_CARE_ALLGEMEIN** (or Action = **HANDLE DIRECTLY**): Handle the case directly — use the **Action** text as the primary handling hint, then query KnowledgeBase only for compatible steps (Themen-ID, tickets, reply substance). Summarize, advise agent, draft reply.
+5. **If Ziel-Kontakt = another team/queue**: Transfer the case to that team in Sprinklr. Inform customer the case has been forwarded (customer-safe wording; no internal queue names unless policy allows).
+6. **If Ziel-Kontakt = an email address**: Forward the case/documents to that email address (LF TR extern).
+7. **If Ziel-Kontakt = "Kein Transfer"**: Do **not** transfer in Sprinklr. Follow the **Action** handling instructions (refer to hotline only if Action says so, use text block, handle per notes, etc.). KB may refine steps; it must not invent a transfer.
+8. **If Ziel-Kontakt / Action = a ticket instruction**: Create the specified ticket (e.g., "Ticket Themen-ID 653 an NP-Desk").
+
+See also: `.cursor/rules/transfer-matrix-priority.mdc`
 
 ---
 
@@ -35,7 +39,7 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 | BUSINESS-TEAM | Business customers (mobile) |
 | CBC_ENGLISCH | English-language care |
 | CBC_XF_E_KUNDENDATEN | Customer data / bank details team |
-| CBC_Vertragsstillegung | Contract suspension team |
+| CBC_XF_E_VERTRAGSSTILLLEGUNG | Contract suspension team |
 | CBC_XF_E_WIDERRUF | Revocation/withdrawal team |
 | CBC_XF_E_COLLECTIONS | Collections / dunning / payment |
 | CS_E_XF_SELBSTSTAENDIGE | Self-employed (SOHO) service |
@@ -299,7 +303,7 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 | 131 | Kundentyp aendern (Privat auf SOHO) | E-Mail | CS_E_XF_SELBSTSTAENDIGE | Transfer in Sprinklr |
 | 132 | Kundentyp aendern (SOHO auf Privat) | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
 | 133 | Vertragslaufzeit Anfrage | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 134 | Vertragsstilllegung | E-Mail | CBC_Vertragsstillegung | Transfer in Sprinklr |
+| 134 | Vertragsstilllegung | E-Mail | CBC_XF_E_VERTRAGSSTILLLEGUNG | Transfer in Sprinklr |
 | 135 | Vertragsuebernahme/Inhaberwechsel | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
 
 ---
@@ -424,7 +428,7 @@ Current transfer goal names and their last-known status:
 | CBC_ENGLISCH | Active | 2026-03-02 |
 | CBC_XF_E_KUNDENDATEN | Active | 2026-07-26 |
 | CBC_KUENDIGUNGEN_SME_SOHO | Inactive (no longer exists) | 2026-07-27 |
-| CBC_Vertragsstillegung | Active | 2026-03-02 |
+| CBC_XF_E_VERTRAGSSTILLLEGUNG | Active | 2026-03-02 |
 | CBC_XF_E_WIDERRUF | Active | 2026-03-02 |
 | CBC_XF_E_COLLECTIONS | Active | 2026-08-30 |
 | CS_E_XF_SELBSTSTAENDIGE | Active | 2026-03-02 |

@@ -1,0 +1,58 @@
+---
+description: Transfer Matrix overrides Knowledge Base for case handling path / transfer eligibility.
+alwaysApply: true
+---
+
+# Transfer Matrix priority over Knowledge Base
+
+**Hard rule for RE / CALL / routing:** [`KnowledgeBase/TransferMatrix.md`](KnowledgeBase/TransferMatrix.md) decides **whether** and **where** a case is handled. The Knowledge Base (knowledgebase1–7, articles, templates) must **not** override that path.
+
+## Authority order
+
+1. **Transfer Matrix** — Thema → Fall → **Ziel-Kontakt** + **Action** (handling hint)
+2. **Documented chat exceptions** / inactive-goal alternates (e.g. removed queues → HANDLE DIRECTLY)
+3. **Knowledge Base** — ticket/Themen-ID detail, process steps, reply substance **only when compatible with (1)**
+
+If KB text suggests a different queue, “always transfer”, “always hotline”, or “handle elsewhere” than the matrix row → **ignore that KB routing**. Follow the matrix.
+
+## Every case (verified / CALL brief / awaiting manual verification)
+
+1. Identify Thema / Fall from the customer issue.
+2. **Grep TransferMatrix.md first** — read **Ziel-Kontakt** and **Action**.
+3. Set RE section 3 from the matrix only:
+
+| Ziel-Kontakt / Action | Transfer eligible | What to do |
+|----------------------|-------------------|------------|
+| Other queue / coding (not `*CARE_ALLGEMEIN*`) | **Yes** | Transfer / LF TR to that Ziel-Kontakt |
+| Email address (`@…`) | **Yes** | External transfer to that email |
+| **`CBC_CARE_ALLGEMEIN`** / **HANDLE DIRECTLY** | **No** | We handle; use **Action** column as primary handling hint |
+| **Kein Transfer** (+ instructions in Action) | **No** | Do **not** Sprinklr-transfer; follow **Action** handling hint |
+| Ticket instruction in Action | Per Action | e.g. create named ticket — not a free KB invent |
+
+4. Only then query KB articles — for **how** to execute the matrix path (Themen-ID, steps, customer wording), never to **re-route**.
+
+## Non-transferable cases — handling hint first
+
+When Transfer eligible = **No**:
+
+1. Quote / apply the matrix **Action** / handling hint next to Ziel-Kontakt (e.g. Mein o2 paths, KB Themen-ID refs already in the Action cell, “process per KB …”, text-block names for **agent** use).
+2. Use KB to flesh out that hint (ticket fields, process detail, reply options).
+3. If KB is silent or conflicts on **routing**, still stay on the matrix path (handle directly / Kein Transfer instructions).
+
+Do **not** invent a transfer because the KB article “usually” goes to another team.
+
+## Transferable cases
+
+When Transfer eligible = **Yes**: Ziel-Kontakt from the matrix is final (unless an explicit always-applied exception overrides, e.g. English → `CBC_XF_E_ENGLISCH`, Care Widerruf window → `CBC_XF_E_WIDERRUF`). Skip deep KB solution-hunting; short RE 4a/5 is enough.
+
+## Inactive / removed goals
+
+If the matrix marks a former Ziel as **Inactive**, follow [`.cursor/rules/inactive-transfer-goal-alternates.mdc`](.cursor/rules/inactive-transfer-goal-alternates.mdc) and the matrix alternate row — usually **CBC_CARE_ALLGEMEIN — HANDLE DIRECTLY** + Action hint. Never transfer to a removed queue even if old KB text still names it.
+
+## Customer-facing replies
+
+Matrix queue names stay in **agent** sections only. Customer body: no TransferMatrix / Sabio / queue codings — see `.cursor/rules/reply-no-internal-systems.mdc`.
+
+## Intent
+
+Agents always open with **Transfer Matrix for the handling path**; KB supports execution, it does not outrank Ziel-Kontakt / Action.
