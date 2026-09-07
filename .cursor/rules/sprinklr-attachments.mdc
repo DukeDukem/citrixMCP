@@ -7,7 +7,9 @@ alwaysApply: true
 
 **Chat scope:** Email processing agent (`EMAIL-PROCESSING-AGENT.md`).
 
-When an EMAIL case has attachments (**Anhang** / **Anhänge**), the agent must **open or download them** and use their content in the RE analysis (IDs, screenshots, forms, PDFs). Do not draft section 6 ignoring attachments that are visible on the case.
+**Purpose (only this):** Open or download attachments so the agent can **read what the customer sent** and have a **complete understanding of the case** before drafting the 7-step RE. Not a separate workflow, not Case Tracker logging, not an arm trigger.
+
+When an EMAIL case shows **Anhang** / **Anhänge**, review those files as part of RE analysis (IDs on scans, screenshots, forms, PDFs, etc.). Do not ignore visible attachments that change what the customer is asking or proving.
 
 ## Detection
 
@@ -53,12 +55,12 @@ Expect `ATTACHMENTS_FOUND N=…` / `ATTACHMENT_VIEWED` / `ATTACHMENT_DOWNLOADED`
 ## When to run (EMAIL RE)
 
 1. After extract / CUSTOMER EMAIL (typed **RE** or `--await-arm`)  
-2. **Before** finishing the 7-step draft if attachments exist  
-3. Note attachment filenames + what they show in agent sections (1 / 5); do not invent content you did not open  
+2. **Before** finishing the 7-step draft if attachments exist — so section 1 / verification / handling reflect the full case (body + attachments)  
+3. Briefly note what the attachment shows if it matters; no need for a separate “attachment report” section  
 
 ## Hard bans
 
-- Do **not** skip visible Anhänge when they affect verification, billing, ID, or the customer ask  
+- Do **not** skip visible Anhänge when they matter for understanding the case  
 - Do **not** download to any path other than **yoummday temporaries**  
 - Do **not** treat View Detail / Download as arm triggers (not Anwenden / Next / Weiter)  
-- Attachment UI is for **RE analysis**, not Case Tracker Notiz (Notiz stays empty)
+- Do **not** put attachment filenames or counts in Case Tracker **Notiz** (Notiz stays empty)

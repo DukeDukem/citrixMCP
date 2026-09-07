@@ -76,7 +76,7 @@ CHANNEL DETECT (after every case open — RE --once OR after await-arm extract):
 - Look at visible Sprinklr overlay/timeline → print CHANNEL: CALL or CHANNEL: EMAIL (or UNKNOWN).
 - CALL LISTEN / TELEPROMPTER: PARKED (capture_path.json enabled=false). Do NOT run call_listen --arm or --prime. Expect CALL_LISTEN_DISABLED if tried.
 - EMAIL → full 7-step RE → play-ready → AUTO-LF → (transfer arm OR wait for PR).
-- If EMAIL has Anhänge: open via View Detail (hover toolbar) or download to C:\Users\PC ENTER\Downloads\yoummday temporaries before finishing RE. Helper: open_case_attachments.py --view / --download. Rule: sprinklr-attachments.mdc
+- If EMAIL has Anhänge: open/download so the agent can read them for full case understanding (not a separate process). Helper: open_case_attachments.py --view / --download → yoummday temporaries. Rule: sprinklr-attachments.mdc
 - CALL → do NOT run email RE/PR. Wait for typed BRIEF → CALL handling pack → AUTO-LF voice → --arm-next (or transfer arm).
 
 CALL WAIT LINE (use when CHANNEL: CALL):
