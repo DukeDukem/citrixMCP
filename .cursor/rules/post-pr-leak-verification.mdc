@@ -25,10 +25,12 @@ After every PR (paste reply) command, run a data leak verification scan.
 ## If script returns CLEAN:
 
 - Reply is safe to send
-- User clicks **Senden** manually in Sprinklr (`button[data-testid="replyBox-sendBtn"]` / `@replyBox/primaryAction/replyButton`)
-- After **Senden**, the reply box often goes **empty** — that means the mail **was sent**, not that PR failed
-- Do **not** re-scan an empty editor after Senden and report paste/verification failure
-- Do **not** treat Senden as an arm trigger (Anwenden is separate, after PR success)
+- User clicks **Senden** manually (`button[data-testid="replyBox-sendBtn"]` / `@replyBox/primaryAction/replyButton`)
+- Often Sprinklr shows an internal **grammar warning** (not necessarily real grammar issues) — user clicks the same button again when label is **Ignorieren und senden**
+- After send completes (one or two clicks), the reply box often goes **empty** — that means the mail **was sent**, not that PR failed
+- Do **not** treat the grammar gate as a paste error or rewrite the reply for Sprinklr’s checker
+- Do **not** re-scan an empty editor after send and report paste/verification failure
+- Do **not** treat Senden / Ignorieren und senden as arm triggers (Anwenden is separate, after PR success)
 - Auto-LF already ran at RE; agent arms Anwenden after PR (see `lf-log-form.mdc`)
 
 ## If script returns DATA LEAK DETECTED:
@@ -49,7 +51,8 @@ After every PR (paste reply) command, run a data leak verification scan.
 | When editor is empty | Meaning |
 |----------------------|---------|
 | **Before** PR paste completes / before CLEAN verify | Problem — do not claim success |
-| **Right after** CLEAN verify + user **Senden** | **Success** — email sent; ignore empty box |
+| **Right after** CLEAN verify + user **Senden** (or **Senden** → **Ignorieren und senden**) | **Success** — email sent; ignore empty box |
+| After first **Senden** only, grammar gate still open | Mail may not be sent yet; editor can still show draft — wait for user’s second click; not a PR failure |
 | After agent intentional clear due to leak | Cleanup state — need fresh RE/PR |
 
 ## After any detected leak (even if recovered):

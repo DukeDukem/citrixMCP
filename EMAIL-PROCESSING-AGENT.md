@@ -30,7 +30,7 @@ COMMANDS:
 - After AUTO-LF transfer: IMMEDIATELY --arm-weiter (queue) or --arm-extern (email @) + await. Quote: LF TR done for #FALL_ID. No PR.
 - After AUTO-LF non-transfer EMAIL: wait for user PR only. Do NOT arm yet.
 - PR (EMAIL non-transfer) -> paste + verify, then IMMEDIATELY run.py --arm (Anwenden) + finishing quote PR done for #FALL_ID + --await-arm. LF already done at RE.
-- After CLEAN PR: I click Senden (replyBox-sendBtn) myself. Empty reply box after Senden = email sent (success), NOT a paste/verify failure. Do not re-PR or treat empty editor as error. Senden is NOT part of arming.
+- After CLEAN PR: I click Senden (replyBox-sendBtn) myself. Often a Sprinklr grammar warning appears (internal criteria, not necessarily real errors) — I click again when the button shows Ignorieren und senden (same testid). Empty reply box after that = email sent (success), NOT a paste/verify failure. Do not re-PR or rewrite for the grammar gate. Senden / Ignorieren und senden are NOT part of arming.
 - PR LF / LF / LF TR -> optional recovery/override only (same arms as before).
 - CALL: BRIEF → handle pack → AUTO-LF --channel voice → --arm-next (or weiter/extern if transfer) + await. Quote: LF done for #FALL_ID.
 - DONE / Done for today -> done_for_today.py; stop watches (including detached); pause until next login

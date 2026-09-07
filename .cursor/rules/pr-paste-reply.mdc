@@ -84,22 +84,24 @@ When the user prompts with PR/pr:
 
 ### User clicks **Senden** (not an arm; not a paste error)
 
-After a **CLEAN** post-paste verification, the user often clicks **Senden** immediately:
+After a **CLEAN** post-paste verification, the user sends manually. Sprinklr often needs **two clicks** on the same primary reply button:
 
-```html
-button[data-testid="replyBox-sendBtn"]
-data-tracker-event-id="@replyBox/primaryAction/replyButton"
-```
+| Step | Button label (typical) | Selector (stable) |
+|------|------------------------|-------------------|
+| 1 | **Senden** | `button[data-testid="replyBox-sendBtn"]` + `data-tracker-event-id="@replyBox/primaryAction/replyButton"` |
+| 2 (if grammar gate appears) | **Ignorieren und senden** (same testid; label/position may change) | Same `replyBox-sendBtn` / `@replyBox/primaryAction/replyButton` |
 
-Label: **Senden**.
+**Grammar warning (normal, not a real error):** After the first **Senden**, Sprinklr may flag “potential grammatical errors.” That is **Sprinklr’s internal grammar criteria**, not proof the agent pasted bad German and not a failed PR. The user dismisses by clicking the button again when it shows **Ignorieren und senden**.
 
 **Meaning for the agent:**
 
-1. The email **was sent** by the user — PR paste **succeeded**.
-2. The reply editor / TinyMCE box becoming **empty** (or the compose UI resetting) is **expected** after Senden — **not** `ERROR: POST-PASTE VERIFICATION FAILED`, not “paste didn’t stick”, not a reason to re-PR or clear/re-paste.
-3. **Senden is not part of any arming process** (not Anwenden / Next / Weiter / Weiterleiten). Do **not** watch for Senden to trigger `--arm*`. Arm Anwenden only after PR paste+verify succeeded (per Auto-LF rules), independent of when the user clicks Senden.
-4. Do **not** re-run leak verification against an empty box after Senden and treat emptiness as failure.
-5. If CLEAN was already returned for this PR, proceed with Anwenden arm / await as usual even if the editor is empty because the user already sent.
+1. Until the second confirm (or a single Senden with no gate), the mail may still be unsent — editor can still show the reply. That is OK.
+2. After the user finishes send (Senden, or Senden → Ignorieren und senden), the email **was sent** — PR paste **succeeded**.
+3. The reply editor becoming **empty** (or compose UI resetting) after that is **expected** — **not** `ERROR: POST-PASTE VERIFICATION FAILED`, not “paste didn’t stick”, not a reason to re-PR.
+4. **Neither Senden nor Ignorieren und senden is part of arming** (not Anwenden / Next / Weiter / Weiterleiten). Do **not** watch these buttons to trigger `--arm*`. Arm Anwenden only after PR paste+verify succeeded (per Auto-LF rules), independent of when the user completes send.
+5. Do **not** re-run leak verification against an empty box after send and treat emptiness as failure.
+6. Do **not** “fix” the reply just because Sprinklr showed the grammar gate.
+7. If CLEAN was already returned for this PR, proceed with Anwenden arm / await as usual even if the editor is empty because the user already sent.
 
 VIOLATION OF THIS RULE = DATA BREACH. DO NOT PROCEED IF UNCERTAIN.
 
