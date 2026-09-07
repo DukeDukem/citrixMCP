@@ -56,13 +56,12 @@ Expect **`CALL_LISTEN_ARMED`** / **`CALL_LISTEN_DETACHED`**. Transcript builds a
 
 ```
 CHANNEL: CALL
-Fall #…. Listening — transcript building.
+Fall #…. Listening — transcript + live teleprompter.
 
-I started local call listen (speech-to-text). When the customer has explained their issue, type BRIEF (I will read call_brief_{FALL}.txt) or paste/forward a correction. I will then analyze and handle it.
-STOP LISTEN — stops transcription early.
+I started local call listen. After your greeting, customer pauses → teleprompter updates (on-top window / call_teleprompter_latest.txt). Say those lines to the customer. Type BRIEF only if you want a full handling pack. STOP LISTEN to stop STT.
 ```
 
-5. Remain idle until: user sends **BRIEF** / a typed voice brief / or enough transcript exists and user asks to handle.
+5. Remain idle for chat; **teleprompter updates continuously** without waiting for BRIEF. On **BRIEF**: read `call_brief_{FALL}.txt` (+ latest teleprompter context) → full CALL handling pack.
 
 On **LF**, **DONE**, or user **STOP LISTEN**:
 

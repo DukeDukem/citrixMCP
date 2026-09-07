@@ -1,7 +1,6 @@
 {
   "capture_path": "webrtc_hook",
   "fallback": "windows_loopback",
-  "locked_at": "2026-09-07T10:51:00+00:00",
   "stt": "faster-whisper",
   "stt_fallback": "vosk",
   "stt_language": "de",
@@ -10,6 +9,10 @@
   "gate_timeout_s": 25,
   "greeting_match_min": 2,
   "min_customer_chars": 8,
+  "teleprompter_enabled": true,
+  "teleprompter_backend": "auto",
+  "utterance_silence_s": 1.4,
+  "utterance_min_chars": 18,
   "agent_greeting_fragments": [
     "Willkommen bei o2",
     "Willkommen beim o2",
@@ -18,5 +21,5 @@
     "was kann ich für Sie tun",
     "was kann ich fuer Sie tun"
   ],
-  "notes": "Brief keeps customer speech AFTER the Lukas/o2 greeting. If greeting never appears in STT (remote-only stream), gate opens after gate_timeout_s."
+  "notes": "After greeting, each customer pause (~1.4s) fires teleprompter → call_teleprompter_latest.txt + on-top UI. BRIEF still optional for full CALL pack."
 }

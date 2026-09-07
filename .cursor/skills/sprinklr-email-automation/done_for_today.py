@@ -32,6 +32,7 @@ _KILL_CMDLINE_MARKERS = (
     "sprinklr-call-listen" + os.sep + "call_listen.py",
     "sprinklr-call-listen/call_listen.py",
     "call_listen.py",
+    "teleprompter_ui.py",
 )
 
 # Never kill ourselves or the Cursor host by broad matches alone.
@@ -52,6 +53,8 @@ def _clear_session_flags() -> None:
         "call_listen.json",
         "call_listen.log",
         "call_listen_stop",
+        "call_teleprompter_latest.txt",
+        "call_teleprompter_ui.json",
     ):
         path = state_dir / name
         if path.exists():

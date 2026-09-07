@@ -70,19 +70,19 @@ DETACHED ARM (mandatory — fixes false "watch died"):
 CHANNEL DETECT (after every case open — RE --once OR after await-arm extract):
 - Look at visible Sprinklr overlay/timeline → print CHANNEL: CALL or CHANNEL: EMAIL (or UNKNOWN).
 - EMAIL → full 7-step RE as usual → PR/LF/LF TR.
-- CALL → do NOT run email RE/PR. IMMEDIATELY: uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --arm (local STT). Say transcript is building. When I type BRIEF, read .cursor/state/call_brief_{FALL}.txt (or use my paste override). Then analyze + handle. LF --channel voice (ticketstatus 3) → call_listen --stop → --arm-next.
+- CALL → do NOT run email RE/PR. IMMEDIATELY: uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --arm (local STT + teleprompter UI). After my o2 greeting, customer pauses → SAY THIS appears in teleprompter window / call_teleprompter_latest.txt (I read those lines on the phone). BRIEF = optional full CALL pack. LF --channel voice → call_listen --stop → --arm-next.
 
 CALL WAIT LINE (use when CHANNEL: CALL):
 CHANNEL: CALL
-Fall #…. Listening — transcript building.
-I started local call listen (speech-to-text). Type BRIEF when ready (I read call_brief_{FALL}.txt), or paste a correction. STOP LISTEN to stop STT early.
+Fall #…. Listening — transcript + live teleprompter.
+After your greeting, customer pauses update the on-top teleprompter (say those lines). Type BRIEF only for a full handling pack. STOP LISTEN to stop STT.
 
-CALL LISTEN:
-- Arm: call_listen.py --arm → CALL_LISTEN_ARMED / DETACHED
-- Brief file: .cursor/state/call_brief_{FALL}.txt
+CALL LISTEN + TELEPROMPTER:
+- Arm: call_listen.py --arm → CALL_LISTEN_ARMED + TELEPROMPTER_UI_PID
+- Brief file: .cursor/state/call_brief_{FALL}.txt ([Kunde] lines)
+- Teleprompter: .cursor/state/call_teleprompter_latest.txt (multi-turn; not one-shot)
 - Stop: call_listen.py --stop (also on LF / DONE)
-- First live CALL: also run probe_call_audio.py --lock to confirm WebRTC tracks
-- Agent cannot hear audio in chat — only the transcript file
+- Agent cannot hear audio in chat — STT + teleprompter files only
 
 LF TR QUEUE PATH (I click all four; script reacts ONLY to step 4):
 1/4 Transfer (GuidedAction)

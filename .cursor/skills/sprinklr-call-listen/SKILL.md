@@ -57,12 +57,23 @@ uv pip install sounddevice numpy
 4. Manual paste still overrides
 5. On LF / `STOP LISTEN` / DONE: `call_listen.py --stop` (DONE also kills via done_for_today)
 
-## Post-greeting capture (customer rant)
+## Live teleprompter (multi-turn)
 
-Calls typically start with your line:
+Not one-shot. After your greeting, each customer pause (~1.4s silence) generates **SAY THIS** text:
 
-> Willkommen bei o2, Lukas ist mein Name, was kann ich für Sie tun?
+| File | Use |
+|------|-----|
+| `.cursor/state/call_teleprompter_latest.txt` | Current lines to speak |
+| `.cursor/state/call_teleprompter_{FALL}.txt` | Full turn history |
+| `teleprompter_ui.py` | Always-on-top window (auto-started with `--arm`) |
 
-Listen **discards** STT until that greeting is recognized (or **25s** timeout if your mic is not in the captured stream). After that, lines are tagged `[Kunde]` in `call_brief_{FALL}.txt`.
+Tone: friendly, short, can be “solution without solution” (empathy + clarifying Q or hold).  
+Optional faster LLM: set `openai_api_key` / `GROQ_API_KEY` / Ollama — else instant local templates.
 
-Config: `capture_path.json` → `post_greeting_only`, `agent_greeting_fragments`, `gate_timeout_s`.
+**BRIEF** = optional end-of-topic full CALL handling pack (KB/transfer). Teleprompter runs continuously without BRIEF.
+
+```powershell
+uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --arm
+# UI opens automatically; or:
+uv run python .cursor/skills/sprinklr-call-listen/teleprompter_ui.py
+```

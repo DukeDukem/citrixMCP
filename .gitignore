@@ -35,3 +35,6 @@ processed_case_ids.json
 .cursor/state/call_listen_stop
 .cursor/reports/call-audio-probe-*.json
 .cursor/state/stt_models/
+.cursor/state/call_teleprompter_*.txt
+.cursor/state/call_teleprompter_latest.txt
+.cursor/state/call_teleprompter_ui.json

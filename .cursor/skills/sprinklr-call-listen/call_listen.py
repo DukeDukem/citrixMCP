@@ -32,6 +32,8 @@ _LOG = _STATE / "call_listen.log"
 _META = _STATE / "call_listen.json"
 _STOP = _STATE / "call_listen_stop"
 _CAPTURE_PATH = _SKILL / "capture_path.json"
+_TP_LATEST = _STATE / "call_teleprompter_latest.txt"
+_TP_UI_META = _STATE / "call_teleprompter_ui.json"
 
 # Inject: hook PCs, tap remote audio via AudioContext → Int16 PCM chunks (no webm/ffmpeg).
 _INJECT_CAPTURE_JS = """
@@ -328,6 +330,101 @@ def _try_loopback_chunk(seconds: float = 3.0) -> Optional[Path]:
         return None
 
 
+def _teleprompter_paths(fall: str) -> Path:
+    return _STATE / f"call_teleprompter_{fall}.txt"
+
+
+def _write_teleprompter(fall: str, customer: str, talk: str, backend: str) -> None:
+    _STATE.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%H:%M:%S")
+    block = (
+        f"[{stamp}] SAY THIS (backend={backend})\n"
+        f"{talk.strip()}\n"
+        f"---\n"
+        f"[{stamp}] Customer said:\n{customer.strip()}\n"
+        f"{'=' * 40}\n"
+    )
+    latest = (
+        f"[{stamp}] SAY THIS\n\n"
+        f"{talk.strip()}\n\n"
+        f"— (customer) {customer.strip()[:240]}{'…' if len(customer.strip()) > 240 else ''}\n"
+    )
+    path = _teleprompter_paths(fall)
+    with path.open("a", encoding="utf-8") as f:
+        f.write(block)
+    _TP_LATEST.write_text(latest, encoding="utf-8")
+    print(f"TELEPROMPTER_UPDATE fall={fall} backend={backend}", flush=True)
+    _log(f"TELEPROMPTER ({backend}): {talk[:100]}…")
+
+
+class UtteranceBuffer:
+    """Accumulate customer STT; fire teleprompter after short silence."""
+
+    def __init__(self, silence_s: float = 1.4, min_chars: int = 18) -> None:
+        self.silence_s = silence_s
+        self.min_chars = min_chars
+        self.parts: list[str] = []
+        self.last_speech_at = 0.0
+        self.last_fire_text = ""
+
+    def push(self, text: str) -> None:
+        text = (text or "").strip()
+        if not text:
+            return
+        self.parts.append(text)
+        self.last_speech_at = time.time()
+
+    def pending(self) -> str:
+        return " ".join(self.parts).strip()
+
+    def ready_to_fire(self) -> bool:
+        if not self.parts:
+            return False
+        if time.time() - self.last_speech_at < self.silence_s:
+            return False
+        pending = self.pending()
+        if len(pending) < self.min_chars:
+            return False
+        if pending == self.last_fire_text:
+            return False
+        return True
+
+    def consume(self) -> str:
+        text = self.pending()
+        self.parts.clear()
+        self.last_fire_text = text
+        return text
+
+
+def _fire_teleprompter(fall: str, customer: str, cfg: dict) -> None:
+    from teleprompter import generate_talk_track
+
+    talk, backend = generate_talk_track(customer, capture_cfg=cfg)
+    _write_teleprompter(fall, customer, talk, backend)
+
+
+def _spawn_teleprompter_ui() -> None:
+    """Visible always-on-top window (not CREATE_NO_WINDOW)."""
+    try:
+        creationflags = 0
+        if sys.platform == "win32":
+            creationflags = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
+        proc = subprocess.Popen(
+            [sys.executable, str(_SKILL / "teleprompter_ui.py")],
+            cwd=str(_REPO),
+            creationflags=creationflags,
+            close_fds=False if sys.platform == "win32" else True,
+        )
+        _STATE.mkdir(parents=True, exist_ok=True)
+        _TP_UI_META.write_text(
+            json.dumps({"pid": proc.pid, "started_at": datetime.now(timezone.utc).isoformat()}),
+            encoding="utf-8",
+        )
+        print(f"TELEPROMPTER_UI_PID {proc.pid}", flush=True)
+    except Exception as e:
+        print(f"[WARN] teleprompter UI: {e}", flush=True)
+
+
 def _spawn_detached() -> int:
     _STATE.mkdir(parents=True, exist_ok=True)
     _LOG.write_text("", encoding="utf-8")
@@ -355,10 +452,12 @@ def _spawn_detached() -> int:
     )
     _write_meta({"pid": proc.pid, "detached": True})
     print("MODE: --listen-call (DETACHED)")
-    print(f"CALL_LISTEN_ARMED")
+    print("CALL_LISTEN_ARMED")
     print(f"CALL_LISTEN_DETACHED pid={proc.pid}")
     print(f"CALL_LISTEN_LOG {_LOG}")
-    print("READY_FOR_CALL_AUDIO — transcript builds in .cursor/state/call_brief_{FALL}.txt", flush=True)
+    print("READY_FOR_CALL_AUDIO — transcript + live teleprompter", flush=True)
+    print(f"TELEPROMPTER_FILE {_TP_LATEST}", flush=True)
+    _spawn_teleprompter_ui()
     return 0
 
 
@@ -408,6 +507,14 @@ def run_foreground() -> int:
         if gate.enabled
         else "Post-greeting gate OFF — keeping all STT."
     )
+    silence_s = float(cfg.get("utterance_silence_s", 1.4))
+    min_utt = int(cfg.get("utterance_min_chars", 18))
+    tp_enabled = bool(cfg.get("teleprompter_enabled", True))
+    utt = UtteranceBuffer(silence_s=silence_s, min_chars=min_utt)
+    _log(
+        f"Teleprompter {'ON' if tp_enabled else 'OFF'} "
+        f"(silence={silence_s}s, min_chars={min_utt})"
+    )
 
     _STATE.mkdir(parents=True, exist_ok=True)
     _CHUNKS.mkdir(parents=True, exist_ok=True)
@@ -434,11 +541,12 @@ def run_foreground() -> int:
 
             markers = call_markers(page)
             fid = extract_fall_id(page)
-            if fid and fid != fall:
+            if fid and fid != fall and fall != "unknown":
                 fall = fid
-                gate = CustomerPhaseGate(cfg)  # new case → wait for greeting again
+                gate = CustomerPhaseGate(cfg)
+                utt = UtteranceBuffer(silence_s=silence_s, min_chars=min_utt)
                 _write_meta({"fall": fall, "capture_path": path_mode, "gate_open": gate.open})
-                _log(f"New Fall #{fall} — greeting gate reset")
+                _log(f"New Fall #{fall} — greeting gate + utterance buffer reset")
             elif fid:
                 fall = fid
                 _write_meta({"fall": fall, "capture_path": path_mode, "gate_open": gate.open})
@@ -491,6 +599,8 @@ def run_foreground() -> int:
                                     _append_brief(fall, keep, tag="[Kunde]")
                                     _log(f"STT[Kunde]: {keep[:120]}{'…' if len(keep) > 120 else ''}")
                                     print(f"CALL_BRIEF_UPDATE fall={fall}", flush=True)
+                                    if tp_enabled and gate.open:
+                                        utt.push(keep)
                         elif not stt_missing_noted:
                             _append_brief(
                                 fall,
@@ -515,8 +625,18 @@ def run_foreground() -> int:
                             _append_brief(fall, keep, tag="[Kunde]")
                             _log(f"STT(loop)[Kunde]: {keep[:120]}")
                             print(f"CALL_BRIEF_UPDATE fall={fall}", flush=True)
+                            if tp_enabled and gate.open:
+                                utt.push(keep)
 
-            time.sleep(1.0)
+            # Fire teleprompter ASAP after short customer pause
+            if tp_enabled and gate.open and utt.ready_to_fire():
+                customer_utt = utt.consume()
+                try:
+                    _fire_teleprompter(fall, customer_utt, cfg)
+                except Exception as e:
+                    _log(f"teleprompter error: {e}")
+
+            time.sleep(0.35)
 
         try:
             page = find_sprinklr_page(browser)
@@ -538,10 +658,12 @@ def cmd_stop() -> int:
     _STATE.mkdir(parents=True, exist_ok=True)
     _STOP.write_text("stop", encoding="utf-8")
     print("CALL_LISTEN_STOP_REQUESTED")
-    # Also try kill via meta pid
-    if _META.exists():
+    # Kill listen + teleprompter UI
+    for meta_path, label in ((_META, "listen"), (_TP_UI_META, "teleprompter_ui")):
+        if not meta_path.exists():
+            continue
         try:
-            meta = json.loads(_META.read_text(encoding="utf-8"))
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
             pid = int(meta.get("pid") or 0)
             if pid and sys.platform == "win32":
                 subprocess.run(
@@ -550,9 +672,9 @@ def cmd_stop() -> int:
                     timeout=15,
                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                 )
-                print(f"STOPPED pid={pid}")
+                print(f"STOPPED {label} pid={pid}")
         except Exception as e:
-            print(f"[WARN] stop kill: {e}")
+            print(f"[WARN] stop {label}: {e}")
     return 0
 
 
@@ -564,6 +686,9 @@ def cmd_status() -> int:
     brief_files = sorted(_STATE.glob("call_brief_*.txt"))
     for b in brief_files[-5:]:
         print(f"BRIEF {b.name} bytes={b.stat().st_size}")
+    if _TP_LATEST.exists():
+        print("TELEPROMPTER_LATEST:")
+        print(_TP_LATEST.read_text(encoding="utf-8", errors="replace")[:500])
     if _LOG.exists():
         lines = _LOG.read_text(encoding="utf-8", errors="replace").splitlines()
         print("LOG_TAIL:")
