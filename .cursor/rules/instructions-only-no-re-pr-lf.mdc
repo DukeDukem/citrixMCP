@@ -7,7 +7,7 @@ alwaysApply: true
 
 Some workspace chats are **rules/configuration only** (agent directives, skill updates, transfer-matrix changes, Case Tracker setup, etc.). **This is not the customer-case processing chat.**
 
-**Live automation runs only in the email processing chat** — open a separate chat with **`EMAIL-PROCESSING-AGENT.md`** (login, manual RE, PR, LF).
+**Live automation runs only in the email processing chat** — open a separate chat with **`EMAIL-PROCESSING-AGENT.md`** (login, RE + Auto-LF, PR, DONE).
 
 ## When this rule applies
 
@@ -50,6 +50,7 @@ If the user also asked a rules/config question in the same message, answer that 
 - Updating `.cursor/rules/`, skills, AGENT-INSTRUCTIONS, TransferMatrix, config structure (not live case handling)
 - Explaining how RE/PR/LF/login work
 - Documenting test results from configuration work **without** treating the chat as the live processing queue
+- Pointing bonus / Produktivitätsbonus questions to **`SEPTEMBER-INCENTIVE-AGENT.md`** (do not deep-run bonus planning here unless the user insists)
 
 ## Customer-case chats
 
@@ -57,6 +58,11 @@ The **email processing agent chat** (startup: **`EMAIL-PROCESSING-AGENT.md`**) r
 
 - **login** — Sprinklr + Case Tracker tab
 - **RE** — Anwenden-gated auto-RE (or `--once`) → 7-step RE
-- **PR** / **LF** — paste reply and log form
+- **RE** — extract → 7-step + Auto-LF  
+- **PR** — paste reply (then Anwenden arm; LF already done at RE)
+
+## Bonus chat
+
+**September Incentive** (startup: **`SEPTEMBER-INCENTIVE-AGENT.md`**) — yoummday points / 500 € / Treue-Bonus only. Knowledge: `.cursor/knowledge/september-incentive-2026.md`.
 
 This instructions chat must **not** run case scripts or draft live customer replies. **`revert last`** (checkpoint restore) is allowed here.

@@ -1,124 +1,80 @@
 ---
-description: LF TR / lf tr — transfer close-out (Weiter or Extern arm). Distinct from PR LF (non-transfer / Anwenden arm).
+description: Transfer close-out — Auto-LF Transfer Ja during RE, or manual LF TR override. Weiter/Extern arm (not Anwenden).
 alwaysApply: true
 ---
 
-# LF TR = Log Form + Transfer close-out (no customer reply)
+# Transfer close-out (Auto-LF TR / manual LF TR)
 
 **Chat scope:** Email processing chat only (`EMAIL-PROCESSING-AGENT.md`).
 
 ## Hard distinction (do not mix)
 
-| Command | Case type | Customer reply | Tracker Transfer | Next-case arm |
-|---------|-----------|----------------|------------------|---------------|
-| **PR LF** / **pr lf** | **Non-transfer** (we answer) | **PR** then **LF** | Usually **Nein** (or as resolved) | **`--arm`** (detached) → **`--await-arm`** → **Anwenden** |
-| **LF TR** / **lf tr** (queue target) | **Transfer** (we do not answer) | **No PR** | **Ja** + queue name | **`--arm-weiter`** (detached) → **`--await-arm`** → **Weiter** |
-| **LF TR** / **lf tr** (email target) | **External email transfer** | **No PR** | **Ja** + email | **`--arm-extern`** (detached) → **`--await-arm`** → **Weiterleiten** |
+| Path | Case type | Customer reply | Tracker Transfer | Next-case arm |
+|------|-----------|----------------|------------------|---------------|
+| **Auto-LF** after EMAIL RE (non-transfer) + later **PR** | We answer | **PR** | **Nein** (at RE Auto-LF) | **`--arm`** after **PR** |
+| **Auto-LF** after RE/CALL when transfer eligible | Transfer | **No PR** | **Ja** + target | **`--arm-weiter`** / **`--arm-extern`** right after Auto-LF |
+| Manual **LF TR** / **lf tr** | Override / recovery | **No PR** | **Ja** + target | Same Weiter/Extern arms |
 
-- After **PR LF** → **never** arm Weiter / Extern / `--arm-weiter` / `--arm-extern`.
-- After **LF TR** → **never** arm Anwenden / `--arm`, and **never** run PR unless the user explicitly asks for a reply.
-- **Queue** vs **email** target picks the arm — do **not** swap.
+- After non-transfer **PR** → **never** arm Weiter / Extern.  
+- After transfer Auto-LF / **LF TR** → **never** arm Anwenden; **never** PR unless user asks.  
+- Queue (no `@`) → **`--arm-weiter`**. Email (`@`) → **`--arm-extern`**.
 
-**Triggers (case-insensitive):** `LF TR` | `lf tr` | `LFTR` | `lftr`  
-Optional override: `LF TR "Alternate Queue Name"` / `lf tr CBC_XF_E_KUNDENDATEN` / `lf tr geschaeftskunden-service@telefonica.com`
+## Default: Auto-LF Transfer (no typed `LF TR`)
 
-Use for **transfer-eligible** cases where you **do not** paste a customer reply (**no PR**). You transfer in Sprinklr; Case Tracker is logged as Transfer Ja; next case is armed via **Weiter** (internal queue) or **Extern** (email address) — not Anwenden.
+When RE §3 / CALL pack says **Transfer eligible: Yes**:
 
-## Required flow
+1. Resolve target from **TransferMatrix** Ziel-Kontakt (or Sprinklr Ziel).  
+2. Run Auto-LF with `--transfer 1 --target "…"`.  
+3. Immediately arm Weiter or Extern + **`--await-arm`**.  
+4. Finishing quote: **`LF TR done for #FALL_ID`**.  
+5. User completes Sprinklr transfer UI (below).
 
-1. **Resolve transfer target**
-   - Default: transfer goal / Ziel-Kontakt from the **latest RE section 3/4a** for the **currently visible Fall #** (TransferMatrix).
-   - If the user named an alternate in the command (quoted or after `LF TR`), use **that** target instead.
-   - If no target can be determined → **STOP** and ask for the queue/email target. Do not fill Transfer Ja without a target.
+Manual **`LF TR`** / **`lf tr`** (+ optional alternate target) remains for override if Auto-LF missed or target must change.
 
-2. **Choose arm from target type**
-
-| Target looks like | Example | Arm after LF |
-|-------------------|---------|--------------|
-| **Queue / coding** (no `@`) | `CS_E_XF_AKTION1`, `CBC_XF_E_KUNDENDATEN` | **`--arm-weiter`** |
-| **Email address** (contains `@`) | `geschaeftskunden-service@telefonica.com` | **`--arm-extern`** |
-
-3. **LF (transfer)** — fill Roberta Case Tracker for the visible Fall #:
-   ```powershell
-   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --transfer 1 --target "TRANSFER_TARGET"
-   ```
-   - Transfer **Ja**, Target = resolved queue/email  
-   - Ticketstatus Salcus → **3-Bot dokumentiert nicht in Salcus** (always when Transfer Ja)  
-   - Salcus from exclusive Kundennummer box only (`C-…` → empty)  
-   - Same exclusive Salcus / Notiz rules as normal LF (`.cursor/rules/lf-log-form.mdc`)
-
-4. **Do not PR** for this close-out unless the user explicitly asks for a customer reply.
-
-5. **Immediately after LF succeeds** — arm the matching watch **detached** (not Anwenden), then await:
-
-### A) Internal queue → Weiter
+## Required fill
 
 ```powershell
-Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-weiter
+uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --transfer 1 --target "TRANSFER_TARGET"
 ```
 
-Expect **`WEITER_RE_ARMED`** + **`ARM_WATCH_DETACHED`**. Finishing quote, then:
+- Ticketstatus **3**; Salcus exclusive Kundennummer box only (`C-…` → empty).  
+- Same Salcus / Notiz rules as `.cursor/rules/lf-log-form.mdc`.
+
+## Arms after transfer LF
+
+### A) Queue → Weiter
 
 ```powershell
-uv run python .cursor/skills/sprinklr-read-answer-email/run.py --await-arm
+uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-weiter
 ```
 
-User completes the transfer UI manually (script does **not** react to steps 1–3):
+Then **`--await-arm`**. User clicks:
 
-| Step | Button | Notes |
-|------|--------|--------|
-| **1/4** | **Transfer** | `data-entityid="@sprinklr/action/GuidedAction"` |
-| **2/4** | **Weiterleiten** | `screenButton` — **ignored** by arm |
-| **3/4** | **Weiteleiten** | UI typo; `screenButton` — **ignored** by arm |
-| **4/4** | **Weiter** | Exact label only — **this** left-click triggers next-case RE |
+| Step | Button | Arm reacts? |
+|------|--------|-------------|
+| 1/4 | **Transfer** | No |
+| 2/4 | **Weiterleiten** | No |
+| 3/4 | **Weiteleiten** | No |
+| 4/4 | **Weiter** (exact) | **Yes** → next case |
 
-On final **Weiter** only:
-- `button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]`
-- text must be exactly **Weiter** (not Weiterleiten / Weiteleiten)
-
-### B) External email → Extern
+### B) Email → Extern
 
 ```powershell
-Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-extern
+uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-extern
 ```
 
-Expect **`EXTERN_RE_ARMED`** + **`ARM_WATCH_DETACHED`**. Finishing quote, then:
+Then **`--await-arm`**. User clicks:
 
-```powershell
-uv run python .cursor/skills/sprinklr-read-answer-email/run.py --await-arm
-```
+| Step | Button | Arm reacts? |
+|------|--------|-------------|
+| 1/3 | **Externer Transfer** | No |
+| 2/3 | **Weiterleiten** (exact) | **Yes** → next case |
 
-User completes the external transfer UI manually (script does **not** react to step 1):
-
-| Step | Button | Notes |
-|------|--------|--------|
-| **1/3** | **Externer Transfer** | `data-entityid="@sprinklr/action/GuidedAction"` — **ignored** by arm |
-| **2/3** | **Weiterleiten** | `screenButton` + SolidTickCircle — **this** left-click triggers next-case RE |
-| **3/3** | (script) | wait 4s → `collapsed-case-item` → extract |
-
-On **Weiterleiten** only (extern arm):
-- `button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]`
-- text must be exactly **Weiterleiten** (not Weiter / Weiteleiten)
-- Example target: `geschaeftskunden-service@telefonica.com`
-
-6. After the trigger click: detached watch waits **4 seconds**, then clicks a **new** `collapsed-case-item` (skips the Fall # just transferred), extracts → **`--await-arm`** returns → agent outputs full **7-step RE**. If next-case open fails → `ERROR: NEXT CASE NOT OPEN — run run.py --once` (arm stops; do not wait for another Weiterleiten). If await is aborted, re-run **`--await-arm`**.
-
-### Finishing quote (mandatory after LF TR)
-
-After Transfer Ja LF + Weiter/Extern arm is **`ARM_WATCH_DETACHED`**, include:
-
-`LF TR done for #FALL_ID`
-
-Example: `LF TR done for #55403274`  
-(Dexter cue via hook — same as PR LF done.) Then run **`--await-arm`**.
+After trigger: 4s → new `collapsed-case-item` → extract → Auto-LF again on the new case during its RE/CALL pack.
 
 ## Integrity
 
-- ONE Fall # only; target must match this case’s RE (or explicit user override).  
-- Do not arm Anwenden after LF TR.  
-- Do not arm Weiter/Extern after normal PR+LF / PR LF.  
-- Queue LF TR → **never** `--arm-extern`. Email LF TR → **never** `--arm-weiter`.  
-- Weiter arm must **not** fire on Weiterleiten or Weiteleiten.  
-- Extern arm must **not** fire on Externer Transfer or exact **Weiter**.  
-- Arms are **detached**; Cursor aborting `--await-arm` is not a dead watch — re-await.  
-- No `monitor_emails` fallback.
+- ONE Fall #; target from this case’s RE/pack (or explicit override).  
+- Do not arm Anwenden after transfer.  
+- Do not arm Weiter/Extern after non-transfer **PR**.  
+- Arms are **detached**; re-run **`--await-arm`** if Cursor aborts the poll.

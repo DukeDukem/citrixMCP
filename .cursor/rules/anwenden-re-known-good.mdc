@@ -9,13 +9,12 @@ alwaysApply: true
 
 ## Close-out arms (do not mix)
 
-| Command | Meaning | Arm | Then |
+| Trigger | Meaning | Arm | Then |
 |---------|---------|-----|------|
-| **PR LF** | Non-transfer EMAIL answered | **Anwenden** (`--arm`) | **`--await-arm`** |
-| **LF** alone (EMAIL) | Logged without PR | **Anwenden** (`--arm`) | **`--await-arm`** |
-| **LF** alone (**CALL**) | Voice logged (`--channel voice`) | **Next** (`--arm-next`) | **`--await-arm`** |
-| **LF TR** (queue) | Transfer (no reply) | **Weiter** (`--arm-weiter`) | **`--await-arm`** |
-| **LF TR** (email) | External email transfer | **Extern** (`--arm-extern`) | **`--await-arm`** |
+| **PR** (EMAIL; Auto-LF already at RE) | Non-transfer answered | **Anwenden** (`--arm`) | **`--await-arm`** |
+| **Auto-LF** / **LF** (**CALL**) | Voice logged | **Next** (`--arm-next`) | **`--await-arm`** |
+| **Auto-LF TR** / **LF TR** (queue) | Transfer | **Weiter** (`--arm-weiter`) | **`--await-arm`** |
+| **Auto-LF TR** / **LF TR** (email) | External transfer | **Extern** (`--arm-extern`) | **`--await-arm`** |
 
 **CALL Next arm:** exact label **Next** on `button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]` only (not Back / Weiter / Weiterleiten). Detection is **DOM/event-based** (not pixel coordinates) — disposition tray position does not matter. Close DevTools **Inspect** before clicking (Inspect steals the click). If a live `--arm-next` watch was started before a detection fix, **kill/re-arm** so the new listener code loads.
 
@@ -23,15 +22,16 @@ alwaysApply: true
 
 | Action | Behavior |
 |--------|----------|
-| Typed **RE** / bare `run.py` | **Always `--once`** — extract open case (workday push-start / re-read). **Never** arm Anwenden. |
-| After LF close-out | Explicit `--arm` / `--arm-weiter` / `--arm-extern` only |
+| Typed **RE** / bare `run.py` | **Always `--once`** — extract → 7-step + **Auto-LF**. **Never** arm Anwenden on typed RE. |
+| After **PR** (non-transfer) | Explicit `--arm` then await |
+| After transfer / CALL Auto-LF | `--arm-weiter` / `--arm-extern` / `--arm-next` then await |
 
 ## Detached arm + click-ready
 
 1. `run.py --arm*` → **`ARM_WATCH_DETACHED`** + **`READY_FOR_YOUR_CLICK`** + **Dexter** (no console window: `CREATE_NO_WINDOW`).
-2. Chat: `Armed — click … now.` + finishing quote (`PR LF done` / `LF done` / `LF TR done`).
+2. Chat: `Armed — click … now.` + finishing quote (`PR done` / `LF done` / `LF TR done`).
 3. `run.py --await-arm` (user may already click; await spinner ≠ “not ready”).
-4. Full **7-step RE**, then `re_complete_sound.py --play-ready` (book).
+4. Full **7-step RE** + `--play-ready` + **Auto-LF**, then transfer arm or wait for **PR**.
 
 If `--await-arm` aborted → **re-run `--await-arm`**. If log has `ERROR: NEXT CASE NOT OPEN` → **`run.py --once`**. Never stack a second arm while one wait is live.
 
@@ -50,10 +50,10 @@ If `--await-arm` aborted → **re-run `--await-arm`**. If log has `ERROR: NEXT C
 ## Workday flow
 
 1. **login** → open first case → **RE** (`--once`) → **CHANNEL: CALL|EMAIL** (do **not** arm call_listen while STT parked)
-2. **EMAIL** → 7-step → `--play-ready` → **PR LF** / **LF** / **LF TR** (listen stays up)
-3. **CALL** → wait for voice brief / teleprompter (listen already on) → handle pack → **LF** `--channel voice` (ticketstatus 3) → **`--arm-next`** only (do **not** stop listen)
-4. Close-out → case arm + await → classify next case again
-5. **DONE** at end of day (stops call listen)
+2. **EMAIL** → 7-step → `--play-ready` → **Auto-LF** → **PR** (non-transfer) or transfer arm (no PR)
+3. **CALL** → BRIEF → handle pack → **Auto-LF** voice → **`--arm-next`**
+4. Close-out arm + await → next case → Auto-LF again
+5. **DONE** at end of day
 
 ## Hard constraints
 

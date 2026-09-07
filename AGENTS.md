@@ -15,12 +15,14 @@
 ## Case commands (email processing chat)
 
 - **login** — Sprinklr + Case Tracker; sets first-RE marker
-- **RE** (typed) — **always `--once`** extract open case (first case of day / fresh agent push-start, or manual re-read). Never Anwenden arm on typed RE.
-- **PR LF** / **LF** (EMAIL) — **`--arm`** → Anwenden → **`--await-arm`**
-- **LF** (**CALL**) — `--channel voice` then **`--arm-next`** → exact **Next** → **`--await-arm`** (never Anwenden after a call)
-- **LF TR** — queue **`--arm-weiter`** or email **`--arm-extern`**, then **`--await-arm`**
-- **CALL vs EMAIL:** After every case open, classify via overlay. **Teleprompter/STT parked** (`capture_path.json` `enabled=false`) — do **not** `--arm`/`--prime` call_listen. On **CHANNEL: CALL** → wait for typed **BRIEF** → handle pack → LF voice + **`--arm-next`**. **EMAIL** → 7-step RE/PR/LF + Anwenden **`--arm`**. Rule: `sprinklr-call-vs-email.mdc`
-- **Transfer path:** Always **TransferMatrix.md** first (Ziel-Kontakt + Action). KB must not override routing; if not transferable, handle from matrix Action hint then KB. Rule: `transfer-matrix-priority.mdc`
+- **RE** (typed) — **always `--once`** extract open case → 7-step (EMAIL) + **Auto-LF**. Never Anwenden arm on typed RE.
+- **PR** (EMAIL non-transfer) — paste reply (LF already done at RE) → **`--arm`** → Anwenden → **`--await-arm`**
+- **Auto-LF transfer** — during RE when §3 says transfer → Transfer Ja fill → **`--arm-weiter`** / **`--arm-extern`** (no typed LF TR needed)
+- **CALL** — BRIEF → pack → Auto-LF voice → **`--arm-next`**
+- Typed **LF** / **LF TR** / **PR LF** — recovery/override only
+- **CALL vs EMAIL:** After every case open, classify via overlay. **Teleprompter/STT parked** — do **not** `--arm`/`--prime` call_listen. Rule: `sprinklr-call-vs-email.mdc`
+- **Transfer path:** Always **TransferMatrix.md** first. Rule: `transfer-matrix-priority.mdc`
+- **Auto-LF:** Rule: `lf-log-form.mdc`
 
 ## Instructions dashboard
 

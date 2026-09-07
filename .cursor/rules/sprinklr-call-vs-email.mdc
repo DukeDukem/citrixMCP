@@ -80,7 +80,9 @@ Treat the user’s next substantive message (case content, not `LF` / `DONE` / `
 6. **Talk track (optional German bullets)**  
 7. **Close-out** — **LF** Voice, or **LF TR** if transfer; no **PR** unless user asks for email  
 
-### Close-out — LF + arm Next
+### Close-out — Auto-LF + arm Next
+
+After CALL handling pack:
 
 ```powershell
 uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --channel voice
@@ -91,7 +93,7 @@ uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id 
 | **Kanal** | **Voice (Tel.)** (`#channel_voice`) |
 | **Ticketstatus Salcus** | **Always** **3-Bot dokumentiert nicht in Salcus** |
 
-**After CALL LF — do NOT `--arm` (Anwenden).** Then:
+**Do this Auto-LF** in the same turn as the pack (no typed `LF`). Then:
 
 ```powershell
 uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-next

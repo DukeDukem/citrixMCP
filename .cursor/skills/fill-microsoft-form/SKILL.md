@@ -1,11 +1,13 @@
 ---
 name: fill-microsoft-form
-description: Opens and fills the Roberta O2 Case Tracker (and generic forms). Use when the user wants LF / log form / case tracker fill. Requires Chrome with CDP (login or sprinklr-open-login-status first).
+description: Opens and fills the Roberta O2 Case Tracker (and generic forms). Auto-LF runs during RE/CALL processing; typed LF is recovery. Requires Chrome with CDP (login first).
 ---
 
 # Fill Case Tracker (Roberta) / Microsoft Form
 
 **Shorthand:** **LF** = fill the **Roberta Case Tracker** for the current Sprinklr case.
+
+**Default:** Agent runs **Auto-LF** after EMAIL 7-step RE (or CALL pack) — user does **not** type `LF`. Typed `LF` / `LF TR` / `PR LF` = override/recovery. See `.cursor/rules/lf-log-form.mdc`.
 
 **Platform:** `https://roberta.yoummday.com/casetracker/` — **primary for LF**. Microsoft Forms is legacy only.
 
@@ -21,27 +23,24 @@ On **login** (`--login-only`), Sprinklr automation opens Case Tracker in a new t
 # Open/reuse tracker tab only
 uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --open-only
 
-# LF — fill current case (reads Sprinklr sidebar automatically)
+# Auto-LF / LF — fill current case (reads Sprinklr sidebar automatically)
 uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#36698255"
 ```
 
-Optional overrides: `--salcus`, `--transfer 0|1`, `--target`, `--submit`
+Optional overrides: `--salcus`, `--transfer 0|1`, `--target`, `--channel voice`, `--submit`
 
-### LF TR (transfer, no PR)
+### After EMAIL Auto-LF
 
-When the user types **LF TR** / **lf tr** (optional `"alternate target"`):
+| Outcome | Next |
+|---------|------|
+| Non-transfer | Wait for user **PR** → then `run.py --arm` + `--await-arm` |
+| Transfer | Immediately `--arm-weiter` or `--arm-extern` + `--await-arm` |
 
-1. Fill with `--transfer 1 --target "<RE 4a goal or user override>"`
-2. Do **not** run PR
-3. After fill succeeds, arm by target (**detached**), then await:
-   - Queue: `run.py --arm-weiter` → expect `ARM_WATCH_DETACHED` → `run.py --await-arm`
-   - Email (`@`): `run.py --arm-extern` → expect `ARM_WATCH_DETACHED` → `run.py --await-arm`
+### After CALL Auto-LF
 
-Full rule: `.cursor/rules/lf-tr-transfer.mdc`.
+`--channel voice` → immediately `run.py --arm-next` + `--await-arm` (or weiter/extern if transfer).
 
-### After LF / PR LF (non-transfer)
-
-After fill succeeds: `run.py --arm` → `ARM_WATCH_DETACHED` → finishing quote → `run.py --await-arm`. See `.cursor/rules/re-read-email.mdc`.
+Full rules: `.cursor/rules/lf-log-form.mdc`, `.cursor/rules/lf-tr-transfer.mdc`.
 
 ### Field mapping
 

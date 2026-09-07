@@ -54,7 +54,7 @@ If customer is **not verified**: do steps 1, 2, then skip transfer matrix; use u
 
 **Always stick to the processing form:** When you run this skill or respond to the user about a read-email case, you must use the mandatory output structure (sections 1–7) and the verification/case-processing flow defined here. Do not deviate, skip, or reorder. **Do not show or require any "accept", "approve", or similar confirmation pop-ups during the RE output flow; all steps must be executed automatically unless the user explicitly interrupts or overrides them.**
 
-1. **Run the skill / after armed extract.** User types **RE** → bare `run.py` is **always `--once`**. After **EMAIL LF** / **PR LF**, use **`--arm`** then **`--await-arm`**. After **CALL LF** (`--channel voice`), use **`--arm-next`** then **`--await-arm`**. After **LF TR**, use **`--arm-weiter`** / **`--arm-extern`** then **`--await-arm`**.
+1. **Run the skill / after armed extract.** User types **RE** → bare `run.py` is **always `--once`**. After **PR** (EMAIL non-transfer; Auto-LF already done), use **`--arm`** then **`--await-arm`**. After **CALL Auto-LF** (`--channel voice`), use **`--arm-next`** then **`--await-arm`**. After **transfer Auto-LF**, use **`--arm-weiter`** / **`--arm-extern`** then **`--await-arm`**.
 1a. **CHANNEL gate (mandatory):** From visible Sprinklr overlay/timeline, print **`CHANNEL: CALL`** or **`CHANNEL: EMAIL`** (see `sprinklr-call-vs-email.mdc`).
    - **EMAIL** → continue sections 1–7 below (email RE).  
    - **CALL** → **stop** the email RE. Announce wait for voice brief; when the user pastes the customer’s spoken case as text, run the **CALL handling pack** (summary, verification, transfer/KB, phone talk track, LF with `--channel voice`). **No PR** unless the user asks for an email.  
@@ -72,9 +72,12 @@ If customer is **not verified**: do steps 1, 2, then skip transfer matrix; use u
    uv run python .cursor/skills/sprinklr-email-automation/re_complete_sound.py --play-ready
    ```
    Hook is a backup only. Manual: type **`sound`**.
-8. **After EMAIL LF succeeds** (**LF alone** or **PR LF**, non-transfer): **immediately** run **`run.py --arm`** (expect **`ARM_WATCH_DETACHED`**), finishing quote, then **`run.py --await-arm`** until extract → full 7-step RE. If await is aborted, **re-run `--await-arm`** (detached watch still running). Use **`--once`** only if `ARM_WATCH_LOG` has no CUSTOMER EMAIL.
-8b. **After CALL LF** (`--channel voice`): **immediately** **`run.py --arm-next`** (expect **`NEXT_RE_ARMED`**), finishing quote `LF done for #FALL_ID`, then **`--await-arm`**. User clicks exact **Next** (disposition screenButton). Never Anwenden after a call. Call listen/teleprompter is **parked** (`enabled=false`) — do not `--arm`/`--prime` call_listen.
-9. **LF TR** (transfer, no PR): Transfer Ja LF, then arm by target — queue → **`--arm-weiter`**; email → **`--arm-extern`** (both detached). Finishing quote: **`LF TR done for #FALL_ID`** (Dexter). Then **`--await-arm`**. Never swap arms with PR LF / CALL Next.
+7b. **Auto-LF (mandatory):** Immediately fill Case Tracker for this Fall # (`fill_case_tracker.py`). Do **not** wait for typed `LF`. Transfer Nein or Ja per section 3 / TransferMatrix. See `.cursor/rules/lf-log-form.mdc`.
+7c. **If Transfer eligible: Yes** after Auto-LF: arm **`--arm-weiter`** or **`--arm-extern`**, finishing quote `LF TR done for #FALL_ID`, then **`--await-arm`**. No PR.
+7d. **If Transfer eligible: No:** stop after Auto-LF and wait for user **PR**. Do **not** arm Anwenden yet.
+8. **After PR succeeds** (EMAIL non-transfer; Auto-LF already done): **immediately** run **`run.py --arm`** (expect **`ARM_WATCH_DETACHED`**), finishing quote `PR done for #FALL_ID`, then **`run.py --await-arm`** until extract → full 7-step + Auto-LF again. If await is aborted, **re-run `--await-arm`**. Use **`--once`** only if `ARM_WATCH_LOG` has no CUSTOMER EMAIL.
+8b. **After CALL Auto-LF** (`--channel voice`): **immediately** **`run.py --arm-next`** (expect **`NEXT_RE_ARMED`**), finishing quote `LF done for #FALL_ID`, then **`--await-arm`**. User clicks exact **Next**. Never Anwenden after a call. Call listen/teleprompter is **parked** — do not `--arm`/`--prime` call_listen.
+9. Manual **LF** / **LF TR** / **PR LF** = recovery overrides only (same arms as Auto-LF paths).
 
 **No reload or navigation:** Script reads the **current tab** only. Run **login** first. Script does **not** write to the editor.
 
