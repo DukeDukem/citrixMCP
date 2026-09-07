@@ -36,84 +36,41 @@ Use **visible Sprinklr overlay + timeline + Case Informationen** (see markers be
 
 ---
 
-## CALL handling workflow (full stack — STT + live teleprompter)
+## CALL listen + teleprompter — **DISABLED (parked)**
 
-**Honest limit:** The agent cannot hear audio in chat. Local listen → STT → files → agent reads files / user reads teleprompter.
+**Status (2026-09-07):** Speech detection + teleprompter are **off** until reactivated with a better STT model.  
+Config: `.cursor/skills/sprinklr-call-listen/capture_path.json` → **`enabled: false`**, **`teleprompter_enabled: false`**.
 
-**Use on every `CHANNEL: CALL` from now on.** Do **not** start `call_listen` on EMAIL.
+**Hard rule while parked:** Do **not** run `call_listen.py --arm` or `--prime` after login or on CHANNEL: CALL. Expect `CALL_LISTEN_DISABLED` if tried. Code + HyperX loopback + turbo German STT base remains in the skill for later.
 
-### Step 0 — On CHANNEL: CALL
+**Reactivate later:** set `enabled=true` and `teleprompter_enabled=true` in `capture_path.json`, then `--arm` (see skill SKILL.md).
+
+### Step 0 — On CHANNEL: CALL (while STT parked)
 
 1. Print short identity: Fall #, customer name if visible, Quelle/Ziel if useful.  
 2. **Do NOT** run email 7-step RE/PR.  
 3. **Do NOT** invent the issue from Anruf timeline alone.  
-4. Immediately arm listen (detached):
-
-```powershell
-uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --arm
-```
-
-Expect **`CALL_LISTEN_ARMED`** / **`CALL_LISTEN_DETACHED`** + **`TELEPROMPTER_UI_PID`**.
-
+4. **Do NOT** arm/prime call_listen or open the teleprompter UI.  
 5. Say this wait line (exact intent):
 
 ```
 CHANNEL: CALL
-Fall #…. Listening — transcript + live teleprompter.
+Fall #…. Teleprompter/STT parked — greet normally.
 
-I started local call listen. After my o2 greeting, customer pauses update the on-top teleprompter (I say those lines). Type BRIEF only for a full handling pack. STOP LISTEN to stop STT.
+Type BRIEF (or paste what the customer said) for a full handling pack.
 ```
 
-6. Remain idle in chat for teleprompter turns; do not demand BRIEF every turn.
+6. Wait for the user’s typed **BRIEF** / voice summary. Then produce the CALL handling pack.
 
-On **LF**, **DONE**, or user **STOP LISTEN**:
+### BRIEF (required while STT parked)
 
-```powershell
-uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --stop
-```
-
-(`done_for_today.py` also stops call listen + teleprompter UI.)
-
-### Greeting gate
-
-User open line: **"Willkommen bei o2, Lukas ist mein Name, was kann ich für Sie tun?"**
-
-- STT **ignores** speech until that greeting is detected (or **25s timeout** if greeting not in stream).  
-- After gate open: customer lines tagged **`[Kunde]`** in `.cursor/state/call_brief_{FALL}.txt`.
-
-### Agent time-buy fillers (IGNORE)
-
-These must **not** be treated as customer speech and must **not** reset/break the STT pipeline. Customer buffer keeps accumulating:
-
-- Alles klar / Verstehe ich / Mal schauen was ich da für Sie tun kann / Moment bitte  
-- Ich schaue das kurz nach / short stall questions / hold lines  
-
-### Live teleprompter (multi-turn — not one-shot)
-
-After greeting, each customer pause (~**1.4s** silence) → generate **SAY THIS** immediately.
-
-| Source | Use |
-|--------|-----|
-| On-top window (auto-started with `--arm`) | Primary — user speaks those lines |
-| `.cursor/state/call_teleprompter_latest.txt` | Same current lines |
-| `.cursor/state/call_teleprompter_{FALL}.txt` | Turn history |
-
-Tone: friendly German talk-track the user can say aloud; short; may be **solution-without-solution** (empathy + clarifying Q **or** *Einen Moment, ich lege Sie kurz in die Warteschleife…*).  
-**No** internal system names. **No** invented backend promises.  
-Customer can rant again after the user speaks → next teleprompter update. Loop until call ends.
-
-### BRIEF (optional)
-
-**BRIEF** = read `call_brief_{FALL}.txt` (+ latest teleprompter context) → full **CALL handling pack**.  
-**Not** required for every turn. Manual paste from the user still overrides STT.
-
-Treat the user’s next substantive message (case content, not `LF` / `DONE` / `PR`) as an override **customer voice brief** when given.
+Treat the user’s next substantive message (case content, not `LF` / `DONE` / `PR`) as the **customer voice brief**.
 
 - Combine: Sprinklr sidebar/case facts **+** brief text.  
 - Do **not** mix another Fall’s data.  
-- Do **not** claim “I heard the call” — say **transcript received** / STT brief.
+- Do **not** claim “I heard the call” or cite STT transcripts.
 
-### CALL handling pack (on BRIEF only)
+### CALL handling pack (on BRIEF)
 
 1. **Channel + Fall # + customer** (one line)  
 2. **Case summary** — problem + what they want (~35–60 words)  
@@ -137,7 +94,6 @@ uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id 
 **After CALL LF — do NOT `--arm` (Anwenden).** Then:
 
 ```powershell
-uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --stop
 uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-next
 ```
 
@@ -149,28 +105,19 @@ User clicks exact **Next** on `button[data-tracker-event-id="@guidedWorkflow/run
 
 After Next → 4s → next case → **CHANNEL: CALL|EMAIL** again.
 
-### Optional first live call probe
+### EMAIL (unchanged)
 
-While **Im Gespräch**:
-
-```powershell
-uv run python .cursor/skills/sprinklr-call-listen/probe_call_audio.py --lock
-```
-
-Confirm `remoteAudioTracks`; `capture_path` stays `webrtc_hook`; fallback `windows_loopback`.
-
-### EMAIL unchanged
-
-**EMAIL** → normal 7-step RE → **PR LF** → **`--arm`** (Anwenden). **Never** start `call_listen` on EMAIL.
+**EMAIL** → normal 7-step RE → **PR LF** → **`--arm`** (Anwenden). No call_listen.
 
 ---
 
 ## Hard bans (CALL)
 
 - No automatic email **7-step section 6** + **PR** for live/disposition calls  
-- No treating Anruf timeline / audio bars as a substitute for the user’s voice brief **or** STT `call_brief_*.txt`  
-- No claiming the agent “heard” the call — only **transcript received** from local STT  
-- No Kanal **E-Mail Care** when LF’ing a call 
+- No inventing the issue from Anruf timeline alone (need typed BRIEF while STT parked)  
+- No claiming the agent “heard” the call  
+- No Kanal **E-Mail Care** when LF’ing a call  
+- **No** `call_listen.py --arm` / `--prime` while `enabled=false` (unless user explicitly reactivates config)
 
 ---
 

@@ -73,7 +73,7 @@ If customer is **not verified**: do steps 1, 2, then skip transfer matrix; use u
    ```
    Hook is a backup only. Manual: type **`sound`**.
 8. **After EMAIL LF succeeds** (**LF alone** or **PR LF**, non-transfer): **immediately** run **`run.py --arm`** (expect **`ARM_WATCH_DETACHED`**), finishing quote, then **`run.py --await-arm`** until extract → full 7-step RE. If await is aborted, **re-run `--await-arm`** (detached watch still running). Use **`--once`** only if `ARM_WATCH_LOG` has no CUSTOMER EMAIL.
-8b. **After CALL LF** (`--channel voice`): **immediately** **`run.py --arm-next`** (expect **`NEXT_RE_ARMED`**), finishing quote `LF done for #FALL_ID`, then **`--await-arm`**. User clicks exact **Next** (disposition screenButton). Never Anwenden after a call.
+8b. **After CALL LF** (`--channel voice`): **immediately** **`run.py --arm-next`** (expect **`NEXT_RE_ARMED`**), finishing quote `LF done for #FALL_ID`, then **`--await-arm`**. User clicks exact **Next** (disposition screenButton). Never Anwenden after a call. Call listen/teleprompter is **parked** (`enabled=false`) — do not `--arm`/`--prime` call_listen.
 9. **LF TR** (transfer, no PR): Transfer Ja LF, then arm by target — queue → **`--arm-weiter`**; email → **`--arm-extern`** (both detached). Finishing quote: **`LF TR done for #FALL_ID`** (Dexter). Then **`--await-arm`**. Never swap arms with PR LF / CALL Next.
 
 **No reload or navigation:** Script reads the **current tab** only. Run **login** first. Script does **not** write to the editor.

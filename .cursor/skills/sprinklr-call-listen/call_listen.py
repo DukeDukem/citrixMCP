@@ -7,8 +7,9 @@ Usage:
   uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --stop
   uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --status
 
-Agent: after CHANNEL: CALL, run --arm (detached). Read .cursor/state/call_brief_{FALL}.txt
-as voice brief (or when user types BRIEF). STOP LISTEN / LF / DONE stops the watch.
+DISABLED BY DEFAULT (capture_path.json enabled=false) until a better STT model is ready.
+Reactivate: set enabled=true (+ teleprompter_enabled=true) in capture_path.json, then --arm.
+While disabled, CALL handling uses typed BRIEF only (no STT / teleprompter).
 """
 from __future__ import annotations
 
@@ -31,9 +32,12 @@ _CHUNKS = _STATE / "call_audio_chunks"
 _LOG = _STATE / "call_listen.log"
 _META = _STATE / "call_listen.json"
 _STOP = _STATE / "call_listen_stop"
+_PRIME = _STATE / "call_listen_prime"
 _CAPTURE_PATH = _SKILL / "capture_path.json"
 _TP_LATEST = _STATE / "call_teleprompter_latest.txt"
 _TP_UI_META = _STATE / "call_teleprompter_ui.json"
+_LIVE_DIR = _STATE  # call_live_{FALL}.txt written by TeleprompterDisplay
+
 
 # Inject: hook PCs, tap remote audio via AudioContext → Int16 PCM chunks (no webm/ffmpeg).
 _INJECT_CAPTURE_JS = """
@@ -105,7 +109,7 @@ _INJECT_CAPTURE_JS = """
       let pcmBuf = [];
       let samplesAccum = 0;
       const targetRate = 16000;
-      const flushEverySec = 2.5;
+      const flushEverySec = 1.0;
       proc.onaudioprocess = (e) => {
         try {
           const input = e.inputBuffer.getChannelData(0);
@@ -218,10 +222,34 @@ def _load_capture_config() -> dict[str, Any]:
         except Exception:
             pass
     return {
+        "enabled": False,
         "capture_path": "webrtc_hook",
         "fallback": "windows_loopback",
         "stt_language": "de",
     }
+
+
+def _feature_enabled(cfg: dict[str, Any] | None = None) -> bool:
+    """Master switch: capture_path.json → enabled (default False while parked)."""
+    c = cfg if cfg is not None else _load_capture_config()
+    return bool(c.get("enabled", False))
+
+
+def _refuse_if_disabled(*, force: bool = False) -> int | None:
+    """Return exit code if listen/teleprompter must not start; else None."""
+    if force or _feature_enabled():
+        return None
+    print("CALL_LISTEN_DISABLED")
+    print(
+        "Call speech detection + teleprompter are parked "
+        "(capture_path.json enabled=false)."
+    )
+    print(
+        "Reactivate later: set enabled=true and teleprompter_enabled=true, "
+        "then run call_listen.py --arm."
+    )
+    print("CALL cases: use typed BRIEF only until then.")
+    return 2
 
 
 def _brief_path(fall: str) -> Path:
@@ -262,7 +290,7 @@ def _pcm_b64_to_wav(b64: str, sample_rate: int = 16000) -> Path:
     return wav_path
 
 
-def _transcribe_chunk(ch: dict, language: str = "de") -> Optional[str]:
+def _transcribe_chunk(ch: dict, language: str = "de", cfg: dict | None = None) -> Optional[str]:
     sys.path.insert(0, str(_SKILL))
     from stt_backend import backend_name, transcribe_wav, webm_to_wav_ffmpeg
 
@@ -272,7 +300,7 @@ def _transcribe_chunk(ch: dict, language: str = "de") -> Optional[str]:
     fmt = (ch.get("format") or "").lower()
     if fmt == "pcm_s16le" or ch.get("sampleRate"):
         wav = _pcm_b64_to_wav(b64, int(ch.get("sampleRate") or 16000))
-        return transcribe_wav(wav, language=language)
+        return transcribe_wav(wav, language=language, cfg=cfg)
 
     # Legacy webm path
     _CHUNKS.mkdir(parents=True, exist_ok=True)
@@ -280,61 +308,140 @@ def _transcribe_chunk(ch: dict, language: str = "de") -> Optional[str]:
     webm.write_bytes(base64.b64decode(b64))
     wav = _CHUNKS / (webm.stem + ".wav")
     if webm_to_wav_ffmpeg(webm, wav):
-        return transcribe_wav(wav, language=language)
-    return transcribe_wav(webm, language=language)  # may fail without av
+        return transcribe_wav(wav, language=language, cfg=cfg)
+    return transcribe_wav(webm, language=language, cfg=cfg)  # may fail without av
 
 
-def _try_loopback_chunk(seconds: float = 3.0) -> Optional[Path]:
-    """Optional WASAPI loopback via sounddevice; returns wav path or None."""
+def _try_loopback_chunk(
+    seconds: float = 2.0,
+    min_peak: float = 0.0005,
+    preferred_device: str | None = None,
+) -> Optional[Path]:
+    """
+    Capture what speakers play (customer audio) via soundcard loopback.
+
+    Tries preferred device first, then all speaker loopbacks; keeps the loudest clip.
+    Returns wav path, or None if below volume threshold.
+    """
     try:
         import numpy as np  # type: ignore
-        import sounddevice as sd  # type: ignore
+        import soundcard as sc  # type: ignore
     except ImportError:
+        _log("loopback: install soundcard — uv pip install soundcard")
         return None
 
     _CHUNKS.mkdir(parents=True, exist_ok=True)
     fs = 16000
+    frames = max(1, int(seconds * fs))
+
+    def _record_one(mic) -> tuple[Optional[Any], float, str]:
+        try:
+            data = mic.record(numframes=frames, samplerate=fs)
+            pcm = np.asarray(data, dtype=np.float32)
+            if pcm.ndim > 1:
+                pcm = pcm.mean(axis=1)
+            pcm = np.clip(pcm.flatten(), -1.0, 1.0)
+            peak = float(np.max(np.abs(pcm))) if pcm.size else 0.0
+            return pcm, peak, getattr(mic, "name", "?")
+        except Exception as e:
+            return None, 0.0, f"fail:{e}"
+
     try:
-        # loopback device: hostapi WASAPI often exposed as specialized devices
-        devices = sd.query_devices()
-        loop_idx = None
-        for i, d in enumerate(devices):
-            name = (d.get("name") or "").lower()
-            if "loopback" in name or "stereo mix" in name or "what u hear" in name:
-                loop_idx = i
-                break
-        if loop_idx is None:
-            # Try Wasapi loopback default
+        speakers = list(sc.all_speakers())
+
+        def _rank(s) -> tuple:
+            nl = (s.name or "").lower()
+            prefer_l = (preferred_device or "").lower()
+            if prefer_l and prefer_l in nl:
+                return (0, nl)
+            if "hyperx" in nl or "stinger" in nl or "headset" in nl:
+                return (1, nl)
+            return (2, nl)
+
+        uniq = sorted(speakers, key=_rank)
+        if not uniq:
+            uniq = [sc.default_speaker()]
+
+        best_pcm = None
+        best_peak = -1.0
+        best_name = ""
+        for s in uniq:
             try:
-                loop_idx = sd.default.device[0]
+                mic = sc.get_microphone(id=s.name, include_loopback=True)
             except Exception:
-                return None
-        recording = sd.rec(
-            int(seconds * fs),
-            samplerate=fs,
-            channels=1,
-            dtype="float32",
-            device=loop_idx,
-        )
-        sd.wait()
-        pcm = np.clip(recording.flatten(), -1, 1)
+                continue
+            pcm, peak, name = _record_one(mic)
+            if pcm is None:
+                continue
+            if peak > best_peak:
+                best_peak = peak
+                best_pcm = pcm
+                best_name = name
+            # Fast path: preferred/headset already loud enough — skip other devices
+            if best_peak >= float(min_peak) and (
+                "hyperx" in (best_name or "").lower()
+                or "stinger" in (best_name or "").lower()
+                or (preferred_device and preferred_device.lower() in (best_name or "").lower())
+            ):
+                break
+
+        if best_pcm is None:
+            _log("loopback: no speaker device recorded")
+            return None
+
+        if best_peak < float(min_peak):
+            # Throttle: full multi-device dump at most every ~8s
+            now = time.time()
+            last = getattr(_try_loopback_chunk, "_last_silent_log", 0.0)
+            if now - last >= 8.0:
+                _try_loopback_chunk._last_silent_log = now  # type: ignore[attr-defined]
+                peaks = []
+                for s in uniq:
+                    try:
+                        mic = sc.get_microphone(id=s.name, include_loopback=True)
+                        _, p, n = _record_one(mic)
+                        peaks.append(f"{n}={p:.5f}")
+                    except Exception as e:
+                        peaks.append(f"{s.name}=err:{e}")
+                _log(
+                    "loopback SILENT on all speakers (skip STT) — "
+                    "Sprinklr VOIP must play through Windows Speakers "
+                    f"(prefer HyperX). peaks: {'; '.join(peaks)}"
+                )
+            return None
+
         wav_path = _CHUNKS / f"loop_{int(time.time() * 1000)}.wav"
         with wave.open(str(wav_path), "wb") as w:
             w.setnchannels(1)
             w.setsampwidth(2)
             w.setframerate(fs)
-            w.writeframes((pcm * 32767).astype("int16").tobytes())
+            w.writeframes((best_pcm * 32767).astype("int16").tobytes())
+        _log(f"loopback ok peak={best_peak:.5f} device={best_name}")
         return wav_path
     except Exception as e:
         _log(f"loopback capture failed: {e}")
         return None
 
 
+def _set_capture_path(path_mode: str) -> None:
+    """Persist capture path override (e.g. auto-fallback to loopback)."""
+    cfg = _load_capture_config()
+    cfg["capture_path"] = path_mode
+    cfg["notes"] = (
+        cfg.get("notes") or ""
+    ) + f" | auto-set capture_path={path_mode} at {datetime.now().isoformat()}"
+    try:
+        _CAPTURE_PATH.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception as e:
+        _log(f"could not persist capture_path: {e}")
+
+
+
 def _teleprompter_paths(fall: str) -> Path:
     return _STATE / f"call_teleprompter_{fall}.txt"
 
 
-def _write_teleprompter(fall: str, customer: str, talk: str, backend: str) -> None:
+def _write_teleprompter(fall: str, customer: str, talk: str, backend: str, display=None) -> None:
     _STATE.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%H:%M:%S")
     block = (
@@ -344,15 +451,19 @@ def _write_teleprompter(fall: str, customer: str, talk: str, backend: str) -> No
         f"[{stamp}] Customer said:\n{customer.strip()}\n"
         f"{'=' * 40}\n"
     )
-    latest = (
-        f"[{stamp}] SAY THIS\n\n"
-        f"{talk.strip()}\n\n"
-        f"— (customer) {customer.strip()[:240]}{'…' if len(customer.strip()) > 240 else ''}\n"
-    )
     path = _teleprompter_paths(fall)
     with path.open("a", encoding="utf-8") as f:
         f.write(block)
-    _TP_LATEST.write_text(latest, encoding="utf-8")
+    if display is not None:
+        display.fall = fall
+        display.set_say_this(talk, customer, backend)
+    else:
+        latest = (
+            f"[{stamp}] SAY THIS\n\n"
+            f"{talk.strip()}\n\n"
+            f"— (customer) {customer.strip()[:240]}{'…' if len(customer.strip()) > 240 else ''}\n"
+        )
+        _TP_LATEST.write_text(latest, encoding="utf-8")
     print(f"TELEPROMPTER_UPDATE fall={fall} backend={backend}", flush=True)
     _log(f"TELEPROMPTER ({backend}): {talk[:100]}…")
 
@@ -396,11 +507,11 @@ class UtteranceBuffer:
         return text
 
 
-def _fire_teleprompter(fall: str, customer: str, cfg: dict) -> None:
+def _fire_teleprompter(fall: str, customer: str, cfg: dict, display=None) -> None:
     from teleprompter import generate_talk_track
 
     talk, backend = generate_talk_track(customer, capture_cfg=cfg)
-    _write_teleprompter(fall, customer, talk, backend)
+    _write_teleprompter(fall, customer, talk, backend, display=display)
 
 
 def _spawn_teleprompter_ui() -> None:
@@ -425,8 +536,108 @@ def _spawn_teleprompter_ui() -> None:
         print(f"[WARN] teleprompter UI: {e}", flush=True)
 
 
-def _spawn_detached() -> int:
+def _write_primed_teleprompter(fall: str, reason: str, display=None) -> None:
+    """Show READY so the user greets only after CALL prime."""
+    if display is not None:
+        display.reset(fall)
+        display.set_status(
+            f"PRIMED ({reason}) — LIVE lines appear as customer speaks (proves STT pickup)"
+        )
+    else:
+        text = (
+            f"LIVE CUSTOMER (STT) — Fall #{fall}\n"
+            f"PRIMED ({reason}) — waiting for customer audio…\n"
+            f"{'─' * 42}\n"
+            f"(no customer speech transcribed yet)\n\n"
+            f"{'═' * 42}\n"
+            f"SAY THIS — read to customer\n"
+            f"{'─' * 42}\n"
+            f"Hold greeting until PRIMED. Then greet / unhold.\n"
+            f"If LIVE stays empty during talk → audio not reaching STT.\n"
+        )
+        try:
+            _TP_LATEST.write_text(text, encoding="utf-8")
+        except Exception as e:
+            _log(f"prime teleprompter write: {e}")
+    print(f"TELEPROMPTER_PRIMED fall={fall} reason={reason}", flush=True)
+
+
+def _consume_prime_flag() -> bool:
+    if not _PRIME.exists():
+        return False
+    try:
+        _PRIME.unlink()
+        return True
+    except Exception:
+        return True
+
+
+def _prime_gate(gate, fall: str, reason: str, display=None) -> bool:
+    """Open customer phase; return True if newly opened."""
+    evt = gate.open_call_case(reason=reason)
+    if not evt:
+        return False
+    _log(evt)
+    print(evt, flush=True)
+    _write_meta(
+        {
+            "fall": fall,
+            "gate_open": True,
+            "gate_reason": reason,
+            "session_keepalive": True,
+        }
+    )
+    _write_primed_teleprompter(fall, reason, display=display)
+    return True
+
+
+def cmd_prime() -> int:
+    """Agent: CHANNEL: CALL detected → prime customer STT / teleprompter."""
     _STATE.mkdir(parents=True, exist_ok=True)
+    _PRIME.write_text(
+        json.dumps(
+            {
+                "at": datetime.now(timezone.utc).isoformat(),
+                "reason": "agent_channel_call",
+            }
+        ),
+        encoding="utf-8",
+    )
+    # Also update UI immediately so user can greet without waiting for poll
+    fall = "unknown"
+    if _META.exists():
+        try:
+            fall = str(json.loads(_META.read_text(encoding="utf-8")).get("fall") or "unknown")
+        except Exception:
+            pass
+    _write_primed_teleprompter(fall, "agent_channel_call")
+    print("CALL_LISTEN_PRIME_REQUESTED")
+    print("TELEPROMPTER PRIMED — hold greeting until then, then greet")
+    return 0
+
+
+def _spawn_detached(*, force: bool = False) -> int:
+    """Idempotent arm: keep one listen + teleprompter for the whole session."""
+    refused = _refuse_if_disabled(force=force)
+    if refused is not None:
+        return refused
+    _STATE.mkdir(parents=True, exist_ok=True)
+
+    live_pid = _living_meta_pid(_META)
+    if live_pid:
+        print("MODE: --listen-call (DETACHED)")
+        print("CALL_LISTEN_ALREADY_ARMED")
+        print(f"CALL_LISTEN_DETACHED pid={live_pid}")
+        print(f"CALL_LISTEN_LOG {_LOG}")
+        print("READY_FOR_CALL_AUDIO — transcript + live teleprompter (session keep-alive)", flush=True)
+        print(f"TELEPROMPTER_FILE {_TP_LATEST}", flush=True)
+        tp_pid = _living_meta_pid(_TP_UI_META)
+        if tp_pid:
+            print(f"TELEPROMPTER_UI_PID {tp_pid} (already running)", flush=True)
+        else:
+            _spawn_teleprompter_ui()
+        return 0
+
     _LOG.write_text("", encoding="utf-8")
     if _STOP.exists():
         try:
@@ -450,7 +661,7 @@ def _spawn_detached() -> int:
         creationflags=creationflags,
         close_fds=False if sys.platform == "win32" else True,
     )
-    _write_meta({"pid": proc.pid, "detached": True})
+    _write_meta({"pid": proc.pid, "detached": True, "session_keepalive": True})
     print("MODE: --listen-call (DETACHED)")
     print("CALL_LISTEN_ARMED")
     print(f"CALL_LISTEN_DETACHED pid={proc.pid}")
@@ -461,14 +672,42 @@ def _spawn_detached() -> int:
     return 0
 
 
-def _should_stop(page, markers: dict) -> bool:
-    if _STOP.exists():
+def _pid_alive(pid: int) -> bool:
+    if not pid or pid <= 0:
+        return False
+    if sys.platform == "win32":
+        try:
+            out = subprocess.run(
+                ["tasklist", "/FI", f"PID eq {pid}"],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+            )
+            return str(pid) in (out.stdout or "")
+        except Exception:
+            return False
+    try:
+        os.kill(pid, 0)
         return True
-    # Stop when call clearly ended and no longer in conversation
-    if markers.get("anrufBeendet") and not markers.get("imGespraech"):
-        # disposition may still be open — keep listening while disposition visible? Plan: stop on Anruf beendet
-        return True
-    return False
+    except OSError:
+        return False
+
+
+def _living_meta_pid(meta_path: Path) -> int:
+    if not meta_path.exists():
+        return 0
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        pid = int(meta.get("pid") or 0)
+        return pid if _pid_alive(pid) else 0
+    except Exception:
+        return 0
+
+
+def _should_stop(_page, _markers: dict) -> bool:
+    """Session keep-alive: only the stop file ends the listen process."""
+    return _STOP.exists()
 
 
 def run_foreground() -> int:
@@ -496,24 +735,59 @@ def run_foreground() -> int:
             "uv pip install vosk"
         )
     else:
-        _log(f"STT backend: {stt_name}")
+        _log(
+            f"STT backend: {stt_name} language={language} "
+            f"(German lock; dialect/accent/broken DE expected)"
+        )
+        try:
+            from faster_whisper import WhisperModel
+            from stt_backend import resolve_whisper_model_id, transcribe_wav as _tw
+
+            mid = resolve_whisper_model_id(cfg)
+            _log(f"STT acoustic model: {mid}")
+            device = str(cfg.get("stt_device") or "cpu")
+            ctype = str(cfg.get("stt_compute_type") or "int8")
+            _log("STT: preloading acoustic model (may take ~1 min on CPU)…")
+            model = WhisperModel(mid, device=device, compute_type=ctype)
+            cache_key = f"_wmodel_{mid}_{device}_{ctype}"
+            setattr(_tw, cache_key, model)
+            _log("STT: preload OK")
+        except Exception as e:
+            _log(f"STT model resolve/preload warn: {e}")
 
     from greeting_gate import CustomerPhaseGate
+    from teleprompter_display import TeleprompterDisplay
 
     gate = CustomerPhaseGate(cfg)
+    trigger = getattr(gate, "trigger", "call_case")
     _log(
-        "Post-greeting gate ON — brief keeps customer speech after "
-        "'Willkommen bei o2, Lukas ist mein Name…' (or gate timeout)."
-        if gate.enabled
-        else "Post-greeting gate OFF — keeping all STT."
+        f"Gate trigger={trigger} — "
+        + (
+            "opens on CHANNEL: CALL / call UI / --prime (not spoken greeting)."
+            if trigger == "call_case"
+            else (
+                "opens after spoken o2 greeting (or timeout)."
+                if trigger == "greeting"
+                else "always open."
+            )
+        )
     )
     silence_s = float(cfg.get("utterance_silence_s", 1.4))
     min_utt = int(cfg.get("utterance_min_chars", 18))
+    loopback_min_peak = float(cfg.get("loopback_min_peak", 0.0005))
+    loopback_chunk_s = float(cfg.get("loopback_chunk_s", 2.0))
+    loopback_device = (cfg.get("loopback_device") or "").strip() or None
     tp_enabled = bool(cfg.get("teleprompter_enabled", True))
     utt = UtteranceBuffer(silence_s=silence_s, min_chars=min_utt)
+    display = TeleprompterDisplay(_TP_LATEST, _STATE)
+    display.set_status("Session listen armed — waiting for CHANNEL: CALL")
     _log(
         f"Teleprompter {'ON' if tp_enabled else 'OFF'} "
-        f"(silence={silence_s}s, min_chars={min_utt})"
+        f"(silence={silence_s}s, min_chars={min_utt}, live_stt=ON)"
+    )
+    _log(
+        f"Volume gate: loopback_min_peak={loopback_min_peak} "
+        f"chunk={loopback_chunk_s}s (below = skip STT)"
     )
 
     _STATE.mkdir(parents=True, exist_ok=True)
@@ -531,6 +805,9 @@ def run_foreground() -> int:
 
     fall = "unknown"
     stt_missing_noted = False
+    ended_reset_done = False
+    last_status_log = 0.0
+    no_audio_since = None
     try:
         while not _STOP.exists():
             page = find_sprinklr_page(browser)
@@ -545,19 +822,55 @@ def run_foreground() -> int:
                 fall = fid
                 gate = CustomerPhaseGate(cfg)
                 utt = UtteranceBuffer(silence_s=silence_s, min_chars=min_utt)
+                display.reset(fall)
+                ended_reset_done = False
+                no_audio_since = None
                 _write_meta({"fall": fall, "capture_path": path_mode, "gate_open": gate.open})
-                _log(f"New Fall #{fall} — greeting gate + utterance buffer reset")
+                _log(f"New Fall #{fall} — gate + utterance buffer reset")
             elif fid:
                 fall = fid
+                display.fall = fall
                 _write_meta({"fall": fall, "capture_path": path_mode, "gate_open": gate.open})
 
+            # Agent CHANNEL: CALL → --prime flag
+            if _consume_prime_flag():
+                _prime_gate(gate, fall, "agent_channel_call", display=display)
+
             if not is_call_channel(markers):
-                _log("No CALL markers yet — waiting (EMAIL cases ignored)…")
+                _log("No CALL markers — waiting (EMAIL OK; session keep-alive)…")
                 time.sleep(2)
                 continue
 
+            # CALL UI detected → prime customer STT / teleprompter (no spoken greeting needed)
+            if not gate.open:
+                reason = "im_gespraech" if markers.get("imGespraech") else "call_ui"
+                _prime_gate(gate, fall, reason, display=display)
+
+            if markers.get("imGespraech"):
+                ended_reset_done = False
+
+            # Call ended → reset gate for next call; do NOT exit (always-on session)
+            if markers.get("anrufBeendet") and not markers.get("imGespraech"):
+                if not ended_reset_done:
+                    gate = CustomerPhaseGate(cfg)
+                    utt = UtteranceBuffer(silence_s=silence_s, min_chars=min_utt)
+                    ended_reset_done = True
+                    no_audio_since = None
+                    display.set_status("Anruf beendet — gate reset; waiting for next CALL")
+                    _log("Anruf beendet — gate reset; listen stays armed")
+                    _write_meta(
+                        {
+                            "fall": fall,
+                            "capture_path": path_mode,
+                            "gate_open": False,
+                            "session_keepalive": True,
+                        }
+                    )
+                time.sleep(1.0)
+                continue
+
             if _should_stop(page, markers):
-                _log("Stop condition (Anruf beendet or stop file)")
+                _log("Stop condition (stop file)")
                 break
 
             # Inject / poll WebRTC path
@@ -567,21 +880,62 @@ def run_foreground() -> int:
                     polled = page.evaluate(_POLL_CHUNKS_JS) or {}
                     chunks = polled.get("chunks") or []
                     status = polled.get("status") or {}
-                    if status.get("recording"):
-                        _log(f"Recording… tracks={status.get('tracks')} fall={fall}")
+                    tracks = int(status.get("tracks") or 0)
+                    recording = bool(status.get("recording"))
+                    now = time.time()
+                    if recording and tracks > 0:
+                        no_audio_since = None
+                        if now - last_status_log >= 3.0:
+                            _log(f"Recording… tracks={tracks} fall={fall} chunks={len(chunks)}")
+                            last_status_log = now
+                        display.set_status(
+                            f"recording=yes tracks={tracks} chunks={len(chunks)} — LIVE updating…"
+                        )
+                    else:
+                        if no_audio_since is None:
+                            no_audio_since = now
+                        wait_s = int(now - no_audio_since)
+                        if now - last_status_log >= 3.0:
+                            _log(
+                                f"No remote audio yet fall={fall} "
+                                f"recording={recording} tracks={tracks} waited={wait_s}s"
+                            )
+                            last_status_log = now
+                        display.set_status(
+                            f"recording={'yes' if recording else 'no'} tracks={tracks} "
+                            f"— NO customer audio for {wait_s}s (WebRTC empty?)"
+                        )
+                        # Sprinklr often uses native VOIP (0 RTC tracks) — fall back to headset loopback
+                        if wait_s >= 8:
+                            _log(
+                                "AUTO-FALLBACK capture_path=windows_loopback "
+                                "(WebRTC tracks=0 — VOIP not in page)"
+                            )
+                            _set_capture_path("windows_loopback")
+                            path_mode = "windows_loopback"
+                            no_audio_since = None
+                            display.set_status(
+                                "FALLBACK: HyperX speaker loopback — listening to what you hear…"
+                            )
+                            continue
                     for ch in chunks:
                         b64 = ch.get("b64")
                         if not b64:
                             continue
-                        # Persist raw chunk meta
                         try:
                             raw_path = _CHUNKS / f"{fall}_{ch.get('at', int(time.time()*1000))}.b64.txt"
-                            raw_path.write_text(b64[:80] + f"... len={len(b64)} fmt={ch.get('format')}", encoding="utf-8")
+                            raw_path.write_text(
+                                b64[:80] + f"... len={len(b64)} fmt={ch.get('format')}",
+                                encoding="utf-8",
+                            )
                         except Exception:
                             pass
                         if whisper_ok:
-                            text = _transcribe_chunk(ch, language=language)
+                            text = _transcribe_chunk(ch, language=language, cfg=cfg)
                             if text:
+                                # Always show raw STT in LIVE pane (parallel to speech)
+                                if tp_enabled:
+                                    display.append_live(text, tag="STT")
                                 keep, evt = gate.filter(text)
                                 if evt:
                                     _log(evt)
@@ -601,28 +955,41 @@ def run_foreground() -> int:
                                     keep2, skip_evt = filter_customer_speech(keep, cfg)
                                     if skip_evt:
                                         _log(skip_evt)
+                                        if tp_enabled:
+                                            display.append_live(keep, tag="filtered")
                                     keep = keep2
                                 if keep:
                                     _append_brief(fall, keep, tag="[Kunde]")
                                     _log(f"STT[Kunde]: {keep[:120]}{'…' if len(keep) > 120 else ''}")
                                     print(f"CALL_BRIEF_UPDATE fall={fall}", flush=True)
                                     if tp_enabled and gate.open:
+                                        display.append_live(keep, tag="Kunde")
                                         utt.push(keep)
                         elif not stt_missing_noted:
                             _append_brief(
                                 fall,
                                 "[STT unavailable — install vosk or faster-whisper; audio capture still armed]",
                             )
+                            display.set_status("STT unavailable — install vosk or faster-whisper")
                             stt_missing_noted = True
                 except Exception as e:
                     _log(f"webrtc poll error: {e}")
+                    display.set_status(f"webrtc poll error: {e}")
 
-            # Loopback fallback mode or webrtc producing nothing for a while
+            # Loopback: capture headset output (customer voice you hear)
             if path_mode == "windows_loopback":
-                wav = _try_loopback_chunk(3.0)
+                wav = _try_loopback_chunk(
+                    loopback_chunk_s,
+                    min_peak=loopback_min_peak,
+                    preferred_device=loopback_device,
+                )
                 if wav and whisper_ok:
-                    text = transcribe_wav(wav, language=language)
+                    text = transcribe_wav(wav, language=language, cfg=cfg)
                     if text:
+                        no_audio_since = None
+                        display.set_status("loopback HyperX — LIVE STT updating…")
+                        if tp_enabled:
+                            display.append_live(text, tag="STT")
                         keep, evt = gate.filter(text)
                         if evt:
                             _log(evt)
@@ -634,19 +1001,37 @@ def run_foreground() -> int:
                             keep2, skip_evt = filter_customer_speech(keep, cfg)
                             if skip_evt:
                                 _log(skip_evt)
+                                if tp_enabled:
+                                    display.append_live(keep, tag="filtered")
                             keep = keep2
                         if keep:
                             _append_brief(fall, keep, tag="[Kunde]")
                             _log(f"STT(loop)[Kunde]: {keep[:120]}")
                             print(f"CALL_BRIEF_UPDATE fall={fall}", flush=True)
                             if tp_enabled and gate.open:
+                                display.append_live(keep, tag="Kunde")
                                 utt.push(keep)
+                    else:
+                        display.set_status("loopback active — waiting for speech in headset…")
+                elif not wav:
+                    display.set_status(
+                        "SILENT loopback (HyperX+ASUS peak=0) — "
+                        "play Sprinklr on HyperX Speakers, unmute, disable exclusive mode"
+                    )
+                # Fire SAY THIS on pause (loopback path skips the shared sleep below)
+                if tp_enabled and gate.open and utt.ready_to_fire():
+                    customer_utt = utt.consume()
+                    try:
+                        _fire_teleprompter(fall, customer_utt, cfg, display=display)
+                    except Exception as e:
+                        _log(f"teleprompter error: {e}")
+                continue
 
             # Fire teleprompter ASAP after short customer pause
             if tp_enabled and gate.open and utt.ready_to_fire():
                 customer_utt = utt.consume()
                 try:
-                    _fire_teleprompter(fall, customer_utt, cfg)
+                    _fire_teleprompter(fall, customer_utt, cfg, display=display)
                 except Exception as e:
                     _log(f"teleprompter error: {e}")
 
@@ -717,19 +1102,37 @@ def main() -> int:
     ap.add_argument("--foreground", action="store_true", help="Run listen loop in this process")
     ap.add_argument("--stop", action="store_true", help="Stop listen watch")
     ap.add_argument("--status", action="store_true", help="Show listen status / brief files")
+    ap.add_argument(
+        "--prime",
+        action="store_true",
+        help="CHANNEL: CALL — open customer STT / teleprompter (no spoken greeting needed)",
+    )
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="Bypass enabled=false (debug only; do not use from agent while parked)",
+    )
     args = ap.parse_args()
 
     if args.stop:
         return cmd_stop()
     if args.status:
         return cmd_status()
+    if args.prime:
+        refused = _refuse_if_disabled(force=args.force)
+        if refused is not None:
+            return refused
+        return cmd_prime()
     if args.arm:
-        return _spawn_detached()
+        return _spawn_detached(force=args.force)
     if args.foreground:
+        refused = _refuse_if_disabled(force=args.force)
+        if refused is not None:
+            return refused
         return run_foreground()
 
     # default: arm detached
-    return _spawn_detached()
+    return _spawn_detached(force=args.force)
 
 
 if __name__ == "__main__":

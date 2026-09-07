@@ -49,11 +49,11 @@ If `--await-arm` aborted → **re-run `--await-arm`**. If log has `ERROR: NEXT C
 
 ## Workday flow
 
-1. **login** → open first case → **RE** (`--once`) → **CHANNEL: CALL|EMAIL**
-2. **EMAIL** → 7-step → `--play-ready` → **PR LF** / **LF** / **LF TR**
-3. **CALL** → wait for voice brief → handle pack → **LF** `--channel voice` (ticketstatus 3)
-4. Close-out → arm + await → classify next case again
-5. **DONE** at end of day
+1. **login** → open first case → **RE** (`--once`) → **CHANNEL: CALL|EMAIL** (do **not** arm call_listen while STT parked)
+2. **EMAIL** → 7-step → `--play-ready` → **PR LF** / **LF** / **LF TR** (listen stays up)
+3. **CALL** → wait for voice brief / teleprompter (listen already on) → handle pack → **LF** `--channel voice` (ticketstatus 3) → **`--arm-next`** only (do **not** stop listen)
+4. Close-out → case arm + await → classify next case again
+5. **DONE** at end of day (stops call listen)
 
 ## Hard constraints
 

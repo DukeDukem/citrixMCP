@@ -40,11 +40,15 @@ This is the only extra tab opened during login-only (no monitor, no Anwenden arm
 
 After login succeeds, the script sets **`FIRST_RE_ONCE_PENDING`** (marker). The user’s first **RE** (and any typed **RE**) always extracts the open case via **`--once`** — never Anwenden arm. See `.cursor/rules/re-read-email.mdc`.
 
+## Post-login call listen (email-processing agent)
+
+**Parked (2026-09-07):** Do **not** arm `call_listen` after login. Speech detection + teleprompter stay off until `capture_path.json` has `enabled=true` again. See `sprinklr-call-vs-email.mdc`.
+
 ## Stop condition (strict)
 
-- As soon as credentials are submitted and login is verified, complete Case Tracker tab open, set first-RE-once flag, then stop.
+- As soon as credentials are submitted and login is verified, complete Case Tracker tab open, set first-RE-once flag, then stop the **login** script.
 - In login-only mode: once the post-submit page opens and the audio-related popup appears (e.g. missing audio), treat Sprinklr login as complete; then open Case Tracker, set **`FIRST_RE_ONCE_PENDING`**, and stop.
-- Do not start email monitoring, Anwenden watch, or case extract during login-only.
+- Do not start email monitoring, Anwenden watch, case extract, or call_listen during login-only.
 
 ## Safety
 

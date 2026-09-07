@@ -24,7 +24,7 @@ You are the Email Processing Agent. Follow EMAIL-PROCESSING-AGENT.md and these r
 MODEL: Cursor picker must stay Auto. Never switch models.
 
 COMMANDS:
-- login -> Sprinklr login-only + Case Tracker tab; sets FIRST_RE_ONCE_PENDING
+- login -> Sprinklr login-only + Case Tracker tab; sets FIRST_RE_ONCE_PENDING. Do NOT arm call_listen (STT/teleprompter parked).
 - RE -> run.py = ALWAYS --once (extract currently open case). First case of the day / fresh agent = typed RE push-start. NEVER arm Anwenden on typed RE.
 - PR LF (EMAIL) -> non-transfer: PR then LF, then IMMEDIATELY run.py --arm (Anwenden) + finishing quote + --await-arm. Never --arm-next / --arm-weiter / --arm-extern.
 - LF alone (EMAIL) -> log form, then IMMEDIATELY --arm (Anwenden) + finishing quote + --await-arm.
@@ -36,7 +36,7 @@ COMMANDS:
 - DONE / Done for today -> done_for_today.py; stop watches (including detached); pause until next login
 
 POST-LOGIN / FIRST CASE (push-start):
-- login once, open first case, type RE.
+- login once → open first case, type RE. Do NOT arm call_listen (STT/teleprompter parked until better model).
 - RE must extract currently open case (--once). Expect MODE: --once + CUSTOMER EMAIL + full 7-step.
 - Do NOT arm Anwenden and wait for Anwenden click on the first RE (or any typed RE).
 - After that close-out, automation takes over via --arm* + --await-arm.
@@ -69,20 +69,20 @@ DETACHED ARM (mandatory — fixes false "watch died"):
 
 CHANNEL DETECT (after every case open — RE --once OR after await-arm extract):
 - Look at visible Sprinklr overlay/timeline → print CHANNEL: CALL or CHANNEL: EMAIL (or UNKNOWN).
+- CALL LISTEN / TELEPROMPTER: PARKED (capture_path.json enabled=false). Do NOT run call_listen --arm or --prime. Expect CALL_LISTEN_DISABLED if tried.
 - EMAIL → full 7-step RE as usual → PR/LF/LF TR.
-- CALL → do NOT run email RE/PR. IMMEDIATELY: uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --arm (local STT + teleprompter UI). After my o2 greeting, customer pauses → SAY THIS appears in teleprompter window / call_teleprompter_latest.txt (I read those lines on the phone). BRIEF = optional full CALL pack. LF --channel voice → call_listen --stop → --arm-next.
+- CALL → do NOT run email RE/PR. Wait for typed BRIEF / paste of what the customer said → CALL handling pack. LF --channel voice → --arm-next only.
 
 CALL WAIT LINE (use when CHANNEL: CALL):
 CHANNEL: CALL
-Fall #…. Listening — transcript + live teleprompter.
-After your greeting, customer pauses update the on-top teleprompter (say those lines). Type BRIEF only for a full handling pack. STOP LISTEN to stop STT.
+Fall #…. Teleprompter/STT parked — greet normally.
+Type BRIEF (or paste what the customer said) for a full handling pack.
 
-CALL LISTEN + TELEPROMPTER:
-- Arm: call_listen.py --arm → CALL_LISTEN_ARMED + TELEPROMPTER_UI_PID
-- Brief file: .cursor/state/call_brief_{FALL}.txt ([Kunde] lines)
-- Teleprompter: .cursor/state/call_teleprompter_latest.txt (multi-turn; not one-shot)
-- Stop: call_listen.py --stop (also on LF / DONE)
-- Agent cannot hear audio in chat — STT + teleprompter files only
+CALL LISTEN + TELEPROMPTER (parked — do not use until reactivated):
+- Master switch: .cursor/skills/sprinklr-call-listen/capture_path.json → enabled=false, teleprompter_enabled=false
+- Reactivate later: set both true, then call_listen.py --arm (see skill SKILL.md)
+- While parked: typed BRIEF only; no STT / no SAY THIS window
+- done_for_today.py still safe to run (stops any leftover watch)
 
 LF TR QUEUE PATH (I click all four; script reacts ONLY to step 4):
 1/4 Transfer (GuidedAction)
@@ -101,7 +101,7 @@ CALL NEXT PATH (I click; script reacts ONLY to exact Next):
 - After Next: wait 4s -> next collapsed-case-item (skip closed Fall) -> extract -> CHANNEL detect
 
 SOUNDS (volume 0.75; do not change unless I ask):
-- After --arm / --arm-next / --arm-weiter / --arm-extern succeeds → Dexter (script plays; means click now)
+- After --arm / --arm-next / --arm-weiter / --arm-extern succeeds → Dexter ~2.5s once (script plays; means click now; 15s debounce vs hook)
 - After full 7-step RE (section 7) → MUST run: re_complete_sound.py --play-ready (book). Do not rely on hooks alone.
 - EXTRACT DONE (armed only, after CUSTOMER EMAIL) → Prowler
 - Finishing quotes still required: PR LF done / LF done / LF TR done for #FALL_ID
@@ -109,7 +109,7 @@ SOUNDS (volume 0.75; do not change unless I ask):
 
 OTHER:
 - Full 7-step RE form for EMAIL cases (sprinklr-read-answer-email SKILL).
-- CALL cases: start call_listen.py --arm → BRIEF / paste → handle pack (no PR unless I ask). LF: --channel voice, ticketstatus 3, then call_listen --stop + --arm-next.
+- CALL cases: typed BRIEF → handle pack (no PR unless I ask). LF: --channel voice, ticketstatus 3, then --arm-next only.
 - C-... in Kundennummer box is NOT Salcus -> leave empty -> ticketstatus 3.
 - No monitor_emails / get_new_emails fallback for RE modes.
 - No internal system names in customer replies.
@@ -179,6 +179,8 @@ Rules: `re-read-email.mdc`, `pr-paste-reply.mdc`, `lf-log-form.mdc`, `lf-tr-tran
 | Agent finishes **LF TR** (`LF TR done for #…`) | Dexter | `PR_LF_DONE_SOUND` |
 
 - Volume: **0.75** (`re_complete_sound_volume` / `re_ready_sound_volume` / `pr_lf_done_sound_volume`).
+- **Dexter length:** ~**2.5 s** hard Stop/Close (`hold_ms=2500` in `re_complete_sound.py`) — not the full ~11 s clip. Same cue for PR LF done, LF TR done, and `--arm*` click-ready. Prowler / book lengths unchanged.
+- **Dexter once per close-out:** shared **15 s** debounce (`dexter_debounce.json` in `play_pr_lf_done_sound`). Hook does **not** match `READY_FOR_YOUR_CLICK` / `PR_LF_DONE_SOUND` (arm script already plays). Avoids double Dexter from arm + finishing-quote hook.
 - Manual tests:  
   `…/re_complete_sound.py --play` (Prowler)  
   `…/re_complete_sound.py --play-ready` (book)  

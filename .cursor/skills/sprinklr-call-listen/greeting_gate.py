@@ -1,10 +1,12 @@
 """
-Post-greeting gate: keep customer speech after the agent o2 welcome line.
+Customer-phase gate for CALL listen / teleprompter.
 
-Typical agent open:
-  "Willkommen bei o2, Lukas ist mein Name, was kann ich für Sie tun?"
+Default trigger (gate_trigger=call_case): open when Sprinklr CALL UI is detected
+(or agent --prime). Do NOT wait for the spoken o2 greeting.
 
-Until that (or timeout), STT lines are discarded so the brief is the customer rant.
+Legacy (gate_trigger=greeting): open after hearing the agent welcome line (or timeout).
+
+Agent greeting / fillers are still stripped from STT so they do not fire SAY THIS.
 """
 from __future__ import annotations
 
@@ -17,7 +19,6 @@ from typing import Any, Optional
 def _norm(s: str) -> str:
     s = unicodedata.normalize("NFKC", s or "")
     s = s.lower()
-    # Fold common STT misspellings / missing umlauts
     repl = (
         ("ä", "ae"),
         ("ö", "oe"),
@@ -37,43 +38,68 @@ def _norm(s: str) -> str:
     return s
 
 
-# Fragments of the standard Lukas / o2 greeting (match ≥2 → gate opens)
 _DEFAULT_FRAGMENTS = (
     "willkommen bei o2",
     "willkommen beim o2",
     "lukas ist mein name",
     "mein name ist lukas",
+    "wie kann ich weiterhelfen",
+    "wie kann ich ihnen weiterhelfen",
     "was kann ich fur sie tun",
     "was kann ich fuer sie tun",
     "was kann ich tun",
 )
 
-# Strip leftover greeting from a mixed chunk after gate opens
 _GREETING_STRIP = re.compile(
     r"(?i)willkommen\s+bei(?:m)?\s+o2[^.]{0,80}?"
-    r"(?:lukas\s+ist\s+mein\s+name|mein\s+name\s+ist\s+lukas)?[^.]{0,40}?"
-    r"(?:was\s+kann\s+ich\s+f(?:u|ue)r\s+sie\s+tun)?[.?!]?\s*"
+    r"(?:lukas\s+ist\s+mein\s+name|mein\s+name\s+ist\s+lukas)?[^.]{0,60}?"
+    r"(?:wie\s+kann\s+ich\s+(?:ihnen\s+)?weiterhelfen|"
+    r"was\s+kann\s+ich\s+f(?:u|ue)r\s+sie\s+tun)?[.?!]?\s*"
 )
 
 
 class CustomerPhaseGate:
-    """Drop STT until agent greeting heard (or timeout), then keep customer text."""
+    """Control when STT counts as customer speech for brief + teleprompter."""
 
     def __init__(self, cfg: dict[str, Any] | None = None) -> None:
         cfg = cfg or {}
-        self.enabled = bool(cfg.get("post_greeting_only", True))
+        # Backward compat: post_greeting_only false → always open (trigger none)
+        if "gate_trigger" in cfg:
+            self.trigger = str(cfg.get("gate_trigger") or "call_case").lower()
+        elif cfg.get("post_greeting_only") is False:
+            self.trigger = "none"
+        else:
+            # New default: CALL case / UI primes the gate (not spoken greeting)
+            self.trigger = "call_case"
+
         self.timeout_s = float(cfg.get("gate_timeout_s", 25))
         self.min_chars = int(cfg.get("min_customer_chars", 8))
         self.match_min = int(cfg.get("greeting_match_min", 2))
         frags = cfg.get("agent_greeting_fragments") or list(_DEFAULT_FRAGMENTS)
         self.fragments = [_norm(f) for f in frags if f]
-        self.open = not self.enabled  # if disabled, always open
+        self.open = self.trigger in ("none", "off", "disabled")
         self.t0 = time.time()
         self._heard: set[str] = set()
-        self.opened_reason: Optional[str] = None
+        self.opened_reason: Optional[str] = "always" if self.open else None
+        # Legacy flag used by call_listen logs
+        self.enabled = self.trigger not in ("none", "off", "disabled")
+
+    def open_call_case(self, reason: str = "call_case") -> Optional[str]:
+        """Prime for customer STT when CHANNEL: CALL / live call UI is seen."""
+        if self.open:
+            return None
+        self.open = True
+        self.opened_reason = reason
+        return f"CUSTOMER_PHASE_OPEN reason={reason}"
+
+    def reset(self) -> None:
+        was_always = self.trigger in ("none", "off", "disabled")
+        self.open = was_always
+        self.t0 = time.time()
+        self._heard.clear()
+        self.opened_reason = "always" if was_always else None
 
     def _greeting_hit(self, normed: str) -> bool:
-        """True if *this* utterance looks like the agent greeting."""
         hits_now = 0
         for frag in self.fragments:
             if frag and frag in normed:
@@ -82,17 +108,14 @@ class CustomerPhaseGate:
         if hits_now >= self.match_min:
             return True
         if len(self._heard) >= self.match_min and hits_now >= 1:
-            # Partial re-hear of greeting while accumulating
             return True
-        # Strong single-line: willkommen + lukas (+ o2 or was kann ich)
         if "willkommen" in normed and "lukas" in normed and (
-            "was kann ich" in normed or "o2" in normed
+            "weiterhelfen" in normed or "was kann ich" in normed or "o2" in normed
         ):
             return True
         return False
 
     def _is_mostly_greeting(self, normed: str) -> bool:
-        """True if utterance is basically only the welcome line (not customer rant)."""
         if not normed:
             return True
         hits = sum(1 for frag in self.fragments if frag and frag in normed)
@@ -104,13 +127,13 @@ class CustomerPhaseGate:
 
     def _strip_greeting(self, text: str) -> str:
         t = _GREETING_STRIP.sub("", text).strip()
-        # Also cut everything up to end of "was kann ich … tun"
         n = _norm(t)
         if self._is_mostly_greeting(n):
             return ""
-        # If greeting + customer in one chunk, drop leading welcome clause
         m = re.search(
-            r"(?i)(?:willkommen|lukas\s+ist\s+mein\s+name|was\s+kann\s+ich\s+f(?:u|ue)r\s+sie\s+tun)[^.?!]*[.?!]\s*",
+            r"(?i)(?:willkommen|lukas\s+ist\s+mein\s+name|"
+            r"wie\s+kann\s+ich\s+(?:ihnen\s+)?weiterhelfen|"
+            r"was\s+kann\s+ich\s+f(?:u|ue)r\s+sie\s+tun)[^.?!]*[.?!]\s*",
             t,
         )
         if m and m.end() < len(t):
@@ -126,20 +149,27 @@ class CustomerPhaseGate:
             return None, None
 
         if not self.enabled:
-            return text, None
+            cleaned = self._strip_greeting(text)
+            if not cleaned or len(cleaned) < self.min_chars:
+                return None, None
+            if self._is_mostly_greeting(_norm(cleaned)):
+                return None, None
+            return cleaned, None
 
-        # Timeout: remote-only streams may never contain the agent mic
-        if not self.open and (time.time() - self.t0) >= self.timeout_s:
-            self.open = True
-            self.opened_reason = "timeout"
-            return (
-                text if len(text) >= self.min_chars else None,
-                "CUSTOMER_PHASE_OPEN reason=timeout (greeting not heard — likely remote-only audio)",
-            )
+        # call_case: stay closed until open_call_case() — discard STT meanwhile
+        if self.trigger == "call_case" and not self.open:
+            return None, f"GATE_SKIP (awaiting CALL prime): {text[:80]}"
 
-        normed = _norm(text)
-
-        if not self.open:
+        # greeting trigger: open on welcome line or timeout
+        if self.trigger == "greeting" and not self.open:
+            if (time.time() - self.t0) >= self.timeout_s:
+                self.open = True
+                self.opened_reason = "timeout"
+                return (
+                    text if len(text) >= self.min_chars else None,
+                    "CUSTOMER_PHASE_OPEN reason=timeout (greeting not heard — likely remote-only audio)",
+                )
+            normed = _norm(text)
             if self._greeting_hit(normed):
                 self.open = True
                 self.opened_reason = "greeting"
@@ -149,7 +179,7 @@ class CustomerPhaseGate:
                 return None, "CUSTOMER_PHASE_OPEN reason=greeting (waiting for customer speech)"
             return None, f"GATE_SKIP (pre-greeting): {text[:80]}"
 
-        # Customer phase — drop pure greeting echoes only
+        # Open phase — drop pure agent greeting echoes
         cleaned = self._strip_greeting(text)
         if not cleaned or len(cleaned) < self.min_chars:
             return None, None

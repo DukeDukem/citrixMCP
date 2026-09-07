@@ -184,7 +184,11 @@ Expect **`NEXT_RE_ARMED`** + **`ARM_WATCH_DETACHED`** + **`READY_FOR_YOUR_CLICK:
 
 User left-clicks exact **Next** (`screenButton`; ignore Back / Weiter / Weiterleiten). Then 4s → next case → CHANNEL detect.
 
+**Next arm:** DOM detection only (not coordinates); tray position irrelevant; close DevTools Inspect before click. Stale watch → kill arm + fresh `--arm-next` (not full DONE unless end of day). Still missed → `--once` on the new case.
+
 Do **not** use `--arm` (Anwenden) after CALL LF.
+
+**Call listen:** Parked (`capture_path.json` `enabled=false`). Do not arm/prime on LF. If a leftover watch is running, **DONE** / `call_listen.py --stop` still clears it.
 
 ### Finishing quote (mandatory after LF / PR LF)
 

@@ -19,7 +19,7 @@ In the instructions dashboard, do **not** run the stop script; tell the user to 
    ```powershell
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-email-automation/done_for_today.py
    ```
-   Expect **`DONE_FOR_TODAY_OK`**. The script stops Anwenden/Weiter/Extern watches (**including detached** `arm_watch` processes), clears `arm_watch.json` / `arm_watch.log`, and clears pending RE/Fall-watch flags.
+   Expect **`DONE_FOR_TODAY_OK`**. The script stops Anwenden/Weiter/Extern watches (**including detached** `arm_watch` processes), **stops any leftover `call_listen` + teleprompter** (feature is parked; stop remains safe), clears `arm_watch.json` / `arm_watch.log`, and clears pending RE/Fall-watch flags.
 
 2. If a tool/shell is still visibly running in this chat (e.g. `--await-arm` polling), **stop/cancel that tool invocation** as well (same intent as Ctrl+C).
 
