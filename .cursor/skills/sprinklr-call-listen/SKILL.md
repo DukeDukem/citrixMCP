@@ -57,8 +57,12 @@ uv pip install sounddevice numpy
 4. Manual paste still overrides
 5. On LF / `STOP LISTEN` / DONE: `call_listen.py --stop` (DONE also kills via done_for_today)
 
-## Privacy
+## Post-greeting capture (customer rant)
 
-- CALL markers only — not EMAIL
-- Local Whisper only (no cloud STT in v1)
-- Chunks/transcripts under `.cursor/state/` (gitignored)
+Calls typically start with your line:
+
+> Willkommen bei o2, Lukas ist mein Name, was kann ich für Sie tun?
+
+Listen **discards** STT until that greeting is recognized (or **25s** timeout if your mic is not in the captured stream). After that, lines are tagged `[Kunde]` in `call_brief_{FALL}.txt`.
+
+Config: `capture_path.json` → `post_greeting_only`, `agent_greeting_fragments`, `gate_timeout_s`.

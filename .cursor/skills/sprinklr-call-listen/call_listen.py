@@ -239,12 +239,13 @@ def _write_meta(extra: dict[str, Any] | None = None) -> None:
     _META.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
-def _append_brief(fall: str, text: str) -> None:
+def _append_brief(fall: str, text: str, tag: str = "") -> None:
     path = _brief_path(fall)
     path.parent.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%H:%M:%S")
+    prefix = f"{tag} " if tag else ""
     with path.open("a", encoding="utf-8") as f:
-        f.write(f"[{stamp}] {text.strip()}\n")
+        f.write(f"[{stamp}] {prefix}{text.strip()}\n")
 
 
 def _pcm_b64_to_wav(b64: str, sample_rate: int = 16000) -> Path:
@@ -398,6 +399,16 @@ def run_foreground() -> int:
     else:
         _log(f"STT backend: {stt_name}")
 
+    from greeting_gate import CustomerPhaseGate
+
+    gate = CustomerPhaseGate(cfg)
+    _log(
+        "Post-greeting gate ON — brief keeps customer speech after "
+        "'Willkommen bei o2, Lukas ist mein Name…' (or gate timeout)."
+        if gate.enabled
+        else "Post-greeting gate OFF — keeping all STT."
+    )
+
     _STATE.mkdir(parents=True, exist_ok=True)
     _CHUNKS.mkdir(parents=True, exist_ok=True)
     _write_meta({"foreground": True, "capture_path": path_mode})
@@ -423,9 +434,14 @@ def run_foreground() -> int:
 
             markers = call_markers(page)
             fid = extract_fall_id(page)
-            if fid:
+            if fid and fid != fall:
                 fall = fid
-                _write_meta({"fall": fall, "capture_path": path_mode})
+                gate = CustomerPhaseGate(cfg)  # new case → wait for greeting again
+                _write_meta({"fall": fall, "capture_path": path_mode, "gate_open": gate.open})
+                _log(f"New Fall #{fall} — greeting gate reset")
+            elif fid:
+                fall = fid
+                _write_meta({"fall": fall, "capture_path": path_mode, "gate_open": gate.open})
 
             if not is_call_channel(markers):
                 _log("No CALL markers yet — waiting (EMAIL cases ignored)…")
@@ -458,9 +474,23 @@ def run_foreground() -> int:
                         if whisper_ok:
                             text = _transcribe_chunk(ch, language=language)
                             if text:
-                                _append_brief(fall, text)
-                                _log(f"STT: {text[:120]}{'…' if len(text) > 120 else ''}")
-                                print(f"CALL_BRIEF_UPDATE fall={fall}", flush=True)
+                                keep, evt = gate.filter(text)
+                                if evt:
+                                    _log(evt)
+                                    if evt.startswith("CUSTOMER_PHASE_OPEN"):
+                                        print("CUSTOMER_PHASE_OPEN", flush=True)
+                                        _write_meta(
+                                            {
+                                                "fall": fall,
+                                                "capture_path": path_mode,
+                                                "gate_open": True,
+                                                "gate_reason": gate.opened_reason,
+                                            }
+                                        )
+                                if keep:
+                                    _append_brief(fall, keep, tag="[Kunde]")
+                                    _log(f"STT[Kunde]: {keep[:120]}{'…' if len(keep) > 120 else ''}")
+                                    print(f"CALL_BRIEF_UPDATE fall={fall}", flush=True)
                         elif not stt_missing_noted:
                             _append_brief(
                                 fall,
@@ -476,9 +506,15 @@ def run_foreground() -> int:
                 if wav and whisper_ok:
                     text = transcribe_wav(wav, language=language)
                     if text:
-                        _append_brief(fall, text)
-                        _log(f"STT(loop): {text[:120]}")
-                        print(f"CALL_BRIEF_UPDATE fall={fall}", flush=True)
+                        keep, evt = gate.filter(text)
+                        if evt:
+                            _log(evt)
+                            if evt.startswith("CUSTOMER_PHASE_OPEN"):
+                                print("CUSTOMER_PHASE_OPEN", flush=True)
+                        if keep:
+                            _append_brief(fall, keep, tag="[Kunde]")
+                            _log(f"STT(loop)[Kunde]: {keep[:120]}")
+                            print(f"CALL_BRIEF_UPDATE fall={fall}", flush=True)
 
             time.sleep(1.0)
 
