@@ -5,6 +5,7 @@ import json
 import logging
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -113,7 +114,7 @@ def play_mp3(
     label: str = "SOUND",
     hold_ms: int = 3500,
 ) -> bool:
-    """Non-blocking Windows MediaPlayer playback. Returns True if started."""
+    """Non-blocking Windows MediaPlayer playback. Hard-stops after hold_ms."""
     if sys.platform != "win32":
         logger.info("%s skipped (non-Windows)", label)
         return False
@@ -124,14 +125,19 @@ def play_mp3(
 
     uri = sound.resolve().as_uri()
     vol = max(0.0, min(1.0, float(volume)))
-    hold = max(500, int(hold_ms))
+    hold = max(200, int(hold_ms))
+    # Explicit Stop/Close — exiting the process alone does not reliably cut audio.
     ps = (
         "Add-Type -AssemblyName presentationCore; "
         f"$p = New-Object System.Windows.Media.MediaPlayer; "
         f"$p.Open([uri]'{uri}'); "
+        "Start-Sleep -Milliseconds 150; "
         f"$p.Volume = {vol:.4f}; "
         "$p.Play(); "
-        f"Start-Sleep -Milliseconds {hold}"
+        f"Start-Sleep -Milliseconds {hold}; "
+        "$p.Stop(); "
+        "$p.Close(); "
+        "exit 0"
     )
     try:
         creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -139,7 +145,7 @@ def play_mp3(
             ["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", ps],
             creationflags=creationflags,
         )
-        print(f"{label} volume={vol:.2f}")
+        print(f"{label} volume={vol:.2f} hold_ms={hold}")
         return True
     except Exception as e:
         logger.warning("Could not play %s: %s", label, e)
@@ -168,13 +174,34 @@ def play_re_ready_sound() -> bool:
 
 
 def play_pr_lf_done_sound() -> bool:
-    """Dexter cue when agent finishes PR LF or LF TR close-out."""
+    """Dexter cue: PR LF / LF TR done + --arm* click-ready (~2.5s hard Stop/Close).
+
+    Shared debounce so arm script + Cursor hook cannot double-play in one close-out.
+    """
+    debounce_path = _REPO_ROOT / ".cursor" / "state" / "dexter_debounce.json"
+    debounce_s = 15.0
+    try:
+        now = time.time()
+        if debounce_path.exists():
+            data = json.loads(debounce_path.read_text(encoding="utf-8"))
+            if now - float(data.get("at", 0)) < debounce_s:
+                print("PR_LF_DONE_SOUND skipped (debounce — already played this close-out)")
+                return False
+        debounce_path.parent.mkdir(parents=True, exist_ok=True)
+        debounce_path.write_text(
+            json.dumps({"at": now}, indent=2),
+            encoding="utf-8",
+        )
+    except Exception:
+        pass
+
     sound, volume = _load_pr_lf_done_config()
     if sound is None:
         logger.warning("Close-out done sound file not found")
         print("[WARN] Close-out done sound not found — skipping audio cue.")
         return False
-    return play_mp3(sound, volume, label="PR_LF_DONE_SOUND", hold_ms=4500)
+    # Truncate full ~11s clip; Stop/Close required (process exit alone does not cut audio).
+    return play_mp3(sound, volume, label="PR_LF_DONE_SOUND", hold_ms=2500)
 
 
 # Alias for transfer close-out (same Dexter file / volume)
@@ -209,9 +236,15 @@ if __name__ == "__main__":
         vol_override = _clamp_volume(args.volume) if args.volume is not None else None
 
         if args.play_pr_lf:
-            sound, volume = _load_pr_lf_done_config()
-            label, hold = "PR_LF_DONE_SOUND", 4500
-        elif args.play_ready:
+            if vol_override is not None:
+                sound, _vol = _load_pr_lf_done_config()
+                if sound is None:
+                    raise SystemExit(1)
+                raise SystemExit(
+                    0 if play_mp3(sound, vol_override, label="PR_LF_DONE_SOUND", hold_ms=2500) else 1
+                )
+            raise SystemExit(0 if play_pr_lf_done_sound() else 1)
+        if args.play_ready:
             sound, volume = _load_re_ready_config()
             label, hold = "RE_READY_SOUND", 5500
         else:

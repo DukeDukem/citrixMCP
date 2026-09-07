@@ -38,3 +38,4 @@ processed_case_ids.json
 .cursor/state/call_teleprompter_*.txt
 .cursor/state/call_teleprompter_latest.txt
 .cursor/state/call_teleprompter_ui.json
+.cursor/state/dexter_debounce.json

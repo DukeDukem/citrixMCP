@@ -44,12 +44,8 @@ _CLOSEOUT_DONE_PATTERNS = (
     re.compile(r"(?mi)\bLF\s+done\s+for\s+#?\d+"),
     re.compile(r"(?mi)^\s*#{0,3}\s*\*{0,2}\s*LF\s+done\s+for\s+#?\d+"),
 )
-# Also match arm-ready lines from run.py (script already plays Dexter; hook is backup)
-_ARMED_READY_PATTERNS = (
-    re.compile(r"(?mi)READY_FOR_YOUR_CLICK"),
-    re.compile(r"(?mi)PR_LF_DONE_SOUND"),
-    re.compile(r"(?mi)>>> CLICK .+ NOW"),
-)
+# Do NOT match READY_FOR_YOUR_CLICK / PR_LF_DONE_SOUND — run.py --arm* already plays Dexter.
+# Matching those caused a second Dexter when the finishing quote also fired this hook.
 
 
 def _log(msg: str) -> None:
@@ -175,7 +171,7 @@ def main() -> int:
         f"keys={list(payload.keys())[:12]}"
     )
 
-    if _any(text, _CLOSEOUT_DONE_PATTERNS) or _any(text, _ARMED_READY_PATTERNS):
+    if _any(text, _CLOSEOUT_DONE_PATTERNS):
         if not _debounce_allow("closeout"):
             _log("closeout_dexter debounced")
             return _ok()
