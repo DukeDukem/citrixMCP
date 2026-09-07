@@ -1,0 +1,64 @@
+---
+description: Open/view/download Sprinklr email attachments during RE (View Detail / Download to yoummday temporaries).
+alwaysApply: true
+---
+
+# Sprinklr email attachments (RE)
+
+**Chat scope:** Email processing agent (`EMAIL-PROCESSING-AGENT.md`).
+
+When an EMAIL case has attachments (**Anhang** / **Anhänge**), the agent must **open or download them** and use their content in the RE analysis (IDs, screenshots, forms, PDFs). Do not draft section 6 ignoring attachments that are visible on the case.
+
+## Detection
+
+| Signal | Meaning |
+|--------|---------|
+| Text **1 Anhang** / **N Anhänge** | Attachment block present |
+| `section[data-tracker-event-id="@conversation/chatItemsList/mediaPreviewCard"]` | One attachment card (`data-index` 0, 1, …) |
+| Filename under card (e.g. `28422.jpg`, `*.pdf`) | Use in RE notes |
+
+## Actions (hover toolbar)
+
+Hover the media preview card so `div[data-testid="BLOCK_ITEM_ACTIONS"]` appears (top-right of card).
+
+| Goal | Button | Selectors |
+|------|--------|-----------|
+| **Open / preview** (preferred for PDFs; also images) | **View Detail** | `button[data-testid="VIEW_DETAIL-iconBtn-with-tooltip"]` or `button[data-entityid="VIEW_DETAIL"]` |
+| **Download** | **Download** | `button[data-testid="DOWNLOAD-iconBtn-with-tooltip"]` or `button[data-entityid="DOWNLOAD"]` |
+
+**PDFs / some files:** A plain click on the card thumbnail often does **not** open the file. Always use **View Detail** after hover.
+
+**Images (jpg/png/…):** Prefer **View Detail** so the agent can read/OCR the content; or download then read from disk.
+
+## Download folder (mandatory)
+
+All attachment downloads go **only** here:
+
+`C:\Users\PC ENTER\Downloads\yoummday temporaries`
+
+Create the folder if missing. Do not leave downloads in the default Downloads root.
+
+## Helper script (preferred)
+
+```powershell
+# List + open View Detail for every card on the visible case
+uv run python .cursor/skills/sprinklr-read-answer-email/open_case_attachments.py --view
+
+# Download all to yoummday temporaries
+uv run python .cursor/skills/sprinklr-read-answer-email/open_case_attachments.py --download
+```
+
+Expect `ATTACHMENTS_FOUND N=…` / `ATTACHMENT_VIEWED` / `ATTACHMENT_DOWNLOADED` / `ATTACHMENTS_NONE`.
+
+## When to run (EMAIL RE)
+
+1. After extract / CUSTOMER EMAIL (typed **RE** or `--await-arm`)  
+2. **Before** finishing the 7-step draft if attachments exist  
+3. Note attachment filenames + what they show in agent sections (1 / 5); do not invent content you did not open  
+
+## Hard bans
+
+- Do **not** skip visible Anhänge when they affect verification, billing, ID, or the customer ask  
+- Do **not** download to any path other than **yoummday temporaries**  
+- Do **not** treat View Detail / Download as arm triggers (not Anwenden / Next / Weiter)  
+- Attachment UI is for **RE analysis**, not Case Tracker Notiz (Notiz stays empty)

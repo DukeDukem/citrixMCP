@@ -58,7 +58,16 @@ If customer is **not verified**: do steps 1, 2, then skip transfer matrix; use u
 1a. **CHANNEL gate (mandatory):** From visible Sprinklr overlay/timeline, print **`CHANNEL: CALL`** or **`CHANNEL: EMAIL`** (see `sprinklr-call-vs-email.mdc`).
    - **EMAIL** → continue sections 1–7 below (email RE).  
    - **CALL** → **stop** the email RE. Announce wait for voice brief; when the user pastes the customer’s spoken case as text, run the **CALL handling pack** (summary, verification, transfer/KB, phone talk track, LF with `--channel voice`). **No PR** unless the user asks for an email.  
-2. **After script output (EMAIL only)**, output sections 1–7 in order (see Mandatory output structure). Use the script output as the source for section 1. **Include date/time context in section 1.**
+1b. **Attachments (EMAIL, mandatory if present):** If the case shows **Anhang** / **Anhänge** or `mediaPreviewCard` cards, open them before finishing the 7-step draft. Prefer:
+   ```powershell
+   uv run python .cursor/skills/sprinklr-read-answer-email/open_case_attachments.py --view
+   ```
+   PDFs often need **View Detail** (hover toolbar), not a plain card click. To save files:
+   ```powershell
+   uv run python .cursor/skills/sprinklr-read-answer-email/open_case_attachments.py --download
+   ```
+   Download path **only:** `C:\Users\PC ENTER\Downloads\yoummday temporaries`. Full rule: `.cursor/rules/sprinklr-attachments.mdc`.
+2. **After script output (EMAIL only)**, output sections 1–7 in order (see Mandatory output structure). Use the script output as the source for section 1. **Include date/time context in section 1.** Factor attachment content into verification / handling when relevant.
 3. **Verification (section 2):** At least 3 key identifiers (name, Kundennummer, Geburtsdatum, bill/invoice number, last 4 IBAN, home address, or third party with Vollmacht). **Never ask for PKK.** Apply the **2-of-3 exception** (see below) when exactly 2 identifiers are present and neither is the Von: (From:) email address.
 4. **If NOT verified:** Use **only** the premade template for unverified customers (case-specific thank you + sympathy + the fixed security text asking for last 4 IBAN and Kundennummer + tip Mein o2). Do **not** query the KnowledgeBase for substantive handling. Output section 5 briefly, then 6 (full template) and 7.
 5. **If verified** or **Awaiting manual verification:** Query **TransferMatrix.md** first (section 3) — **Ziel-Kontakt + Action are authoritative** over KB routing. If **Transfer eligible: Yes** → section 4a (matrix transfer goal). If **Transfer eligible: No** → section 4b (matrix Action/handling hint, then KB only for compatible detail). Then **Exceptions** and **Standard premade** as usual. Fill 5 (instructions), draft **case-specific** reply (6), summary (7). For **Awaiting manual verification**, state in section 2 and in section 7 that the user must manually verify; if they confirm verified, use the drafted reply; if they say unverified, reply with the **standard verification inquiry email** (unverified template with security block + Mein o2).
