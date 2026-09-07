@@ -1,134 +1,34 @@
-# Daily Agent Directives (Sprinklr)
+# Instructions Dashboard Agent — startup instructions
 
-Use this as the startup instruction set for any new agent session.
+**This chat is for rules, skills, TransferMatrix, and automation design only.**
 
-## 1) Scope lock
+**Do not run login, RE, PR, or LF here.** Use a **separate chat** with **`EMAIL-PROCESSING-AGENT.md`**.
 
-- **This chat = rules/configuration only** unless the user explicitly switches intent to live case processing.
-- **Never run RE, PR, LF, or login** in an instructions-only chat. See `.cursor/rules/instructions-only-no-re-pr-lf.mdc`.
-- If the user types RE/PR/LF/login here by mistake → **warn immediately** (wrong chat; use separate chat for customer cases).
-- If in instructions-only mode, never run RE/PR/LF/login automation.
+---
 
-## 2) Case isolation (non-negotiable)
+## Chat model
 
-- One case at a time, one customer at a time, one reply at a time.
-- Never carry text from previous case into current case.
-- Always bind to currently visible Sprinklr Fall #.
+| Chat | Startup doc | Purpose |
+|------|-------------|---------|
+| **Instructions dashboard** | `AGENT-INSTRUCTIONS.md` | Rules, skills, KB, config |
+| **Email processing** | `EMAIL-PROCESSING-AGENT.md` | **login**, **RE** (+ Auto-LF), **PR**, **DONE** |
+| **September Incentive** | `SEPTEMBER-INCENTIVE-AGENT.md` | yoummday Produktivitätsbonus — `.cursor/knowledge/september-incentive-2026.md` |
 
-## 3) RE discipline
+---
 
-- RE reads only the currently visible case.
-- If Fall # changed since previous RE, treat as a completely new case and discard old context.
-- Never reuse prior RE output when case ID differs.
-- Agent-facing language is English only; German is only for the customer email reply block.
-- **AI model (ABSOLUTE):** Model picker stays **Auto**. **Grok banned.** If session is Grok/named model → STOP; user must set Auto and resend (see `.cursor/rules/ai-model-stay-auto.mdc`).
+## Email processing flow (other chat)
 
-## 3b) Login discipline
+1. **login** (once)
+2. Open case → **RE** → 7-step → **Auto-LF** (no typed LF)
+3. Non-transfer → **PR** → user **Senden** (often → **Ignorieren und senden**) → agent arms **Anwenden**
+4. Transfer → Auto-LF Ja → agent arms **Weiter/Extern** (no PR)
+5. CALL → BRIEF → pack → Auto-LF voice → **Next**
+6. Next case → RE + Auto-LF again
 
-- If user types `login`, run startup/login flow immediately.
-- `login` command is login-only: authenticate Sprinklr, **open Roberta Case Tracker tab**, then stop.
-- After Sprinklr login verified, automation opens `https://roberta.yoummday.com/casetracker/` in a new tab (Sprinklr tab stays active). Reuses existing tracker tab if open. Credentials: `case_tracker_nq` + `case_tracker_password` in `config.json`.
-- If post-submit page appears and audio/missing-audio popup is shown, treat Sprinklr login as complete; then open Case Tracker and stop (no monitor/RE/PR/LF).
-- Before any monitoring or case action, verify authenticated state:
-  - not on login form (`uid/pass` not active), and
-  - Sprinklr console workspace is loaded.
-- If not verified, retry login once.
-- If still not verified: stop and report login failure (do not continue automation).
+Call STT/teleprompter: **parked** (`capture_path.json` `enabled=false`) until better model.
 
-## 4) PR discipline (anti-double-paste)
+---
 
-- Pre-paste gate:
-  - Exactly one "Guten Tag"
-  - Exactly one survey line
-  - Exactly one signature block
-  - No duplicated paragraph blocks
-  - No blocked promise language unless explicitly instructed by user
-- Confirm latest RE case ID matches visible Fall # before paste.
-- Paste with `--no-fill-case-tracker`.
-- Immediately run `python .cursor/skills/sprinklr-write-reply/verify_no_data_leak.py`.
-- If not CLEAN: clear editor, block send, and stop (no automatic repaste).
-- On verification failure, clear editor immediately and reset context to current visible case only.
-- Automation-level guards: the write script may emit validation **warnings**, but it must still paste the reply and rely on post-paste verification (and editor readback) as the final safety gate, not silently drop the response.
-- Never reuse previous-case drafts/temp files/clipboard text for PR.
-- After any leak detection, treat old draft as contaminated and rebuild from scratch from current visible case only.
-- Keep send blocked until verification is CLEAN.
-- Terminate write flow immediately after first paste + verification (single-shot behavior).
+## Model lock
 
-## 5) No uninvited promises
-
-Unless user explicitly asks:
-
-- No promises of internal checks/reviews/logistics/ticket handling.
-- No promises of callbacks, further emails, timelines, or "we will update you".
-- No claiming backend actions unless confirmed by user.
-
-## 5b) Solutions-first; no quoted internal actions in customer email
-
-Unless user explicitly instructs exact wording for that reply:
-
-- Prefer **viable, case-specific customer paths**: Mein o2, o2.de, app self-service, official forms, links, **concrete alternatives** (see `.cursor/rules/reply-customer-solutions-qa.mdc`).
-- **Do not** default-include **care hotline** numbers unless KB, TransferMatrix, a documented SKILL exception, or explicit chat instruction requires it for that reply.
-- If KB guidance is thin or the user’s post-RE rewrite lacks substance: **web research** → add specific alternatives for this case in section 6 (QA-safe substance, no generic filler).
-- Do **not** quote direct brand/internal actions in the customer body (*wir haben … angelegt*, *wir prüfen*, *wir bearbeiten*, *wir leiten …*, etc.).
-- **Never** mention internal systems to the customer: Authentifizierungsmatrix, Sabio, TIM, Wissensbasis, TransferMatrix, Sprinklr, Marquez, Themen-ID, queue names (see `.cursor/rules/reply-no-internal-systems.mdc`).
-- Backend/ticket steps stay in agent instructions; customer reply stays actionable for the customer.
-
-## 6) Salutation policy
-
-- Mirror customer signature exactly (full name, initials, first-only, last-only, custom descriptor).
-- Never add Herr/Frau or invented titles.
-- If no valid signature: "Guten Tag,".
-- If abusive/prank/slur signature: do not mirror; use "Guten Tag,".
-- Name-change cases: default to new desired name unless user overrides.
-
-## 7) Transfer/routing policy
-
-- Follow TransferMatrix unless explicit exception rule overrides.
-- If case is transferable with definitive target, keep remaining sections minimal.
-- Collections destination: `collection_webform@cc.o2online.de` (forward to email; former queue name CBC_XF_Collections is retired).
-- Widerruf within 3 months of activation: route to `CBC_XF_E_WIDERRUF` regardless of normal matrix route.
-
-## 7b) Verification/auth matrix policy
-
-- Apply screenshot-based Authentifizierung matrix as authoritative for verification/channel admissibility.
-- Enforce 3-Eckdaten for E-Mail unless row says `keine Authentifizierung nötig`.
-- If matrix says Web/App/Hotline/Formular/Hotline, do not process by Backoffice E-Mail; route accordingly.
-
-## 8) Output safety
-
-- Never expose full Kundennummer/phone identifiers; use partial references only.
-- Never include Fall # in customer thank-you/body.
-- Always include one and only one fixed closing block.
-
-## 9) Failure protocol
-
-- On ambiguity (multiple names/case IDs): stop and clarify.
-- On leak/double-paste detection: stop, block send, rebuild clean from current case only.
-- Prefer safe refusal over risky send.
-
-## 10) LF — Roberta Case Tracker
-
-**URL:** `https://roberta.yoummday.com/casetracker/` — replaces Microsoft Forms for LF.
-
-**Command:**
-```powershell
-uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --attachments 0
-```
-
-**Auto-fill from visible Sprinklr case:**
-
-| Field | Rule |
-|-------|------|
-| **Case #** (`sikas`) | Fall # |
-| **Salcus** (`salcus`) | Sprinklr **Kundennummer** (`data-entityid="Kundennummer"` → `htmlText`); empty if **Nicht festgelegt** |
-| **Kanal** | E-Mail Care |
-| **Transfer** | See below |
-| **Ticketstatus Salcus** | Transfer **Ja** → always **3**; Transfer **Nein** + Kundennummer → **1**; else **3** |
-
-**Transfer (never to ourselves):**
-- **Widerruf** (Quelle/Subject) → **Ja** → `CBC_XF_E_WIDERRUF`
-- **Our team** (`CBC_*_CARE_ALLGEMEIN`, incl. `CBC_XF_E_CARE_ALLGEMEIN`) → **Nein**
-- Other external **Ziel** / email → **Ja** + target
-
-User clicks **Speichern** manually. Full spec: `.cursor/rules/lf-log-form.mdc`.
-
+**Auto only.** Grok banned.
