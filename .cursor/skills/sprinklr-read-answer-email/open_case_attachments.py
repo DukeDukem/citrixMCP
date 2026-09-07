@@ -96,16 +96,22 @@ def cmd_view(page) -> int:
     print(f"ATTACHMENTS_FOUND N={n}")
     for i, card in enumerate(cards):
         name = _card_name(card)
+        lower = (name or "").lower()
         try:
             card.scroll_into_view_if_needed(timeout=3000)
+            # .png → click the card itself (not View Detail / Download)
+            if lower.endswith(".png"):
+                card.click(timeout=5000)
+                print(f"ATTACHMENT_CLICKED index={i} name={name} mode=png_direct")
+                time.sleep(0.8)
+                continue
             card.hover(timeout=3000)
             time.sleep(0.35)
             btn = card.locator(VIEW_BTN).first
             if not btn.count():
-                # toolbar may be sibling under section
                 btn = page.locator(VIEW_BTN).nth(i)
             btn.click(timeout=5000)
-            print(f"ATTACHMENT_VIEWED index={i} name={name}")
+            print(f"ATTACHMENT_VIEWED index={i} name={name} mode=view_detail")
             time.sleep(0.8)
         except Exception as e:
             print(f"ATTACHMENT_VIEW_FAIL index={i} name={name} err={e}")

@@ -19,18 +19,19 @@ When an EMAIL case shows **Anhang** / **Anhänge**, review those files as part o
 | `section[data-tracker-event-id="@conversation/chatItemsList/mediaPreviewCard"]` | One attachment card (`data-index` 0, 1, …) |
 | Filename under card (e.g. `28422.jpg`, `*.pdf`) | Use in RE notes |
 
-## Actions (hover toolbar)
+## Actions by file type
 
-Hover the media preview card so `div[data-testid="BLOCK_ITEM_ACTIONS"]` appears (top-right of card).
+| File type | How to open |
+|-----------|-------------|
+| **`.png`** | **Click the attachment card / thumbnail itself** (`section[data-tracker-event-id="@conversation/chatItemsList/mediaPreviewCard"]` or the preview `img`). Do **not** use View Detail or Download for `.png`. |
+| **`.pdf`** and other types that do not open on plain click | Hover card → **View Detail** (`VIEW_DETAIL-iconBtn-with-tooltip` / `data-entityid="VIEW_DETAIL"`) |
+| Need a local copy | Hover → **Download** (`DOWNLOAD-iconBtn-with-tooltip`) → **yoummday temporaries** only |
 
-| Goal | Button | Selectors |
-|------|--------|-----------|
-| **Open / preview** (preferred for PDFs; also images) | **View Detail** | `button[data-testid="VIEW_DETAIL-iconBtn-with-tooltip"]` or `button[data-entityid="VIEW_DETAIL"]` |
-| **Download** | **Download** | `button[data-testid="DOWNLOAD-iconBtn-with-tooltip"]` or `button[data-entityid="DOWNLOAD"]` |
+**`.png`:** Prefer a direct click on the media preview card so the image opens in-place for the agent to read. Skip View Detail / Download unless the direct click fails.
 
-**PDFs / some files:** A plain click on the card thumbnail often does **not** open the file. Always use **View Detail** after hover.
+**PDFs / stubborn files:** A plain click often does nothing — use **View Detail** after hover.
 
-**Images (jpg/png/…):** Prefer **View Detail** so the agent can read/OCR the content; or download then read from disk.
+**Other images (e.g. `.jpg`):** Direct click if that opens the preview; otherwise View Detail. Still use Download only when a file on disk is needed.
 
 ## Download folder (mandatory)
 
@@ -43,10 +44,10 @@ Create the folder if missing. Do not leave downloads in the default Downloads ro
 ## Helper script (preferred)
 
 ```powershell
-# List + open View Detail for every card on the visible case
+# Open each attachment the right way (.png = card click; others = View Detail)
 uv run python .cursor/skills/sprinklr-read-answer-email/open_case_attachments.py --view
 
-# Download all to yoummday temporaries
+# Download all to yoummday temporaries (when a local file is needed)
 uv run python .cursor/skills/sprinklr-read-answer-email/open_case_attachments.py --download
 ```
 
