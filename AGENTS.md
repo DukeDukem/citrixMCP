@@ -18,7 +18,8 @@
 - **PR LF** / **LF** (EMAIL) — **`--arm`** → Anwenden → **`--await-arm`**
 - **LF** (**CALL**) — `--channel voice` then **`--arm-next`** → exact **Next** → **`--await-arm`** (never Anwenden after a call)
 - **LF TR** — queue **`--arm-weiter`** or email **`--arm-extern`**, then **`--await-arm`**
-- Transfer Matrix vs KB: **TransferMatrix.md always decides handling path** (Ziel-Kontakt + Action). KB only supports that path — see `.cursor/rules/transfer-matrix-priority.mdc`
+- **CALL vs EMAIL:** After every case open, classify via overlay. **CALL** → `call_listen.py --arm` (local STT) → **BRIEF** / paste → handle; LF voice + stop listen + **`--arm-next`**. **EMAIL** → 7-step RE/PR/LF + **`--arm`**. Rule: `sprinklr-call-vs-email.mdc`
+- **Transfer path:** Always **TransferMatrix.md** first (Ziel-Kontakt + Action). KB must not override routing; if not transferable, handle from matrix Action hint then KB. Rule: `transfer-matrix-priority.mdc`
 
 ## Instructions dashboard
 
