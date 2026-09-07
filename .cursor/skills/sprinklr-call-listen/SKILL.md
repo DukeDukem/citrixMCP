@@ -70,6 +70,8 @@ Not one-shot. After your greeting, each customer pause (~1.4s silence) generates
 Tone: friendly, short, can be “solution without solution” (empathy + clarifying Q or hold).  
 Optional faster LLM: set `openai_api_key` / `GROQ_API_KEY` / Ollama — else instant local templates.
 
+**Agent time-buy lines are ignored** by STT/teleprompter (do not interrupt the pipeline), e.g. *Alles klar*, *Verstehe ich*, *Mal schauen was ich da für Sie tun kann*, short hold/filler questions. Customer speech keeps accumulating; teleprompter still fires on the customer pause.
+
 **BRIEF** = optional end-of-topic full CALL handling pack (KB/transfer). Teleprompter runs continuously without BRIEF.
 
 ```powershell

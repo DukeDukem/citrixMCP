@@ -13,6 +13,18 @@
   "teleprompter_backend": "auto",
   "utterance_silence_s": 1.4,
   "utterance_min_chars": 18,
+  "agent_timebuy_max_chars": 90,
+  "agent_timebuy_phrases": [
+    "Alles klar",
+    "Verstehe ich",
+    "Ich verstehe",
+    "Mal schauen was ich da für Sie tun kann",
+    "Mal schauen was ich für Sie tun kann",
+    "Moment bitte",
+    "Einen Moment",
+    "Ich schaue das kurz nach",
+    "Darf ich Sie kurz halten"
+  ],
   "agent_greeting_fragments": [
     "Willkommen bei o2",
     "Willkommen beim o2",

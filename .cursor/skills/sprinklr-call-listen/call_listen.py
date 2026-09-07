@@ -596,6 +596,13 @@ def run_foreground() -> int:
                                             }
                                         )
                                 if keep:
+                                    from agent_fillers import filter_customer_speech
+
+                                    keep2, skip_evt = filter_customer_speech(keep, cfg)
+                                    if skip_evt:
+                                        _log(skip_evt)
+                                    keep = keep2
+                                if keep:
                                     _append_brief(fall, keep, tag="[Kunde]")
                                     _log(f"STT[Kunde]: {keep[:120]}{'…' if len(keep) > 120 else ''}")
                                     print(f"CALL_BRIEF_UPDATE fall={fall}", flush=True)
@@ -621,6 +628,13 @@ def run_foreground() -> int:
                             _log(evt)
                             if evt.startswith("CUSTOMER_PHASE_OPEN"):
                                 print("CUSTOMER_PHASE_OPEN", flush=True)
+                        if keep:
+                            from agent_fillers import filter_customer_speech
+
+                            keep2, skip_evt = filter_customer_speech(keep, cfg)
+                            if skip_evt:
+                                _log(skip_evt)
+                            keep = keep2
                         if keep:
                             _append_brief(fall, keep, tag="[Kunde]")
                             _log(f"STT(loop)[Kunde]: {keep[:120]}")
