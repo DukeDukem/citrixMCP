@@ -82,7 +82,7 @@ Treat the user’s next substantive message (case content, not `LF` / `DONE` / `
 
 ### Close-out — Auto-LF + arm Next
 
-After CALL handling pack:
+**Mandatory for every CALL** (same as EMAIL Auto-LF): after the CALL handling pack, the agent fills Case Tracker **in the same turn** — do **not** wait for typed `LF`.
 
 ```powershell
 uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --channel voice
@@ -92,8 +92,15 @@ uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id 
 |-------|--------|
 | **Kanal** | **Voice (Tel.)** (`#channel_voice`) |
 | **Ticketstatus Salcus** | **Always** **3-Bot dokumentiert nicht in Salcus** |
+| **Transfer** | Nein unless pack says transfer → then Ja + Ziel-Kontakt |
 
-**Do this Auto-LF** in the same turn as the pack (no typed `LF`). Then:
+**Do this Auto-LF** immediately after the pack (no typed `LF`). Then:
+
+| Pack outcome | Arm |
+|--------------|-----|
+| Non-transfer | **`--arm-next`** → user clicks exact **Next** |
+| Transfer queue | **`--arm-weiter`** |
+| Transfer email `@` | **`--arm-extern`** |
 
 ```powershell
 uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-next

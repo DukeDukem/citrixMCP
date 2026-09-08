@@ -32,7 +32,7 @@ COMMANDS:
 - PR (EMAIL non-transfer) -> paste + verify, then IMMEDIATELY run.py --arm (Anwenden) + finishing quote PR done for #FALL_ID + --await-arm. LF already done at RE.
 - After CLEAN PR: I click Senden (replyBox-sendBtn) myself. Often a Sprinklr grammar warning appears (internal criteria, not necessarily real errors) — I click again when the button shows Ignorieren und senden (same testid). Empty reply box after that = email sent (success), NOT a paste/verify failure. Do not re-PR or rewrite for the grammar gate. Senden / Ignorieren und senden are NOT part of arming.
 - PR LF / LF / LF TR -> optional recovery/override only (same arms as before).
-- CALL: BRIEF → handle pack → AUTO-LF --channel voice → --arm-next (or weiter/extern if transfer) + await. Quote: LF done for #FALL_ID.
+- CALL: BRIEF → handle pack → SAME TURN AUTO-LF --channel voice (do NOT wait for typed LF) → --arm-next (or weiter/extern if transfer) + await. Quote: LF done for #FALL_ID. Never Anwenden after a call.
 - DONE / Done for today -> done_for_today.py; stop watches (including detached); pause until next login
 
 POST-LOGIN / FIRST CASE (push-start):
@@ -227,5 +227,40 @@ Finishing quotes still required: PR done / LF done / LF TR done for #FALL_ID
 
 Do not invent extra sounds. Do not change config sound paths or volumes unless I ask.
 Confirm you loaded SOUND CUES + DETACHED ARM, then continue with my next command.
+```
+
+---
+
+## UPDATE — paste to **running** case agent (Auto-LF CALL + EMAIL)
+
+Use when the case chat is already open and needs this delta (no full GO re-bootstrap):
+
+```
+UPDATE — apply immediately for this session:
+
+AUTO-LF IS MANDATORY FOR BOTH EMAIL AND CALL (I do not type LF):
+
+EMAIL:
+1) After 7-step RE + play-ready → fill_case_tracker.py for this Fall #
+2) Transfer Nein → wait for my PR → then --arm Anwenden + --await-arm
+3) Transfer Ja → --arm-weiter (queue) or --arm-extern (@) + --await-arm; quote LF TR done for #FALL_ID
+
+CALL:
+1) CHANNEL: CALL → wait for my BRIEF (or paste of what customer said). No email RE/PR. Teleprompter/STT parked — do not call_listen --arm/--prime.
+2) Output CALL handling pack (TransferMatrix first).
+3) SAME TURN: Auto-LF voice —
+   uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --channel voice
+   (Ticketstatus 3 always. Transfer Ja+target if pack says transfer.)
+4) SAME TURN after Auto-LF:
+   - Non-transfer → run.py --arm-next + --await-arm; quote LF done for #FALL_ID; I click exact Next
+   - Transfer → --arm-weiter / --arm-extern + await; quote LF TR done for #FALL_ID
+5) Never wait for typed LF / LF TR on CALL. Never --arm (Anwenden) after a call.
+
+Also still in force:
+- PR alone arms Anwenden (LF already at RE). Senden → often Ignorieren und senden; empty box after send = success.
+- Anhänge: open for case understanding (.png = click card then Schließen @media/preview/close; PDF = View Detail).
+- Typed LF / LF TR / PR LF = recovery only.
+
+Confirm: CALL Auto-LF + EMAIL Auto-LF loaded. Continue with current case.
 ```
 
