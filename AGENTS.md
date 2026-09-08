@@ -18,7 +18,7 @@
 - **RE** (typed) — **always `--once`** extract open case → 7-step (EMAIL) + **Auto-LF**. Never Anwenden arm on typed RE.
 - **PR** (EMAIL non-transfer) — paste reply (LF already done at RE) → **`--arm`** → Anwenden → **`--await-arm`**
 - **Auto-LF transfer** — during RE when §3 says transfer → Transfer Ja fill → **`--arm-weiter`** / **`--arm-extern`** (no typed LF TR needed)
-- **CALL** — BRIEF → pack → Auto-LF voice → **`--arm-next`**
+- **CALL** — on CHANNEL detect → Auto-LF voice → **`--arm-next`** (BRIEF optional; not required for LF)
 - Typed **LF** / **LF TR** / **PR LF** — recovery/override only
 - **CALL vs EMAIL:** After every case open, classify via overlay. **Teleprompter/STT parked** — do **not** `--arm`/`--prime` call_listen. Rule: `sprinklr-call-vs-email.mdc`
 - **Transfer path:** Always **TransferMatrix.md** first. Rule: `transfer-matrix-priority.mdc`

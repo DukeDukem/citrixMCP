@@ -50,7 +50,7 @@ Typical workday start:
    ```powershell
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
    ```
-   Expect **`MODE: --once`** and either `FIRST_RE_ONCE_CONSUMED` (after login) or `RE_ONCE_DEFAULT`. Then classify **`CHANNEL: CALL|EMAIL`** (see `sprinklr-call-vs-email.mdc`). **EMAIL** → **CUSTOMER EMAIL** + full **7-step RE** + **Auto-LF**. **CALL** → wait for user voice brief (no email RE/PR); Auto-LF after BRIEF pack.
+   Expect **`MODE: --once`** and either `FIRST_RE_ONCE_CONSUMED` (after login) or `RE_ONCE_DEFAULT`. Then classify **`CHANNEL: CALL|EMAIL`** (see `sprinklr-call-vs-email.mdc`). **EMAIL** → **CUSTOMER EMAIL** + full **7-step RE** + **Auto-LF**. **CALL** → no email RE/PR; **immediately Auto-LF** `--channel voice` + arm Next (BRIEF optional, not a gate).
 2. **Do not** run `--arm` / `--await-arm` on typed RE. Arms run after Auto-LF / PR close-out (below).
 3. **Audio:**
    - **Armed auto-RE start:** After Anwenden / Weiter / Extern / Next → 4s wait → case open → extract begins → Prowler (`ARMED_RE_START_SOUND`).
@@ -60,7 +60,7 @@ Typical workday start:
 4. After 7-step + `--play-ready`: **Auto-LF** (do not wait for typed `LF`). See `.cursor/rules/lf-log-form.mdc`.
 5. **EMAIL non-transfer:** wait for user **PR** → after paste succeeds → **`--arm`** + **`--await-arm`**. Finishing quote `PR done for #FALL_ID`.
 6. **EMAIL / CALL transfer:** after Auto-LF Transfer Ja → **`--arm-weiter`** or **`--arm-extern`** + await. Quote `LF TR done for #FALL_ID`.
-7. **CALL non-transfer:** after BRIEF pack + Auto-LF voice → **`--arm-next`** + await. Quote `LF done for #FALL_ID`.
+7. **CALL:** on CHANNEL detect → **immediately Auto-LF** voice → **`--arm-next`** (or transfer arm) + await. Quote `LF done for #FALL_ID`. Do **not** wait for BRIEF.
 
 ### Explicit modes
 
@@ -84,7 +84,7 @@ Every EMAIL extract (typed RE or `--await-arm`):
 3. **Auto-LF** for this Fall # (Transfer Nein or Ja per §3) — user does **not** type `LF`  
 4. If transfer → arm Weiter/Extern immediately; if non-transfer → stop and wait for **PR**
 
-Every CALL after BRIEF pack: Auto-LF `--channel voice` → arm Next (or Weiter/Extern if transfer).
+Every CALL on CHANNEL detect: Auto-LF `--channel voice` → arm Next (or Weiter/Extern if transfer). BRIEF is optional and never blocks Auto-LF.
 
 ## Auto-arm after **PR** (EMAIL non-transfer / Anwenden)
 

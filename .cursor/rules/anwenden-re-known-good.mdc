@@ -51,7 +51,7 @@ If `--await-arm` aborted → **re-run `--await-arm`**. If log has `ERROR: NEXT C
 
 1. **login** → open first case → **RE** (`--once`) → **CHANNEL: CALL|EMAIL** (do **not** arm call_listen while STT parked)
 2. **EMAIL** → 7-step → `--play-ready` → **Auto-LF** → **PR** (non-transfer) or transfer arm (no PR)
-3. **CALL** → BRIEF → handle pack → **Auto-LF** voice → **`--arm-next`**
+3. **CALL** → CHANNEL detect → **Auto-LF** voice immediately → **`--arm-next`** (BRIEF optional)
 4. Close-out arm + await → next case → Auto-LF again
 5. **DONE** at end of day
 

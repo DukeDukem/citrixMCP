@@ -23,7 +23,7 @@ The agent fills Case Tracker **while processing** each newly opened case. The us
 | Channel | When (same agent turn as analysis) | Tracker |
 |---------|--------------------------------------|---------|
 | **EMAIL** | After TransferMatrix decision is known (RE §3) — typically **after the full 7-step RE** (or after §3–5 if transfer-only and no customer reply) | E-Mail Care; Transfer **Nein** or **Ja** + target from §3/4a |
-| **CALL** | After typed **BRIEF** → CALL handling pack (transfer decision known) | **`--channel voice`**; Transfer per pack |
+| **CALL** | As soon as **CHANNEL: CALL** is known (no BRIEF wait) | **`--channel voice`**; Transfer via `resolve_transfer()` / Ziel unless already decided |
 
 ### Order (EMAIL)
 
@@ -38,16 +38,16 @@ The agent fills Case Tracker **while processing** each newly opened case. The us
 | **No** (we answer) | Do **not** arm yet. Wait for user **PR** (paste). After PR succeeds → **`--arm`** Anwenden + await. Finishing quote: `PR done for #FALL_ID` |
 | **Yes** (queue / email target) | No PR. **`--arm-weiter`** (queue) or **`--arm-extern`** (email `@`) + await. Finishing quote: `LF TR done for #FALL_ID` |
 
-### Order (CALL) — Auto-LF mandatory
+### Order (CALL) — Auto-LF on CHANNEL detect (no BRIEF gate)
 
-1. CHANNEL: CALL → wait line → user **BRIEF** (or paste of what the customer said)  
-2. CALL handling pack (TransferMatrix)  
-3. **Immediately Auto-LF** in the **same turn** as the pack:
+1. Classify **CHANNEL: CALL** (extract / overlay).  
+2. **Immediately Auto-LF** in the **same turn** — do **not** wait for BRIEF / handling pack / typed `LF`:
    ```powershell
    uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --channel voice
    ```
-   Do **not** wait for typed `LF`. Ticketstatus **3** always. Transfer Ja + target if pack says transfer.  
-4. Arm close-out: non-transfer → **`--arm-next`**; transfer → **`--arm-weiter`** / **`--arm-extern`**. Finishing quote: `LF done for #FALL_ID` (or `LF TR done` if transfer). Then **`--await-arm`**.
+   Ticketstatus **3** always. Transfer from Sprinklr resolve / known Ziel.  
+3. Arm close-out: non-transfer → **`--arm-next`**; transfer → **`--arm-weiter`** / **`--arm-extern`**. Quote `LF done for #FALL_ID` (or `LF TR done`). Then **`--await-arm`**.  
+4. **BRIEF** / handling pack = **optional** only if the user wants talk-track help mid-call — never blocks Auto-LF.
 
 ### User still does manually
 

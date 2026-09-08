@@ -16,7 +16,7 @@
 | Paste | **PR** | Write reply; then **`--arm`** Anwenden (LF already at RE) |
 | Send (user) | **Senden** → often **Ignorieren und senden** | Grammar gate normal; empty box after send = success, not paste fail |
 | Transfer | Auto-LF at RE | Queue → **`--arm-weiter`**; email `@` → **`--arm-extern`** |
-| CALL | BRIEF → Auto-LF voice | **`--arm-next`** → click **Next** |
+| CALL | CHANNEL detect → Auto-LF voice | **`--arm-next`** → click **Next** (BRIEF optional) |
 | End day | **DONE** | Stop watches; pause until next login |
 
 **Typed LF / LF TR / PR LF:** recovery only.  

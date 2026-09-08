@@ -22,7 +22,7 @@
 2. Open case → **RE** → 7-step → **Auto-LF** (no typed LF)
 3. Non-transfer → **PR** → user **Senden** (often → **Ignorieren und senden**) → agent arms **Anwenden**
 4. Transfer → Auto-LF Ja → agent arms **Weiter/Extern** (no PR)
-5. CALL → BRIEF → pack → Auto-LF voice → **Next**
+5. CALL → CHANNEL detect → Auto-LF voice → **Next** (BRIEF optional)
 6. Next case → RE + Auto-LF again
 
 Call STT/teleprompter: **parked** (`capture_path.json` `enabled=false`) until better model.

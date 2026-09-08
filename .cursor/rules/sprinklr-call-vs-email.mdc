@@ -30,8 +30,8 @@ Use **visible Sprinklr overlay + timeline + Case Informationen** (see markers be
 
 | Channel | Next step |
 |---------|-----------|
-| **EMAIL** | Normal **7-step RE** → **PR** / **LF** / **LF TR** as today |
-| **CALL** | **Do not** run email RE→PR. Enter **CALL wait → voice brief → handle** flow below |
+| **EMAIL** | Normal **7-step RE** → **Auto-LF** → **PR** / transfer arm |
+| **CALL** | **Do not** run email RE→PR. **Immediately Auto-LF** (`--channel voice`) + arm **Next** (or Weiter/Extern if transfer). BRIEF / handling pack is **optional** coaching — **not** a gate for Auto-LF |
 | **UNKNOWN** | Ask user; do not PR |
 
 ---
@@ -45,69 +45,66 @@ Config: `.cursor/skills/sprinklr-call-listen/capture_path.json` → **`enabled: 
 
 **Reactivate later:** set `enabled=true` and `teleprompter_enabled=true` in `capture_path.json`, then `--arm` (see skill SKILL.md).
 
-### Step 0 — On CHANNEL: CALL (while STT parked)
+### Step 0 — On CHANNEL: CALL (immediate Auto-LF)
+
+As soon as the agent classifies **CHANNEL: CALL** (RE extract / await-arm / visible case):
 
 1. Print short identity: Fall #, customer name if visible, Quelle/Ziel if useful.  
 2. **Do NOT** run email 7-step RE/PR.  
-3. **Do NOT** invent the issue from Anruf timeline alone.  
-4. **Do NOT** arm/prime call_listen or open the teleprompter UI.  
-5. Say this wait line (exact intent):
-
-```
-CHANNEL: CALL
-Fall #…. Teleprompter/STT parked — greet normally.
-
-Type BRIEF (or paste what the customer said) for a full handling pack.
-```
-
-6. Wait for the user’s typed **BRIEF** / voice summary. Then produce the CALL handling pack.
-
-### BRIEF (required while STT parked)
-
-Treat the user’s next substantive message (case content, not `LF` / `DONE` / `PR`) as the **customer voice brief**.
-
-- Combine: Sprinklr sidebar/case facts **+** brief text.  
-- Do **not** mix another Fall’s data.  
-- Do **not** claim “I heard the call” or cite STT transcripts.
-
-### CALL handling pack (on BRIEF)
-
-1. **Channel + Fall # + customer** (one line)  
-2. **Case summary** — problem + what they want (~35–60 words)  
-3. **Verification** — identifiers from Sprinklr + brief; never ask for PKK by chat as if emailing  
-4. **Transfer eligibility** — **TransferMatrix first** (Ziel-Kontakt + Action). KB must not override routing. If not transferable, handle from matrix Action hint, then KB detail.  
-5. **Handling instructions** — what to do/say; **no** uninvited backend promises  
-6. **Talk track (optional German bullets)**  
-7. **Close-out** — **LF** Voice, or **LF TR** if transfer; no **PR** unless user asks for email  
-
-### Close-out — Auto-LF + arm Next
-
-**Mandatory for every CALL** (same as EMAIL Auto-LF): after the CALL handling pack, the agent fills Case Tracker **in the same turn** — do **not** wait for typed `LF`.
+3. **Do NOT** arm/prime call_listen.  
+4. **Do NOT** wait for typed **BRIEF** before Case Tracker fill.  
+5. **Immediately Auto-LF** (same turn):
 
 ```powershell
 uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --channel voice
 ```
 
-| Field | Value |
-|-------|--------|
-| **Kanal** | **Voice (Tel.)** (`#channel_voice`) |
-| **Ticketstatus Salcus** | **Always** **3-Bot dokumentiert nicht in Salcus** |
-| **Transfer** | Nein unless pack says transfer → then Ja + Ziel-Kontakt |
+- Kanal = Voice; ticketstatus **3** always.  
+- Transfer: omit flags → script `resolve_transfer()` from Sprinklr Quelle/Ziel; or pass `--transfer 1 --target "…"` if matrix/Ziel already clear.  
+- Never Transfer Ja to `*CARE_ALLGEMEIN*`.
 
-**Do this Auto-LF** immediately after the pack (no typed `LF`). Then:
+6. **Immediately arm** after Auto-LF succeeds:
 
-| Pack outcome | Arm |
-|--------------|-----|
-| Non-transfer | **`--arm-next`** → user clicks exact **Next** |
-| Transfer queue | **`--arm-weiter`** |
-| Transfer email `@` | **`--arm-extern`** |
+| Tracker Transfer | Arm |
+|------------------|-----|
+| Nein | **`--arm-next`** → user clicks exact **Next** |
+| Ja (queue) | **`--arm-weiter`** |
+| Ja (email `@`) | **`--arm-extern`** |
+
+Finishing quote: `LF done for #FALL_ID` (or `LF TR done for #FALL_ID` if transfer). Then **`--await-arm`**.
+
+7. Optional one-liner for the user (not a wait gate):
+
+```
+CHANNEL: CALL
+Fall #…. Auto-LF done — click Next when ready.
+BRIEF optional if you want a live handling pack while on the call.
+```
+
+### BRIEF (optional coaching only)
+
+If the user pastes what the customer said (or types **BRIEF**), produce a **CALL handling pack** for talk-track help. This does **not** delay or replace Auto-LF — Auto-LF already ran at CHANNEL detect.
+
+- Do **not** invent the issue from Anruf timeline alone for the pack.  
+- Do **not** claim “I heard the call.”  
+- Do **not** run a second Auto-LF unless the first failed or transfer target must change.
+
+### CALL handling pack (optional, on BRIEF)
+
+1. **Channel + Fall # + customer** (one line)  
+2. **Case summary** — problem + what they want (~35–60 words)  
+3. **Verification** — identifiers from Sprinklr + brief  
+4. **Transfer eligibility** — TransferMatrix first  
+5. **Handling instructions** / talk track  
+6. Note: Case Tracker already Auto-LF’d at CHANNEL detect; only re-LF if override needed  
+
+### Close-out arms (after Auto-LF at CHANNEL detect)
 
 ```powershell
 uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-next
 ```
 
 Expect **`NEXT_RE_ARMED`** + **`ARM_WATCH_DETACHED`** + **`READY_FOR_YOUR_CLICK: Next`** + Dexter.  
-Finishing quote `LF done for #FALL_ID`, then **`--await-arm`**.  
 User clicks exact **Next** on `button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]` (ignore Back / Weiter / Weiterleiten).
 
 **Next detection:** DOM only (`screenButton` + exact `"Next"`); tray position irrelevant; close DevTools Inspect before click. Stale watch → kill arm + fresh `--arm-next`. Missed extract → `run.py --once`.
@@ -116,14 +113,15 @@ After Next → 4s → next case → **CHANNEL: CALL|EMAIL** again.
 
 ### EMAIL (unchanged)
 
-**EMAIL** → normal 7-step RE → **PR LF** → **`--arm`** (Anwenden). No call_listen.
+**EMAIL** → normal 7-step RE → **Auto-LF** → **PR** (non-transfer) or transfer arm. No call_listen.
 
 ---
 
 ## Hard bans (CALL)
 
 - No automatic email **7-step section 6** + **PR** for live/disposition calls  
-- No inventing the issue from Anruf timeline alone (need typed BRIEF while STT parked)  
+- No delaying Auto-LF for BRIEF — Auto-LF runs at **CHANNEL: CALL** detect  
+- No inventing a full case story from Anruf timeline alone (BRIEF pack stays optional and evidence-based)  
 - No claiming the agent “heard” the call  
 - No Kanal **E-Mail Care** when LF’ing a call  
 - **No** `call_listen.py --arm` / `--prime` while `enabled=false` (unless user explicitly reactivates config)
