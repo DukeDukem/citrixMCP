@@ -14,13 +14,26 @@ User upgraded from Auto-lock. Named models are allowed **except Grok**. Agents m
 
 | Chat | Model picker | Why |
 |------|--------------|-----|
-| **Email processing** (`EMAIL-PROCESSING-AGENT.md`) | **Claude 4.6 Sonnet** (thinking / medium effort if offered) | Best quality/speed/cost for German RE, TransferMatrix, leak gates |
-| **Instructions dashboard** | **Composer 2.5** (or Auto) | Rules/config; burns **Cursor Models** pool, not the $70 Other pool |
-| **September Incentive** | **Composer 2.5** or Auto | Light planning; keep Other Models for case work |
+| **Email processing** (`EMAIL-PROCESSING-AGENT.md`) | **Claude 4.6 Sonnet** (thinking) as default; Composer if Other Models pacing is tight | German RE quality |
+| **Instructions dashboard** (`AGENT-INSTRUCTIONS.md`) | **Pace-based** — see below | Maximize quality + month-end utilization of included pools |
+| **September Incentive** | **Composer 2.5** (Sonnet only if bonus logic is unusually hard and Other Models has end-of-cycle headroom) | Light planning |
 
-**Escalation (same email chat, user switches picker):** **Claude 4.6 Opus** or **Claude Opus 5** only for unusually hard cases (multi-contract, legal/name edge, QA rejection loops). Switch back to Sonnet after.
+### Instructions dashboard — pace to ~max included usage (no on-demand)
 
-**Speed-first alternative (if Other Models burn too fast):** **Composer 2.5** on the email chat — faster/cheaper via Cursor Models pool; accept slightly weaker German/QA. Prefer Sonnet while monthly Other Models headroom remains.
+**Philosophy:** Sweet spot = **high quality output** and **near-full use of included pools by billing-cycle end**. Minimizing usage is **not** the goal. Exceeding into on-demand is **forbidden** (on-demand stays Disabled).
+
+| If… | Instructions chat should… |
+|------|----------------------------|
+| Behind pace (headroom + few days left) | Use **Claude 4.6 Sonnet** for complex rules/architecture tasks |
+| On pace | **Composer 2.5** default; Sonnet for high-stakes multi-file changes |
+| Ahead of pace / protect email RE budget | **Composer 2.5** only |
+| Other Models exhausted | **Composer 2.5** only |
+
+Remind the user to switch the picker when the task warrants it. Full pacing notes: `.cursor/knowledge/pro-plus-model-spend-2026.md` and `AGENT-INSTRUCTIONS.md`.
+
+**Escalation (email chat):** **Claude 4.6 Opus** / **Opus 5** only for unusually hard cases. Switch back to Sonnet after.
+
+**Email throughput when Other Models is scarce:** **Composer 2.5** on the email chat until the cycle resets.
 
 ## Hard ban — Grok
 

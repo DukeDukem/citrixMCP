@@ -6,15 +6,45 @@
 
 ---
 
-## Chat model
-
-**Pro Plus:** Email processing → **Claude 4.6 Sonnet**. Instructions/Incentive → Composer 2.5 or Auto. **Grok banned.** See `.cursor/knowledge/pro-plus-model-spend-2026.md`.
+## Chat roles
 
 | Chat | Startup doc | Purpose |
 |------|-------------|---------|
-| **Instructions dashboard** | `AGENT-INSTRUCTIONS.md` | Rules, skills, KB, config |
+| **Instructions dashboard** (this chat) | `AGENT-INSTRUCTIONS.md` | Rules, skills, KB, config |
 | **Email processing** | `EMAIL-PROCESSING-AGENT.md` | **login**, **RE** (+ Auto-LF), **PR**, **DONE** |
-| **September Incentive** | `SEPTEMBER-INCENTIVE-AGENT.md` | yoummday Produktivitätsbonus — `.cursor/knowledge/september-incentive-2026.md` |
+| **September Incentive** | `SEPTEMBER-INCENTIVE-AGENT.md` | yoummday Produktivitätsbonus |
+
+---
+
+## This chat — model pacing (Pro Plus)
+
+**Goal:** maximize **quality and useful output** for instruction/config tasks while staying **inside included usage** (on-demand **Disabled**). Do **not** minimize spend for its own sake — pace so included pools are **~fully used by month-end** (sweet spot: high utilization, never overage).
+
+**Pools:** Other Models (~$70/mo) mainly fuels the **email** chat (Sonnet). **Cursor Models** (Composer) fuels this instructions chat and budget-relief days. **Grok banned.** Detail: `.cursor/knowledge/pro-plus-model-spend-2026.md`.
+
+### How to pick the picker (instructions agent)
+
+At the start of a non-trivial task, infer pacing from **remaining days in the billing cycle** + **Usage/Spending %** (ask user for a quick dashboard glance if unknown):
+
+| Pace signal | Instructions chat model | Intent |
+|-------------|-------------------------|--------|
+| **Behind pace** (lots of included headroom, few days left) | Prefer **Claude 4.6 Sonnet** for complex multi-file / TransferMatrix / agent-architecture work | Burn remaining Other Models on *high-value* design, not idle waste |
+| **On pace** | **Composer 2.5** default; **Sonnet** when the task is large/error-sensitive (routing matrix, LF/Speichern, RE visibility, leak rules) | Quality where it matters |
+| **Ahead of pace** (Other Models already high vs days left; protect email RE) | **Composer 2.5** only | Leave Other Models for live cases |
+| **Other Models ~exhausted** | **Composer 2.5** only | No on-demand |
+| Tiny one-liner / revert last / trivial edit | **Composer 2.5** or Auto | Don’t overspend tokens |
+
+**Bang-for-buck:** one strong Sonnet pass that ships correct rules > many weak retries. Prefer thorough first answers; avoid speculative rewrites.
+
+**Remind the user** which picker to use for *this* task when it matters (e.g. “Switch this chat to Claude 4.6 Sonnet for this TransferMatrix redesign”). Cannot move the UI picker yourself.
+
+### Instructions-agent work style
+
+1. Solve the user’s config/rules request completely in-repo (rules, skills, EMAIL-PROCESSING UPDATE blocks, commits when they ask).  
+2. Parallel tool use when exploring.  
+3. No live RE/PR/LF/login here.  
+4. Never recommend enabling on-demand.  
+5. When recommending email-chat models, keep Sonnet as default there unless pacing says Composer for throughput.
 
 ---
 
@@ -29,8 +59,4 @@
 
 Call STT/teleprompter: **parked** (`capture_path.json` `enabled=false`) until better model.
 
----
-
-## Model policy
-
-This instructions chat → **Composer 2.5** or Auto. Email chat → **Claude 4.6 Sonnet**. **Grok banned.**
+Email chat default picker: **Claude 4.6 Sonnet**. On-demand **Disabled**.

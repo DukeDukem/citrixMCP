@@ -25,14 +25,21 @@ When included usage hits 100% with on-demand Disabled, Cursor throttles / blocks
 
 Agents must **never** recommend enabling on-demand, raising overage limits, or “just pay for more.”
 
-## Recommended picker
+## Utilization goal (not “spend as little as possible”)
 
-| Work | Model | Pool |
-|------|--------|------|
-| Live EMAIL/CALL RE·PR·LF | **Claude 4.6 Sonnet** (thinking) | Other Models |
-| Hard escalation only | Claude 4.6 Opus / Opus 5 | Other Models |
-| Rules / bonus / throughput / near-cap | **Composer 2.5** | Cursor Models |
-| Forbidden | **Grok** (all); **on-demand enable** | — |
+**Target:** finish the billing cycle at **~maximum included usage** (Other Models ≈100% and healthy Composer use) while **on-demand stays Disabled**.
+
+- Maximize **quality and shipped output** (correct rules, fewer retries).  
+- Pace across remaining days — neither burn the Other Models pool in week 1 nor leave large unused headroom on the last day.  
+- If behind pace late in the month: prefer Sonnet for high-value **instructions** work and keep email on Sonnet.  
+- If ahead of pace: instructions → Composer; email sticky cases → Sonnet, throughput → Composer.  
+- **Never** enable on-demand to “finish the month strong.”
+
+### Rough Other Models pacing
+
+`daily Other Models budget ≈ (remaining $ in Other Models pool) / (remaining days in cycle)`
+
+Email RE is first claim on that budget. Instructions Sonnet usage is the valve when email volume is low and headroom would otherwise go unused.
 
 ## Claude 4.6 Sonnet rates (per 1M tokens)
 
@@ -58,8 +65,16 @@ Agents must **never** recommend enabling on-demand, raising overage limits, or �
 | 50 EMAIL + 30 CALL | ~$25–50 |
 | 80 EMAIL + 40 CALL | ~$40–75 → **move to Composer before hitting 100%** |
 
-If Other Models nears **~$45–50** mid-month → shift throughput to Composer 2.5; keep Sonnet for sticky/QA cases.
+## Recommended picker
+
+| Work | Model | Pool |
+|------|--------|------|
+| Live EMAIL/CALL RE·PR·LF | **Claude 4.6 Sonnet** (thinking) | Other Models |
+| Hard escalation only | Claude 4.6 Opus / Opus 5 | Other Models |
+| Instructions (default / protect email budget) | **Composer 2.5** | Cursor Models |
+| Instructions (behind pace / complex design / unused Other Models late-cycle) | **Claude 4.6 Sonnet** | Other Models |
+| Forbidden | **Grok** (all); **on-demand enable** | — |
 
 ## Total cash
 
-**$60 plan fee only** + consumption of **included** pools. **$0 on-demand** while Disabled.
+**$60 plan fee only** + consumption of **included** pools paced to ~month-end full use. **$0 on-demand** while Disabled.

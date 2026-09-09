@@ -10,11 +10,10 @@
 
 ## Model policy (Pro Plus)
 
-- **Email processing chat:** Cursor picker → **Claude 4.6 Sonnet** (thinking). Escalation: Opus. Throughput/budget: Composer 2.5.
-- **Instructions / Incentive chats:** Composer 2.5 or Auto (save Other Models pool).
-- **Grok banned** for all case work.
-- **On-demand / overage usage: DISABLED** — never recommend enabling it; near Other Models cap → Composer 2.5 or pause until cycle reset.
-- Spend notes: `.cursor/knowledge/pro-plus-model-spend-2026.md`. Rule: `.cursor/rules/ai-model-stay-auto.mdc` (filename historical; content is Pro Plus policy).
+- **Email processing:** **Claude 4.6 Sonnet** default; Composer if Other Models pacing is tight.
+- **Instructions dashboard:** **pace-based** — Composer default; Sonnet when behind pace / complex design so included pools land ~full by month-end. See `AGENT-INSTRUCTIONS.md`.
+- **Grok banned.** **On-demand Disabled.** Never recommend overages.
+- Spend / pacing: `.cursor/knowledge/pro-plus-model-spend-2026.md`.
 
 ## Case commands (email processing chat)
 
