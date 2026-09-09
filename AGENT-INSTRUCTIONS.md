@@ -31,6 +31,6 @@ Call STT/teleprompter: **parked** (`capture_path.json` `enabled=false`) until be
 
 ---
 
-## Model lock
+## Model policy
 
-**Auto only.** Grok banned.
+This instructions chat → **Composer 2.5** or Auto. Email chat → **Claude 4.6 Sonnet**. **Grok banned.**

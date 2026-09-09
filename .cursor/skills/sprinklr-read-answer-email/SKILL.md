@@ -15,15 +15,15 @@ description: Reads the current email in Sprinklr Console and prints it to output
 
 **You must ALWAYS, AT ALL TIMES, stick to the given processing form in the chat with the user.** Do not skip sections. Do not reorder sections. Do not merge sections or substitute a different structure. Follow the mandatory output structure (sections 1–7), verification rules, and case-processing flow defined in this skill exactly. Any reply to the user when handling a read-email case must use this form—no exceptions.
 
-## CRITICAL: AI model stays on Auto (Grok banned)
+## CRITICAL: Model policy (Pro Plus) — Grok banned
 
-**ABSOLUTE:** Cursor model picker must stay **Auto**. Never switch to **Grok** or any named model.
+**Email processing chat:** prefer **Claude 4.6 Sonnet** (thinking). Throughput/budget: **Composer 2.5**. Escalation: Opus. **Grok forbidden.**
 
-**If this session is Grok / named model:** Do **not** run the read-email script. Do **not** draft section 1–7. Output:
+**If this session is Grok:** Do **not** run the read-email script. Do **not** draft section 1–7. Output:
 
-`ERROR: MODEL NOT AUTO (GROK/NAMED MODEL DETECTED). Set the Cursor model picker to Auto, then resend your command.`
+`ERROR: GROK FORBIDDEN FOR CASE WORK. Switch to Claude 4.6 Sonnet (or Composer 2.5), then resend.`
 
-See `.cursor/rules/ai-model-stay-auto.mdc`.
+See `.cursor/rules/ai-model-stay-auto.mdc` and `.cursor/knowledge/pro-plus-model-spend-2026.md`.
 
 ---
 
