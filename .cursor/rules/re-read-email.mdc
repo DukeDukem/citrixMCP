@@ -13,13 +13,17 @@ alwaysApply: true
 
 For every **CHANNEL: EMAIL** case (typed **RE** or after `--await-arm` extract):
 
-1. You **MUST** write the full **7-step RE in chat** before Auto-LF, PR, or any arm.  
+1. You **MUST** write the full **7-step RE as visible chat text** (plain assistant message the user can read without opening any UI menu).  
 2. **Forbidden shortcuts:** Auto-LF only; “transfer done” one-liner; paste-ready reply without sections 1–5/7; tool-only turn with no 7-step text.  
-3. **Order (EMAIL):** extract → CHANNEL: EMAIL → attachments if any → **sections 1–7 in chat** → `--play-ready` → **Auto-LF** → transfer arm **or** wait for **PR**.  
-4. Transfer-eligible EMAIL still gets all 7 sections (section 6 may be short forward notice).  
-5. **CALL** does **not** use the email 7-step form (Auto-LF voice on CHANNEL detect).  
+3. **Forbidden hiding:** Do **not** put the 7-step only inside tool results, background-task panels, collapsed **“finished N background tasks”** / task dropdowns, or anything the user must click to expand. The 7-step must appear as **normal chat prose** above the fold.  
+4. **Turn order (EMAIL):**  
+   - First: write sections **1–7 in the chat message** (full visible text).  
+   - Only **after** that text is written: run `--play-ready`, then **Auto-LF**, then transfer arm **or** wait for **PR**.  
+   - Prefer: 7-step text in the same assistant turn **before** tool calls, or a text-first turn then tools — never tools-only with the RE buried in task UI.  
+5. Transfer-eligible EMAIL still gets all 7 sections visible in chat (section 6 may be short forward notice).  
+6. **CALL** does **not** use the email 7-step form (Auto-LF voice on CHANNEL detect).  
 
-If you already ran Auto-LF without the 7-step: **STOP**, output the full 7-step for the visible Fall # now, then continue.
+If you already ran Auto-LF / tools without a visible 7-step in chat: **STOP**, output the full 7-step as normal chat text for the visible Fall # now, then continue.
 
 **AI model (ABSOLUTE):** Model picker stays **Auto**. **Grok is banned.**
 
@@ -91,12 +95,12 @@ Typical workday start:
 
 Every EMAIL extract (typed RE or `--await-arm`):
 
-1. Full **7-step RE written in chat** (sections 1–7 — no skip, no “LF only”)  
-2. **`re_complete_sound.py --play-ready`**  
-3. **Auto-LF** for this Fall # (Transfer Nein or Ja per §3) — user does **not** type `LF`  
+1. Full **7-step RE as visible chat text** (sections 1–7 — user must see it without expanding “finished background tasks” / any dropdown)  
+2. **Only then** **`re_complete_sound.py --play-ready`**  
+3. **Only then** **Auto-LF** for this Fall # (Transfer Nein or Ja per §3) — user does **not** type `LF`  
 4. If transfer → arm Weiter/Extern immediately; if non-transfer → stop and wait for **PR**
 
-**Auto-LF must never replace or precede the 7-step chat output.**
+**Auto-LF / tool runs must never replace, precede, or hide the 7-step behind Cursor task UI.**
 
 Every CALL on CHANNEL detect: Auto-LF `--channel voice` → arm Next (or Weiter/Extern if transfer). BRIEF is optional and never blocks Auto-LF.
 

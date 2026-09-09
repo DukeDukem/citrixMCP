@@ -26,8 +26,8 @@ MODEL: Cursor picker must stay Auto. Never switch models.
 COMMANDS:
 - login -> Sprinklr login-only + Case Tracker tab; sets FIRST_RE_ONCE_PENDING. Do NOT arm call_listen (STT/teleprompter parked).
 - RE -> run.py = ALWAYS --once (extract currently open case). First case of the day / fresh agent = typed RE push-start. NEVER arm Anwenden on typed RE.
-- After every EMAIL case: MUST type full 7-step RE in chat (sections 1–7 from sprinklr-read-answer-email SKILL). NEVER skip, NEVER Auto-LF-only, NEVER “short transfer note” instead of 7-step.
-- After every EMAIL 7-step RE (+ play-ready): AUTO-LF Case Tracker for this Fall # (do NOT wait for typed LF). Transfer Nein or Ja per §3. Auto-LF runs AFTER the 7-step is visible in chat — not instead of it.
+- After every EMAIL case: MUST type full 7-step RE as VISIBLE chat text (sections 1–7). NEVER hide it under “finished N background tasks”, task dropdowns, or tool-result panels. User must read it without clicking anything. Tools (play-ready / Auto-LF / arms) run AFTER that visible text.
+- After every EMAIL 7-step RE (+ play-ready): AUTO-LF Case Tracker for this Fall # (do NOT wait for typed LF). Transfer Nein or Ja per §3. Auto-LF runs AFTER the 7-step is visible in chat — not instead of it, not buried with it in background tasks.
 - After AUTO-LF transfer: IMMEDIATELY --arm-weiter (queue) or --arm-extern (email @) + await. Quote: LF TR done for #FALL_ID. No PR.
 - After AUTO-LF non-transfer EMAIL: wait for user PR only. Do NOT arm yet.
 - PR (EMAIL non-transfer) -> paste + verify, then IMMEDIATELY run.py --arm (Anwenden) + finishing quote PR done for #FALL_ID + --await-arm. LF already done at RE.
@@ -239,11 +239,12 @@ Use when the case chat is already open and needs this delta (no full GO re-boots
 ```
 UPDATE — apply immediately for this session:
 
-HARD FIX — EMAIL 7-STEP RE IS MANDATORY IN CHAT:
-- Every CHANNEL: EMAIL case (RE or after await-arm extract): you MUST type the full 7-step RE in chat (sections 1–7 per sprinklr-read-answer-email SKILL) BEFORE play-ready and BEFORE Auto-LF.
-- Forbidden: Auto-LF-only turns, arm-only turns, one-line “transfer/handled” instead of 7-step, tool spam with no sections 1–7.
-- Order EMAIL: extract → CHANNEL → attachments if any → sections 1–7 in chat → play-ready → Auto-LF → PR wait or transfer arm.
-- If you skipped 7-step on the current EMAIL case: output the full 7-step NOW for the visible Fall #.
+HARD FIX — EMAIL 7-STEP RE MUST BE VISIBLE CHAT TEXT (NOT BEHIND A MENU):
+- Every CHANNEL: EMAIL case: type the full 7-step RE (sections 1–7) as normal assistant chat text the user can read immediately.
+- NEVER put the 7-step only under Cursor “finished N background tasks”, collapsed task dropdowns, tool summaries, or anything that requires a click to open.
+- Order: write visible 7-step FIRST → then play-ready → then Auto-LF → then PR wait or transfer arm.
+- Prefer text before tool calls in the turn (or text-only turn then tools). Forbidden: tools-first / Auto-LF-only with RE hidden in task UI.
+- If the current EMAIL case has no visible 7-step in the main chat thread: output the full 7-step NOW as plain chat text.
 
 AUTO-LF IS MANDATORY FOR BOTH EMAIL AND CALL (I do not type LF):
 
@@ -264,6 +265,6 @@ Also still in force:
 - Anhänge: .png click then Schließen; PDF View Detail.
 - Typed LF / LF TR / PR LF = recovery only.
 
-Confirm: EMAIL 7-step mandatory in chat; CALL Auto-LF on CHANNEL detect. Continue — if current case is EMAIL and 7-step missing, write it now.
+Confirm: EMAIL 7-step must be visible chat text (not behind background-tasks menu); CALL Auto-LF on CHANNEL detect. Continue — if current EMAIL case has no visible 7-step in the main thread, write it now as plain chat.
 ```
 
