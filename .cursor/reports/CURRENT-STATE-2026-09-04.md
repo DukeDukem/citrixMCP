@@ -4,7 +4,7 @@ Canonical baseline for instructions + fresh case agents.
 
 ## Model
 
-Cursor picker: **Auto only**. Grok banned.
+Cursor picker: **Pro Plus** — email chat **Claude 4.6 Sonnet**; instructions **Composer 2.5** (pace-based). Grok banned. On-demand **Disabled**.
 
 ## Two chats
 

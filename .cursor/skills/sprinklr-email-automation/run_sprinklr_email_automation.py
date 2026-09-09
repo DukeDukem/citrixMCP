@@ -169,6 +169,8 @@ def main() -> int:
         args.append("--watch-weiter-re")
     if "--watch-extern-re" in sys.argv:
         args.append("--watch-extern-re")
+    if "--watch-next-re" in sys.argv:
+        args.append("--watch-next-re")
     if "--write-reply-only" in sys.argv:
         args.append("--write-reply-only")
     if "--wait-next-extract-only" in sys.argv:

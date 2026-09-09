@@ -21,7 +21,7 @@ Say what you want in chat; the agent picks the skill and runs **only that script
 | "Read the email and suggest a reply" | **sprinklr-read-answer-email** | `uv run python .cursor/skills/sprinklr-read-answer-email/run.py` (reads current page; summarizes full conversation + suggested reply in chat; no reload/navigate) |
 | "Reply with …" / "Write that reply in the box" | **sprinklr-write-reply** | `uv run python .cursor/skills/sprinklr-write-reply/run.py <path-to-reply.txt>` (writes into reply field on current page; no reload/navigate) |
 | "Fill this Microsoft form with …" | **fill-microsoft-form** | `uv run python .cursor/skills/fill-microsoft-form/run.py --url "…" --answers …` |
-| "Listen to this CALL" / CHANNEL: CALL | **sprinklr-call-listen** | `uv run python .cursor/skills/sprinklr-call-listen/call_listen.py --arm` (brief: `.cursor/state/call_brief_{FALL}.txt`; stop: `--stop`) |
+| "Listen to this CALL" / CHANNEL: CALL | **sprinklr-call-listen** | **Parked** (`capture_path.json` `enabled=false`) — do not `--arm` until reactivated. When off: brief optional only; Auto-LF on CHANNEL detect. |
 
 **Order:** (1) Skill 1: login + status. (2) Skill 2: read email → summary + suggested reply in chat. (3) User says "reply with …" → Skill **sprinklr-write-reply** with a file containing the reply. (4) Optionally fill-microsoft-form.
 

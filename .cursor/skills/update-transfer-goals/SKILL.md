@@ -6,7 +6,7 @@ Some transfer goal names in the Transfer Matrix may be outdated and need renamin
 
 ## How it works
 
-1. The user provides the old name and the new name (e.g., "rename CS_Hardware to CS_HARDWARE_SUPPORT").
+1. The user provides the old name and the new name (e.g., "rename CS_XF_E_LOOP_ALLGEMEIN to CS_LOOP_SUPPORT").
 2. You open `KnowledgeBase/TransferMatrix.md`.
 3. Use find-and-replace to change **every occurrence** of the old name to the new name throughout the file.
 4. Update the **Transfer Goal Name Registry** table at the bottom of the file:
@@ -27,7 +27,7 @@ Some transfer goal names in the Transfer Matrix may be outdated and need renamin
 ## Batch updates
 
 If the user provides multiple renames at once, process them one at a time sequentially.
-Example user input: "rename CS_Hardware to HW_SUPPORT and CBC_XF_E_WIDERRUF to CBC_REVOCATION"
+Example user input: "rename CS_Hardware to CS_XF_E_HARDWARE and CBC_XF_E_WIDERRUF to CBC_REVOCATION"
 
 ## When a transfer goal no longer exists
 

@@ -670,6 +670,8 @@ def run_continue_after_speichern(*, cdp: str = CDP_ENDPOINT) -> int:
 
     print(f"CONTINUE_LF_FILL_START case=#{nxt}", flush=True)
     try:
+        # --no-continue-arm: prevent nested continue watches if gate still trips
+        cmd.append("--no-continue-arm")
         rc = subprocess.call(cmd, cwd=str(REPO_ROOT))
     except Exception as e:
         print(f"CONTINUE_LF_ERROR reason=fill_spawn {e}", flush=True)

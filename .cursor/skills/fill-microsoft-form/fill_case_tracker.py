@@ -654,9 +654,12 @@ def main() -> int:
                     flush=True,
                 )
                 return gate_rc
+            print("PAUSE_AUTO_LF", flush=True)
+            print("LF_CONTINUE_AFTER_SPEICHERN_ARMED", flush=True)
             print(
                 f"Armed — click Speichern for the previous LF; "
-                f"Auto-LF for #{cont['case_id']} continues automatically.",
+                f"Auto-LF for #{cont['case_id']} continues automatically. "
+                f"Agent: run --await-speichern-continue.",
                 flush=True,
             )
             # 3 = paused with continue watch armed (agent should --await-speichern-continue)

@@ -14,7 +14,7 @@ _SKILLS = _REPO / ".cursor" / "skills" / "sprinklr-email-automation"
 _STATE = _REPO / ".cursor" / "state"
 _LOG = _STATE / "sound_hook.log"
 _DEBOUNCE = _STATE / "sound_hook_debounce.json"
-_DEBOUNCE_SECONDS = 12.0
+_DEBOUNCE_SECONDS = 15.0  # align with play_pr_lf_done_sound shared Dexter debounce
 
 if str(_SKILLS) not in sys.path:
     sys.path.insert(0, str(_SKILLS))

@@ -52,6 +52,12 @@ If the user also asked a rules/config question in the same message, answer that 
 - Documenting test results from configuration work **without** treating the chat as the live processing queue
 - Pointing bonus / Produktivitätsbonus questions to **`SEPTEMBER-INCENTIVE-AGENT.md`** (do not deep-run bonus planning here unless the user insists)
 
+## Model policy (this chat)
+
+- **Instructions dashboard:** **Composer 2.5** default (user sets picker manually). **Sonnet** for complex multi-file / architecture when behind pace on included usage.
+- **Email processing chat** (other thread): **Claude 4.6 Sonnet** for live RE/PR/LF.
+- **Grok banned.** **On-demand Disabled** — never recommend overages. Pace to ~full included usage by month-end: `.cursor/knowledge/pro-plus-model-spend-2026.md`, `AGENT-INSTRUCTIONS.md`, `.cursor/rules/ai-model-stay-auto.mdc`.
+
 ## Customer-case chats
 
 The **email processing agent chat** (startup: **`EMAIL-PROCESSING-AGENT.md`**) runs live case work:
