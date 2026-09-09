@@ -22,15 +22,16 @@ The agent fills Case Tracker **while processing** each newly opened case. The us
 
 | Channel | When (same agent turn as analysis) | Tracker |
 |---------|--------------------------------------|---------|
-| **EMAIL** | After TransferMatrix decision is known — **only after the full 7-step RE is written in chat** (then play-ready) | E-Mail Care; Transfer **Nein** or **Ja** + target from §3/4a |
+| **EMAIL** | After TransferMatrix decision is known — **only after the full 7-step RE is visible as normal chat text** (not under “finished background tasks”; then play-ready) | E-Mail Care; Transfer **Nein** or **Ja** + target from §3/4a |
 | **CALL** | As soon as **CHANNEL: CALL** is known (no BRIEF wait) | **`--channel voice`**; Transfer via `resolve_transfer()` / Ziel unless already decided |
 
 ### Order (EMAIL)
 
 1. Extract / CHANNEL: EMAIL  
-2. Full **7-step RE in chat** (TransferMatrix first for §3) — **mandatory; never skip**  
+2. Full **7-step RE as visible chat text** (TransferMatrix first for §3) — **mandatory; never skip; never only inside background-task UI**  
 3. **`re_complete_sound.py --play-ready`** (book)  
 4. **Immediately Auto-LF** for this Fall # (see RUN LF below)  
+   Tools for steps 3–4 run **after** step 2 is already written as main-thread chat prose.  
 5. Branch on transfer:
 
 | RE §3 Transfer eligible | After Auto-LF success |
