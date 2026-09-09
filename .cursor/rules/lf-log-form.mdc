@@ -78,7 +78,9 @@ State: `.cursor/state/lf_speichern_pending.json`. Expect: `LF_SPEICHERN_PENDING`
 2. **Do not** Auto-LF the new case, **do not** arm Next/Weiter/Extern/Anwenden for that new LF close-out until the gate clears.  
 3. **Warn the user in chat** clearly: previous Case Tracker LF was not saved — click **Speichern** for the previous Fall #, then re-run Auto-LF for the current case.  
 4. Same-case re-LF / recovery is allowed (gate is between **separate** Fall #s only).  
-5. Recovery: user Speichern → re-run `fill_case_tracker.py --case-id "#NEW"`; or if already saved but watch missed it → `--clear-speichern-pending` then retry; emergency only → `--ignore-speichern-gate`.
+5. Recovery: user Speichern → re-run `fill_case_tracker.py --case-id "#NEW"` (retry **must** re-read Case Tracker localStorage for belated Speichern); or `--check-speichern` (live sync); or if already saved but still blocked → `--clear-speichern-pending` then retry; emergency only → `--ignore-speichern-gate`.
+
+Belated Speichern: click is stored in Case Tracker `localStorage` (`lf_speichern_seen`) so a later Auto-LF retry still clears the gate even if the detached watch already died.
 
 ```powershell
 uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --check-speichern

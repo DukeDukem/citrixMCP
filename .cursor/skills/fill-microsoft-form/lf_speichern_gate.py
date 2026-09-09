@@ -1,8 +1,8 @@
 """Speichern gate between Case Tracker LFs for different Fall #s.
 
-After Auto-LF fill (without --submit), a detached watch listens for
-<input type="submit" value="Speichern">. The next LF for a *different*
-case is blocked until that click is registered.
+After Auto-LF fill (without --submit), listeners mark Speichern in
+page localStorage (survives navigation / dead watches). The next LF for a
+*different* case is blocked until that mark is seen.
 """
 from __future__ import annotations
 
@@ -25,6 +25,93 @@ SPEICHERN_STATE = _STATE_DIR / "lf_speichern_pending.json"
 SPEICHERN_LOG = _STATE_DIR / "lf_speichern_watch.log"
 CDP_ENDPOINT = "http://127.0.0.1:9222"
 _WATCH_TIMEOUT_S = 86_400  # 24h
+
+# Document-level capture + localStorage — must NOT depend on data-lf-speichern-watch
+# (that attribute previously blocked re-arming the real notify handler).
+_ARM_SPEICHERN_JS = """
+(caseId) => {
+  const cid = String(caseId || '').replace(/\\D/g, '');
+  window.__lf_speichern_case = cid;
+  try {
+    localStorage.setItem('lf_speichern_pending', cid);
+    // Do not clear lf_speichern_seen here if it already matches cid (re-arm after click)
+    const seen = localStorage.getItem('lf_speichern_seen') || '';
+    if (seen && seen !== cid) {
+      localStorage.removeItem('lf_speichern_seen');
+      localStorage.removeItem('lf_speichern_at');
+    }
+  } catch (e) {}
+
+  const mark = (ev) => {
+    const t = ev && ev.target;
+    let hit = false;
+    if (ev && ev.type === 'submit') {
+      hit = true;
+    } else if (t) {
+      const el = (t.closest && t.closest('input[type="submit"][value="Speichern"]')) || t;
+      if (el && el.matches && el.matches('input[type="submit"][value="Speichern"]')) {
+        hit = true;
+      }
+    }
+    if (!hit) return;
+    const useCid = window.__lf_speichern_case || (localStorage.getItem('lf_speichern_pending') || '');
+    window.__lf_speichern_clicked = true;
+    try {
+      if (useCid) localStorage.setItem('lf_speichern_seen', String(useCid).replace(/\\D/g, ''));
+      localStorage.setItem('lf_speichern_at', String(Date.now()));
+    } catch (e) {}
+    try { if (typeof window.lfSpeichernNotify === 'function') window.lfSpeichernNotify(); } catch (e) {}
+  };
+
+  if (!window.__lfSpeichernDocArmed) {
+    window.__lfSpeichernDocArmed = true;
+    document.addEventListener('click', mark, true);
+    document.addEventListener('submit', mark, true);
+  }
+
+  // Also stamp the button (debug / user inspection) without blocking re-arm
+  const btn = document.querySelector('input[type="submit"][value="Speichern"]');
+  if (btn) btn.setAttribute('data-lf-speichern-watch', '1');
+
+  return {
+    pending: (localStorage.getItem('lf_speichern_pending') || ''),
+    seen: (localStorage.getItem('lf_speichern_seen') || ''),
+    clicked: !!window.__lf_speichern_clicked,
+  };
+}
+"""
+
+_READ_SPEICHERN_MARKS_JS = """
+() => {
+  let pending = '';
+  let seen = '';
+  let at = '';
+  try {
+    pending = localStorage.getItem('lf_speichern_pending') || '';
+    seen = localStorage.getItem('lf_speichern_seen') || '';
+    at = localStorage.getItem('lf_speichern_at') || '';
+  } catch (e) {}
+  return {
+    pending,
+    seen,
+    at,
+    clicked: !!window.__lf_speichern_clicked,
+    sikas: ((document.querySelector('input[name="sikas"]') || {}).value || '').replace(/\\D/g, ''),
+  };
+}
+"""
+
+_CLEAR_PAGE_SPEICHERN_JS = """
+() => {
+  try {
+    localStorage.removeItem('lf_speichern_pending');
+    localStorage.removeItem('lf_speichern_seen');
+    localStorage.removeItem('lf_speichern_at');
+  } catch (e) {}
+  window.__lf_speichern_clicked = false;
+  return true;
+}
+"""
 
 
 def normalise_case_id(case_id: str) -> str:
@@ -94,43 +181,80 @@ def find_case_tracker_page(ctx):
     return None
 
 
-def page_speichern_clicked(page) -> bool:
+def arm_speichern_for_case(page, case_id: str) -> dict:
+    """Install durable Speichern capture for this Fall # (localStorage + document listeners)."""
+    digits = normalise_case_id(case_id)
     try:
-        return bool(page.evaluate("() => !!window.__lf_speichern_clicked"))
-    except Exception:
-        return False
-
-
-def install_speichern_listener(page) -> bool:
-    try:
-        page.evaluate(
-            """() => {
-          window.__lf_speichern_clicked = window.__lf_speichern_clicked || false;
-          const mark = () => { window.__lf_speichern_clicked = true; };
-          const arm = () => {
-            const btn = document.querySelector('input[type="submit"][value="Speichern"]');
-            const form = (btn && btn.form) || document.querySelector('form');
-            if (btn && !btn.dataset.lfSpeichernWatch) {
-              btn.dataset.lfSpeichernWatch = '1';
-              btn.addEventListener('click', mark, true);
-            }
-            if (form && !form.dataset.lfSpeichernWatch) {
-              form.dataset.lfSpeichernWatch = '1';
-              form.addEventListener('submit', mark, true);
-            }
-          };
-          arm();
-          if (!window.__lfSpeichernObs) {
-            window.__lfSpeichernObs = new MutationObserver(arm);
-            window.__lfSpeichernObs.observe(document.documentElement, { childList: true, subtree: true });
-          }
-          return true;
-        }"""
-        )
-        return True
+        result = page.evaluate(_ARM_SPEICHERN_JS, digits)
+        return result if isinstance(result, dict) else {}
     except Exception as e:
-        print(f"[WARN] Could not install Speichern listener: {e}", flush=True)
+        print(f"[WARN] Could not arm Speichern listener: {e}", flush=True)
+        return {}
+
+
+def install_speichern_listener(page, case_id: str | None = None) -> bool:
+    """Backward-compatible wrapper; prefer arm_speichern_for_case with explicit case_id."""
+    st = read_speichern_state() or {}
+    cid = case_id or st.get("case_id") or ""
+    if not cid:
         return False
+    return bool(arm_speichern_for_case(page, str(cid)))
+
+
+def read_page_speichern_marks(page) -> dict:
+    try:
+        result = page.evaluate(_READ_SPEICHERN_MARKS_JS)
+        return result if isinstance(result, dict) else {}
+    except Exception:
+        return {}
+
+
+def clear_page_speichern_marks(page) -> None:
+    try:
+        page.evaluate(_CLEAR_PAGE_SPEICHERN_JS)
+    except Exception:
+        pass
+
+
+def page_speichern_clicked(page) -> bool:
+    marks = read_page_speichern_marks(page)
+    return bool(marks.get("clicked"))
+
+
+def sync_speichern_from_page(page, expected_case: str) -> bool:
+    """
+    If the page shows Speichern already happened for expected_case, mark file state seen.
+    Survives belated clicks after the Python watch died (localStorage).
+    """
+    prev = normalise_case_id(expected_case)
+    if not prev or page is None:
+        return False
+
+    # Re-arm so a click that happens during this check is also captured
+    arm_speichern_for_case(page, prev)
+    marks = read_page_speichern_marks(page)
+    seen = normalise_case_id(str(marks.get("seen") or ""))
+    clicked = bool(marks.get("clicked"))
+    sikas = normalise_case_id(str(marks.get("sikas") or ""))
+
+    if seen == prev or (clicked and (seen == prev or not seen)):
+        mark_speichern_seen(prev, source="localStorage" if seen == prev else "live_flag")
+        return True
+
+    # Heuristic: form no longer holds the previous Case # after a successful Speichern
+    # (empty or different sikas while we still have a pending save for prev).
+    if sikas != prev:
+        # Only trust empty/different if pending file still says unsaved for prev
+        st = read_speichern_state()
+        if st and normalise_case_id(str(st.get("case_id") or "")) == prev and not st.get("speichern_seen"):
+            # Avoid false positive on first open of blank form before any LF — require
+            # that localStorage pending still matches prev (we set it at fill time).
+            ls_pending = normalise_case_id(str(marks.get("pending") or ""))
+            if ls_pending == prev:
+                mark_speichern_seen(prev, source="sikas_cleared")
+                return True
+
+    return False
 
 
 def spawn_speichern_watch(case_id: str) -> int | None:
@@ -228,34 +352,9 @@ def run_speichern_watch(case_id: str, cdp: str = CDP_ENDPOINT) -> int:
                     page.expose_function("lfSpeichernNotify", lambda: _notify_from_page())
                 except Exception:
                     pass
-                page.evaluate(
-                    """() => {
-                  const notify = () => {
-                    window.__lf_speichern_clicked = true;
-                    try { if (window.lfSpeichernNotify) window.lfSpeichernNotify(); } catch (e) {}
-                  };
-                  const arm = () => {
-                    const btn = document.querySelector('input[type="submit"][value="Speichern"]');
-                    const form = (btn && btn.form) || document.querySelector('form');
-                    if (btn && !btn.dataset.lfSpeichernWatch) {
-                      btn.dataset.lfSpeichernWatch = '1';
-                      btn.addEventListener('click', notify, true);
-                    }
-                    if (form && !form.dataset.lfSpeichernWatch) {
-                      form.dataset.lfSpeichernWatch = '1';
-                      form.addEventListener('submit', notify, true);
-                    }
-                  };
-                  arm();
-                  if (!window.__lfSpeichernObs) {
-                    window.__lfSpeichernObs = new MutationObserver(arm);
-                    window.__lfSpeichernObs.observe(document.documentElement, { childList: true, subtree: true });
-                  }
-                  return true;
-                }"""
-                )
-                if page_speichern_clicked(page):
-                    _notify_from_page()
+                arm_speichern_for_case(page, digits)
+                if sync_speichern_from_page(page, digits):
+                    marked["done"] = True
                     return 0
             except Exception:
                 if marked["done"]:
@@ -290,21 +389,29 @@ def gate_previous_speichern(next_case_id: str, tracker_page, *, ignore: bool) ->
         return None
 
     if st.get("speichern_seen"):
+        if tracker_page is not None:
+            clear_page_speichern_marks(tracker_page)
         clear_speichern_state()
         return None
 
+    # Belated Speichern: localStorage / sikas / live flag (works even if watch died)
     if tracker_page is not None:
         try:
-            install_speichern_listener(tracker_page)
-            if page_speichern_clicked(tracker_page):
-                mark_speichern_seen(prev, source="live_flag")
+            if sync_speichern_from_page(tracker_page, prev):
+                clear_page_speichern_marks(tracker_page)
                 clear_speichern_state()
+                print(
+                    f"[CASE TRACKER] Previous Speichern detected for #{prev} — gate cleared; continuing Auto-LF on #{nxt}.",
+                    flush=True,
+                )
                 return None
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[WARN] Speichern live sync failed: {e}", flush=True)
 
     st = read_speichern_state()
     if st and st.get("speichern_seen") and normalise_case_id(str(st.get("case_id") or "")) == prev:
+        if tracker_page is not None:
+            clear_page_speichern_marks(tracker_page)
         clear_speichern_state()
         return None
 
@@ -320,15 +427,15 @@ def gate_previous_speichern(next_case_id: str, tracker_page, *, ignore: bool) ->
     )
     print("PAUSE_AUTO_LF", flush=True)
     print(
-        "After Speichern: re-run Auto-LF for the new case "
-        "(or --check-speichern then fill). "
-        "If you already saved: --clear-speichern-pending then retry.",
+        "After Speichern: re-run Auto-LF for the new case. "
+        "Belated Speichern is detected via Case Tracker localStorage on retry. "
+        "If you already saved and it still blocks: --clear-speichern-pending then retry.",
         flush=True,
     )
     return 2
 
 
-def check_speichern_status() -> int:
+def check_speichern_status(*, cdp: str = CDP_ENDPOINT, sync_live: bool = True) -> int:
     st = read_speichern_state()
     if not st:
         print("LF_SPEICHERN_STATUS clear", flush=True)
@@ -337,6 +444,26 @@ def check_speichern_status() -> int:
     if st.get("speichern_seen"):
         print(f"LF_SPEICHERN_STATUS seen case=#{cid}", flush=True)
         return 0
+
+    if sync_live and sync_playwright is not None:
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.connect_over_cdp(cdp)
+                ctx = browser.contexts[0] if browser.contexts else None
+                page = find_case_tracker_page(ctx) if ctx else None
+                if page and sync_speichern_from_page(page, cid):
+                    clear_page_speichern_marks(page)
+                    clear_speichern_state()
+                    print(f"LF_SPEICHERN_STATUS synced_seen case=#{cid}", flush=True)
+                    return 0
+        except Exception as e:
+            print(f"[WARN] Speichern live check failed: {e}", flush=True)
+
+    st = read_speichern_state()
+    if st and st.get("speichern_seen"):
+        print(f"LF_SPEICHERN_STATUS seen case=#{cid}", flush=True)
+        return 0
+
     print(f"LF_SPEICHERN_STATUS pending case=#{cid}", flush=True)
     print("PAUSE_AUTO_LF", flush=True)
     return 2

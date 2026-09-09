@@ -25,10 +25,11 @@ except ImportError:
 
 try:
     from lf_speichern_gate import (
+        arm_speichern_for_case,
         check_speichern_status,
+        clear_page_speichern_marks,
         clear_speichern_state,
         gate_previous_speichern,
-        install_speichern_listener,
         mark_speichern_seen,
         read_speichern_state,
         run_speichern_watch,
@@ -39,10 +40,11 @@ try:
 except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from lf_speichern_gate import (
+        arm_speichern_for_case,
         check_speichern_status,
+        clear_page_speichern_marks,
         clear_speichern_state,
         gate_previous_speichern,
-        install_speichern_listener,
         mark_speichern_seen,
         read_speichern_state,
         run_speichern_watch,
@@ -507,86 +509,6 @@ def fill_case_tracker_fields(
         print("[CASE TRACKER] Fields filled — click Speichern manually when ready.")
 
 
-# Speichern-gate helpers (no-op / minimal — fill must not crash if watch code is absent)
-_SPEICHERN_STATE_PATH = REPO_ROOT / ".cursor" / "state" / "lf_speichern_state.json"
-
-
-def _read_speichern_state() -> dict | None:
-    try:
-        if not _SPEICHERN_STATE_PATH.exists():
-            return None
-        with open(_SPEICHERN_STATE_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data if isinstance(data, dict) else None
-    except Exception:
-        return None
-
-
-def _write_speichern_state(st: dict) -> None:
-    try:
-        _SPEICHERN_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with open(_SPEICHERN_STATE_PATH, "w", encoding="utf-8") as f:
-            json.dump(st, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
-
-def _clear_speichern_state() -> None:
-    try:
-        if _SPEICHERN_STATE_PATH.exists():
-            _SPEICHERN_STATE_PATH.unlink()
-    except Exception:
-        pass
-
-
-def _gate_previous_speichern(case_id: str, tracker, ignore: bool = False) -> int | None:
-    """Block fill if prior case Speichern is still pending. Returns exit code or None to continue."""
-    if ignore:
-        return None
-    st = _read_speichern_state()
-    if not st or st.get("speichern_seen"):
-        return None
-    pending = _normalise_case_id(str(st.get("case_id") or ""))
-    current = _normalise_case_id(case_id)
-    if not pending or pending == current:
-        return None
-    print(f"ERROR: LF_SPEICHERN_PENDING for #{pending} — click Speichern or use --ignore-speichern-gate", flush=True)
-    print("PAUSE_AUTO_LF", flush=True)
-    return 2
-
-
-def _mark_speichern_seen(case_id: str, source: str = "") -> None:
-    st = _read_speichern_state() or {}
-    st["case_id"] = _normalise_case_id(case_id)
-    st["speichern_seen"] = True
-    if source:
-        st["source"] = source
-    _write_speichern_state(st)
-
-
-def _set_speichern_pending(case_id: str) -> None:
-    _write_speichern_state(
-        {
-            "case_id": _normalise_case_id(case_id),
-            "speichern_seen": False,
-            "pending": True,
-        }
-    )
-
-
-def _install_speichern_listener(tracker) -> None:
-    return None
-
-
-def _spawn_speichern_watch(case_id: str) -> int | None:
-    return None
-
-
-def _run_speichern_watch(case_id: str, cdp: str) -> int:
-    print(f"[CASE TRACKER] Speichern watch not implemented (case=#{_normalise_case_id(case_id)})", flush=True)
-    return 0
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description="Open/fill Roberta O2 Case Tracker")
     ap.add_argument("--case-id", help='Sprinklr Case ID, e.g. "#36698255"')
@@ -630,7 +552,7 @@ def main() -> int:
         return 0
 
     if args.check_speichern:
-        return check_speichern_status()
+        return check_speichern_status(cdp=args.cdp, sync_live=True)
 
     if args.watch_speichern:
         if not args.case_id:
@@ -703,10 +625,14 @@ def main() -> int:
 
         if args.submit:
             mark_speichern_seen(args.case_id, source="submit_flag")
+            try:
+                clear_page_speichern_marks(tracker)
+            except Exception:
+                pass
             clear_speichern_state()
             print("LF_SPEICHERN_CLEARED_AFTER_SUBMIT", flush=True)
         else:
-            install_speichern_listener(tracker)
+            arm_speichern_for_case(tracker, args.case_id)
             set_speichern_pending(args.case_id)
             pid = spawn_speichern_watch(args.case_id)
             if pid is not None:
