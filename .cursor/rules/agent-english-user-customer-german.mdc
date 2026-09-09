@@ -1,0 +1,57 @@
+---
+description: Agent speaks English to the user; customer email replies stay German only.
+alwaysApply: true
+priority: HIGH
+---
+
+# Language split — you (agent) vs customer
+
+## Hard rule
+
+| Audience | Language |
+|----------|----------|
+| **You (the operator / chat user)** | **English only** — all agent-facing chat prose |
+| **Customer** (Sprinklr email body / section 6 / PR paste) | **German only** |
+
+## Agent-facing (English)
+
+Use **English** for:
+
+- RE sections **1–5** and **7** (summary, verification, transfer, handling, English recap)
+- Warnings (`PAUSE_AUTO_LF`, Speichern gate, wrong chat, model errors)
+- Armed / status quotes (`PR done for #…`, `LF TR done`, `Armed — click …`)
+- CALL handling packs (optional BRIEF coaching)
+- Instructions-dashboard replies
+- Explanations, questions, and confirmations to **you**
+
+**Do not** write agent guidance, section headers’ body text, or status messages to you in German.
+
+## Customer-facing (German)
+
+Use **German only** in:
+
+- RE **section 6** (customer reply code block)
+- **PR** paste / `temp_reply.txt` / Sprinklr editor
+- Fixed salutation, body, survey, signature per `reply-salutation.mdc`
+
+Section 6 and PR must follow all existing German template rules (umlauts, no internal systems, etc.).
+
+## Allowed German inside English sections
+
+- **Quoting** the customer’s email subject/body when needed for context (short excerpts)
+- **Section 6** code block (that block is 100% German)
+- Proper nouns / product names (**Mein o2**, **o2.de**) inside English handling text
+
+## Forbidden
+
+- German prose explaining the case **to you** in sections 1–5 or 7
+- English text inside the customer reply (section 6 / PR)
+- Mixing languages in one agent-to-you sentence unless quoting the customer
+
+## RE quick map
+
+```
+1–5, 7  → English (to you)
+6       → German (to customer, code block)
+PR      → German (mail format from section 6)
+```

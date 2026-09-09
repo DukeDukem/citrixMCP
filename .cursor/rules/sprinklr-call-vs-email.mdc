@@ -91,6 +91,8 @@ If the user pastes what the customer said (or types **BRIEF**), produce a **CALL
 
 ### CALL handling pack (optional, on BRIEF)
 
+**Language:** **English only** (to the operator). Customer talk-track phrases may include German wording the agent can say on the call; no German prose explaining the case to you. See `.cursor/rules/agent-english-user-customer-german.mdc`.
+
 1. **Channel + Fall # + customer** (one line)  
 2. **Case summary** — problem + what they want (~35–60 words)  
 3. **Verification** — identifiers from Sprinklr + brief  

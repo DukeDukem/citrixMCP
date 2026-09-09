@@ -8,6 +8,11 @@
 | **Email processing** | `EMAIL-PROCESSING-AGENT.md` | **Yes** |
 | **September Incentive** | `SEPTEMBER-INCENTIVE-AGENT.md` | **No** — yoummday Produktivitätsbonus / shift points / Treue-Bonus only |
 
+## Language
+
+- **To you (operator):** **English only** — RE sections 1–5/7, warnings, CALL packs, instructions chat.
+- **To customer:** **German only** — RE section 6 + PR paste. Rule: `.cursor/rules/agent-english-user-customer-german.mdc`.
+
 ## Model policy (Pro Plus)
 
 - **Email processing:** **Claude 4.6 Sonnet** default; Composer if Other Models pacing is tight.

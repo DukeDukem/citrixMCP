@@ -138,12 +138,14 @@ Do **not** arm twice for the same close-out. If a detached watch is already wait
 
 ## 7-step output
 
-1. Customer summary  
-2. Verification  
-3. Transfer eligibility  
-4a/4b. Backend / instructions  
-5. Instructions on handling case  
-6. Your response to customer (German, code block; **chat** soft-wrap ~72 for vertical read; **PR** uses mail-format length — not chat wraps)  
+**Language:** Sections **1–5** and **7** → **English** (to the operator). Section **6** → **German only** (customer). All other agent chat to the user → English. See `.cursor/rules/agent-english-user-customer-german.mdc`.
+
+1. Customer summary (EN)  
+2. Verification (EN)  
+3. Transfer eligibility (EN)  
+4a/4b. Backend / instructions (EN)  
+5. Instructions on handling case (EN)  
+6. Your response to customer (**German**, code block; **chat** soft-wrap ~72 for vertical read; **PR** uses mail-format length — not chat wraps)  
 7. Summary of response (EN) — then run **`re_complete_sound.py --play-ready`** (book) — then **Auto-LF**
 
 ## Integrity

@@ -4,6 +4,8 @@
 
 **Do not run login, RE, PR, or LF here.** Use a **separate chat** with **`EMAIL-PROCESSING-AGENT.md`**.
 
+**Language:** Address **you** exclusively in **English** in this chat. Customer email replies (section 6 / PR) stay **German only** — see `.cursor/rules/agent-english-user-customer-german.mdc`.
+
 ---
 
 ## Chat roles
