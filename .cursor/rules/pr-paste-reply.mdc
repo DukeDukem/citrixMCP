@@ -40,7 +40,7 @@ When the user prompts with PR/pr:
 
 1. Use the suggested reply from the previous read-email (RE) output for ONE customer only
    - Source must be the latest RE for the currently visible case only.
-   - Default binding rule: if PR is issued immediately after RE and no explicit rewrite instruction was provided by the user, paste the exact customer-reply text from that RE output (no paraphrase, no alternative draft).
+   - Default binding rule: if PR is issued immediately after RE and no explicit rewrite instruction was provided by the user, paste the **same wording** from that RE section 6 (no paraphrase, no alternative draft). **Formatting for paste:** use **mail format** (previous length / paragraph layout / signature line breaks) — **not** the chat ~72-column soft-wrap used only for reading in Cursor. Rejoin chat soft-wraps within paragraphs before writing the reply file. Encoding and template structure stay the same. See `.cursor/rules/ENCODING-SAFE-OUTPUT.mdc`.
    - Hard gate: if latest RE case ID does not match the currently visible case ID, PR must STOP and refuse paste (never fallback to any other draft file).
    - Only two source types are allowed for PR (same visible case only):
      1) exact section-5 reply from latest RE (7-step output), or

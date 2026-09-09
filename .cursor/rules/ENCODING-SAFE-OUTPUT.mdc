@@ -11,7 +11,7 @@ SOLUTION: Output customer replies in markdown code blocks to preserve UTF-8 enco
 
 ## RULE:
 
-When outputting a customer reply (section 6 of RE, or after PR), DO NOT paste it as plain text.
+When outputting a customer reply **in chat** (section 6 of RE), DO NOT paste it as plain text.
 
 INSTEAD: Wrap it in a markdown code block:
 
@@ -27,42 +27,44 @@ The triple backticks preserve UTF-8 encoding and prevent mojibake corruption.
 
 ## CRITICAL:
 
-- If you paste customer reply as plain text and it shows mojibake (GÃ¼, Ã¤, Ã¶, Ã¼, ÃŸ) → YOU FAILED
-- Always use code block format
-- This applies to ALL customer-facing email replies
+- If you paste customer reply as plain text in chat and it shows mojibake (GÃ¼, Ã¤, Ã¶, Ã¼, ÃŸ) → YOU FAILED
+- Always use code block format **in chat** for section 6
+- This applies to ALL customer-facing email replies shown in chat
 
-## NO HORIZONTAL SCROLL (chat window fit)
+---
 
-Cursor code blocks do **not** soft-wrap. Long single lines force left-right scrolling while reading.
+## TWO FORMATS (do not confuse)
 
-**Hard rule for section 6 (and any customer-reply code block in chat):**
+| Where | Line wrapping | Purpose |
+|-------|---------------|---------|
+| **Chat section 6** (Cursor) | Soft-wrap ~72 chars (max 80) | Read with vertical scroll only |
+| **PR / Sprinklr paste** (`temp_reply.txt`, write-reply) | **Mail format** — previous length & layout | What the customer receives |
 
-1. Soft-wrap body text so **each line is at most ~72 characters** (target 60–72; hard max **80**).
-2. Break only at spaces / punctuation — **never** mid-word.
-3. Prefer breaking after commas, periods, or natural German phrase boundaries.
-4. Keep blank lines between paragraphs (salutation → thank-you → body → survey → signature).
-5. Long signature/legal lines: wrap the same way (e.g. company address / Pflichtangaben on multiple lines). Exact wording stays; only line breaks change.
-6. Do **not** use one giant paragraph as a single unbroken line.
-7. PR paste / `temp_reply.txt`: same wrapping is fine (email clients wrap anyway).
+**Chat wrap must NEVER change what gets pasted into Sprinklr.**
 
-**Bad (horizontal scroll):**
-```
-vielen Dank, dass Sie uns bezüglich der fehlenden Gutschrift auf Ihrer März-Rechnung aufmerksam gemacht haben. Wir bedauern die Unannehmlichkeiten und empfehlen Ihnen, in Mein o2 unter Rechnungen den aktuellen Stand zu prüfen und bei Bedarf die Rechnung erneut herunterzuladen.
-```
+### A) Chat display only (section 6)
 
-**Good (vertical scroll only):**
-```
-vielen Dank, dass Sie uns bezüglich der fehlenden
-Gutschrift auf Ihrer März-Rechnung aufmerksam
-gemacht haben. Wir bedauern die Unannehmlichkeiten
-und empfehlen Ihnen, in Mein o2 unter Rechnungen
-den aktuellen Stand zu prüfen und bei Bedarf die
-Rechnung erneut herunterzuladen.
-```
+1. Soft-wrap so each line is ~72 characters (hard max **80**).
+2. Break only at spaces / punctuation — never mid-word.
+3. Keep blank lines between paragraphs (salutation → thank-you → body → survey → signature).
+4. Exact **wording** and UTF-8 encoding stay identical to the mail version.
 
-## FORMAT FOR SECTION 6:
+### B) PR paste / Sprinklr (mandatory — unchanged mail format)
 
-Section 6 output should look like:
+When writing the reply file for **PR** / `sprinklr-write-reply`:
+
+1. Use **mail formatting** — same as before the chat-wrap rule existed.
+2. **Do not** paste the chat soft-wraps (no ~72-column hard line breaks inside paragraphs).
+3. Paragraphs = normal email length: one logical paragraph per block, blank line between blocks.
+4. Keep the **fixed closing / signature block** line layout from `reply-salutation.mdc` (verbatim wording and its usual line breaks).
+5. Same words, same umlauts/UTF-8, same salutation/body/survey/signature order — only undo chat-only soft wraps.
+6. Before PR: if section 6 in chat was soft-wrapped for reading, **rejoin** wrapped lines within each paragraph (join with spaces) into mail-format paragraphs, then write that to the reply file.
+
+**Forbidden:** Letting Cursor chat line-wrapping dictate Sprinklr editor formatting.
+
+---
+
+## FORMAT FOR SECTION 6 (chat):
 
 ---
 
@@ -71,22 +73,27 @@ Section 6 output should look like:
 ```
 Guten Tag [Name],
 
-[case-specific thank you — wrapped ~72 cols]
+[thank you — chat soft-wrapped ~72]
 
-[body paragraphs — each line ≤80 chars]
+[body — chat soft-wrapped ~72]
 
-[survey line — wrapped if needed]
+[survey — chat soft-wrapped if needed]
 
-[signature block — wrapped if needed]
+[signature — may soft-wrap in chat only]
 ```
 
 ---
 
-## CHECK BEFORE OUTPUTTING:
+## CHECK BEFORE OUTPUTTING (chat):
 
-1. Is reply in a code block (between triple backticks)?
-2. Does it show correct umlauts (ü, ä, ö, ß) not mojibake (Ã¼, Ã¤, Ã¶, ÃŸ)?
-3. Are body lines wrapped (~72 chars, max 80) so the chat needs **vertical** scroll only — not constant left-right?
-4. If NO to any → STOP and fix before output
+1. Is reply in a code block?
+2. Correct umlauts (ü, ä, ö, ß) not mojibake?
+3. Chat lines wrapped ~72 for vertical scroll?
+4. If NO → STOP and fix
 
-This prevents encoding corruption and unreadable wide code blocks before they reach the user.
+## CHECK BEFORE PR PASTE:
+
+1. Reply file is **mail format** (not chat soft-wrap)?
+2. Same wording/encoding as section 6 content?
+3. Signature block matches fixed closing template layout?
+4. If chat wraps leaked into the paste file → STOP, reformat to mail length, then paste
