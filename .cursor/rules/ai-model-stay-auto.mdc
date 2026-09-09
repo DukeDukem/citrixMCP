@@ -14,7 +14,7 @@ User upgraded from Auto-lock. Named models are allowed **except Grok**. Agents m
 
 | Chat | Model picker | Why |
 |------|--------------|-----|
-| **Email processing** (`EMAIL-PROCESSING-AGENT.md`) | **Claude 4.6 Sonnet** (thinking) as default; Composer if Other Models pacing is tight | German RE quality |
+| **Email processing** (`EMAIL-PROCESSING-AGENT.md`) | **Recommended:** Claude 4.6 Sonnet (thinking). **User choice (2026-09-09): Auto** for higher case throughput — see user picker log in `.cursor/knowledge/pro-plus-model-spend-2026.md`. Composer if Other Models pacing is tight | German RE quality vs speed |
 | **Instructions dashboard** (`AGENT-INSTRUCTIONS.md`) | **Pace-based** — see below | Maximize quality + month-end utilization of included pools |
 | **September Incentive** | **Composer 2.5** (Sonnet only if bonus logic is unusually hard and Other Models has end-of-cycle headroom) | Light planning |
 

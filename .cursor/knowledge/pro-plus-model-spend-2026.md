@@ -65,11 +65,22 @@ Email RE is first claim on that budget. Instructions Sonnet usage is the valve w
 | 50 EMAIL + 30 CALL | ~$25–50 |
 | 80 EMAIL + 40 CALL | ~$40–75 → **move to Composer before hitting 100%** |
 
+## User picker log (actual UI choice — for usage breakdowns)
+
+Document what **you** set in the Cursor model picker, not what agents recommend. When reconciling dashboard spend, compare against this log.
+
+| Date | Chat | Picker set | Reason / notes |
+|------|------|------------|----------------|
+| **2026-09-09** | **Email processing** (`EMAIL-PROCESSING-AGENT.md`) | **Auto** | Higher processing and case-solving speed. Usage will **not** match Sonnet-primary estimates below — Auto routes across included models (often Composer / Cursor Models; may use Other Models on harder turns). **Grok still forbidden** if Auto selects it → switch picker manually. |
+| *(prior)* | Email processing | Claude 4.6 Sonnet (thinking) | Default recommendation for German RE quality |
+
+**When email chat is on Auto:** treat per-case **Other Models** $ as **variable**; track **Cursor Models vs Other Models** split in [Dashboard → Usage](https://cursor.com/dashboard/spending) separately from Sonnet-only baselines.
+
 ## Recommended picker
 
 | Work | Model | Pool |
 |------|--------|------|
-| Live EMAIL/CALL RE·PR·LF | **Claude 4.6 Sonnet** (thinking) | Other Models |
+| Live EMAIL/CALL RE·PR·LF | **Claude 4.6 Sonnet** (thinking) — or **Auto** if user prioritizes speed (see log above) | Other Models / mixed when Auto |
 | Hard escalation only | Claude 4.6 Opus / Opus 5 | Other Models |
 | Instructions (default / protect email budget) | **Composer 2.5** | Cursor Models |
 | Instructions (behind pace / complex design / unused Other Models late-cycle) | **Claude 4.6 Sonnet** | Other Models |

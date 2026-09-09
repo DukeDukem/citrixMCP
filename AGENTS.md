@@ -15,7 +15,7 @@
 
 ## Model policy (Pro Plus)
 
-- **Email processing:** **Claude 4.6 Sonnet** default; Composer if Other Models pacing is tight.
+- **Email processing:** **Auto** (user choice since **2026-09-09**, speed). Recommended fallback: **Claude 4.6 Sonnet** for hard RE. Picker log: `.cursor/knowledge/pro-plus-model-spend-2026.md`.
 - **Instructions dashboard:** **pace-based** — Composer default; Sonnet when behind pace / complex design so included pools land ~full by month-end. See `AGENT-INSTRUCTIONS.md`.
 - **Grok banned.** **On-demand Disabled.** Never recommend overages.
 - Spend / pacing: `.cursor/knowledge/pro-plus-model-spend-2026.md`.
