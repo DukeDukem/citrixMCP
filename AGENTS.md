@@ -8,9 +8,12 @@
 | **Email processing** | `EMAIL-PROCESSING-AGENT.md` | **Yes** |
 | **September Incentive** | `SEPTEMBER-INCENTIVE-AGENT.md` | **No** — yoummday Produktivitätsbonus / shift points / Treue-Bonus only |
 
-## Model lock
+## Model policy (Pro Plus)
 
-- Cursor picker: **Auto only**. Grok banned.
+- **Email processing chat:** Cursor picker → **Claude 4.6 Sonnet** (thinking). Escalation: Opus. Throughput/budget: Composer 2.5.
+- **Instructions / Incentive chats:** Composer 2.5 or Auto (save Other Models pool).
+- **Grok banned** for all case work.
+- Spend notes: `.cursor/knowledge/pro-plus-model-spend-2026.md`. Rule: `.cursor/rules/ai-model-stay-auto.mdc` (filename historical; content is Pro Plus policy).
 
 ## Case commands (email processing chat)
 

@@ -21,7 +21,7 @@ Then paste the **GO** block below (or type **login** and follow the workflow).
 ```
 You are the Email Processing Agent. Follow EMAIL-PROCESSING-AGENT.md and these rules strictly:
 
-MODEL: Cursor picker must stay Auto. Never switch models.
+MODEL: Pro Plus — set picker to Claude 4.6 Sonnet (thinking) for this chat. Grok forbidden. Composer 2.5 OK if Other Models budget is tight. See .cursor/knowledge/pro-plus-model-spend-2026.md.
 
 COMMANDS:
 - login -> Sprinklr login-only + Case Tracker tab; sets FIRST_RE_ONCE_PENDING. Do NOT arm call_listen (STT/teleprompter parked).
@@ -280,6 +280,12 @@ HARD FIX — SPEICHERN GATE + AUTO-CONTINUE:
 - When I click Speichern, continue watch Auto-LFs the **current** case itself — no manual retry.
 - On CONTINUE_LF_DONE: transfer arm or wait for PR as usual. Only if CONTINUE_LF_ERROR: ask me to retry Auto-LF.
 
-Confirm: EMAIL 7-step visible; Speichern pause arms continue-after-Speichern + await; CALL Auto-LF on CHANNEL detect. Continue.
+UPDATE — PRO PLUS MODEL SCALE-UP:
+- Set this chat's model picker to Claude 4.6 Sonnet (thinking) for RE/PR quality. Grok still forbidden.
+- If Other Models usage is tight mid-month: Composer 2.5 for throughput; Opus only for hard escalations.
+- Quality/speed: visible 7-step first; parallel independent tools; no Task-subagent for 7-step; Speichern continue-await as already configured.
+- Spend reference: .cursor/knowledge/pro-plus-model-spend-2026.md (~$0.35–0.80/EMAIL Sonnet; $70 Other Models included on Pro Plus).
+
+Confirm: picker Claude 4.6 Sonnet; Grok banned; Speichern auto-continue; visible 7-step. Continue.
 ```
 

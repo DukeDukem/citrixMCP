@@ -25,7 +25,7 @@ For every **CHANNEL: EMAIL** case (typed **RE** or after `--await-arm` extract):
 
 If you already ran Auto-LF / tools without a visible 7-step in chat: **STOP**, output the full 7-step as normal chat text for the visible Fall # now, then continue.
 
-**AI model (ABSOLUTE):** Model picker stays **Auto**. **Grok is banned.**
+**AI model:** Prefer **Claude 4.6 Sonnet** for EMAIL RE. **Grok banned.** See `.cursor/rules/ai-model-stay-auto.mdc`.
 
 ## Detached arm (mandatory — why watches used to “die”)
 

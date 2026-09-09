@@ -1,51 +1,94 @@
 ---
-description: ABSOLUTE — model picker stays Auto; Grok and all named models forbidden.
+description: Pro Plus model policy — Claude 4.6 Sonnet for case work; Grok banned; spend awareness.
 alwaysApply: true
+priority: HIGH
 ---
 
-# ABSOLUTE: AI model must stay on Auto — Grok banned
+# Model policy (Pro Plus) — quality + spend
 
-This overrides softer guidance. Applies to **every** chat in this workspace (email RE agent, PR, LF, login, rules chat).
+**Plan assumption:** Cursor **Pro Plus** (~$60/mo) with **~$70/mo Other Models** API pool + generous **Cursor Models** pool (Composer / Grok family).
 
-## Locked setting
+User upgraded from Auto-lock. Named models are allowed **except Grok**. Agents may remind the user which picker model to use; they cannot move the UI picker themselves.
 
-- Cursor model picker must remain **Auto**.
-- The agent must **never** change, request, suggest, or imply a model change.
-- **Grok is explicitly forbidden** (including `cursor-grok-*`, Grok 4, Grok Fast, any Grok variant).
+## Default picker (email processing chat)
 
-## Hard bans
+| Chat | Model picker | Why |
+|------|--------------|-----|
+| **Email processing** (`EMAIL-PROCESSING-AGENT.md`) | **Claude 4.6 Sonnet** (thinking / medium effort if offered) | Best quality/speed/cost for German RE, TransferMatrix, leak gates |
+| **Instructions dashboard** | **Composer 2.5** (or Auto) | Rules/config; burns **Cursor Models** pool, not the $70 Other pool |
+| **September Incentive** | **Composer 2.5** or Auto | Light planning; keep Other Models for case work |
 
-1. **Never** select or switch to: Grok, Claude, GPT, Composer, Haiku, Opus, Sonnet, Gemini, or any named model.
-2. **Never** pass a `model` argument to Task / subagents except omitting it or using `"inherit"` only.
-3. **Never** tell the user to “try Grok” / “switch model” / “use a better model.”
-4. **Never** use cloud/best-of-n runners with a non-inherit model slug.
-5. **Never** treat Auto’s backend routing label as permission to leave Auto selected in the picker.
+**Escalation (same email chat, user switches picker):** **Claude 4.6 Opus** or **Claude Opus 5** only for unusually hard cases (multi-contract, legal/name edge, QA rejection loops). Switch back to Sonnet after.
 
-## If the session is already on Grok (or any non-Auto named model)
+**Speed-first alternative (if Other Models burn too fast):** **Composer 2.5** on the email chat — faster/cheaper via Cursor Models pool; accept slightly weaker German/QA. Prefer Sonnet while monthly Other Models headroom remains.
 
-**STOP immediately.** Do **not** run RE, PR, LF, login automation, or case processing.
+## Hard ban — Grok
 
-Output exactly:
+**Grok remains forbidden** for all Sprinklr case work (including Fast / 4.5 / 4.6 / `cursor-grok-*`).
+
+If identity is Grok → STOP case work and output:
 
 ```
-ERROR: MODEL NOT AUTO (GROK/NAMED MODEL DETECTED).
-Set the Cursor model picker to Auto, then resend your command.
-I will not continue on Grok or any named model.
+ERROR: GROK FORBIDDEN FOR CASE WORK.
+Switch the model picker to Claude 4.6 Sonnet (or Composer 2.5), then resend.
 ```
 
-Do not partially process the case. Do not draft customer replies. Wait for the user to switch back to **Auto** and resend.
+## Subagents / Task tool
 
-## Identity check (every turn)
+- Default `model`: **`"inherit"`** (or omit).
+- Do **not** spawn Task/subagents to write the EMAIL **7-step RE** (hides text under background tasks). Parent agent writes sections 1–7 as visible chat.
+- Subagents only for isolated repo research in the **instructions** chat.
 
-Before any tool call for RE/PR/LF:
+## Quality + speed behaviours (case agent)
 
-- If your system/identity indicates **Grok** or a **named non-Auto model** → hard stop with the error above.
-- If identity is **Auto** (router) → proceed; do not change the picker.
+1. **Visible 7-step first**, then tools (play-ready / Auto-LF / arms).  
+2. **Parallelize** independent tools (e.g. TransferMatrix grep + attachment open + KB) in one turn after CHANNEL: EMAIL.  
+3. **Do not** re-extract or re-query KB when the current extract + matrix row already decide the path.  
+4. Transfer-eligible: short §4a/5; skip deep solution hunting.  
+5. Keep section 6 chat soft-wrap; PR paste stays mail-format.  
+6. On Speichern pause: arm continue + `--await-speichern-continue` (no manual LF retry loop).
 
-## Why the soft rule failed
+## Expected expenditure (Other Models pool)
 
-A “prefer Auto” note is not enough. Agents must treat **Grok / named models as a hard execution blocker** for customer-case work.
+Rates (Cursor docs, per **million** tokens) — **Claude 4.6 Sonnet**: input **$3**, cache read **~$0.30**, output **$15**.
+
+### Per-case estimate (Sonnet, prompt-cache warm)
+
+| Case type | Typical billable shape | Est. Other Models $ |
+|-----------|------------------------|---------------------|
+| EMAIL (RE + Auto-LF + PR + arm) | ~40–80k new input + heavy cache read + ~5–10k out + 2–4 follow-ups | **~$0.35–0.80** |
+| CALL (CHANNEL + Auto-LF + Next) | Smaller context, fewer turns | **~$0.10–0.30** |
+| Transfer-only EMAIL | Shorter §6 | **~$0.25–0.55** |
+
+Composer 2.5 cases draw mainly from the **Cursor Models** pool (not the $70 Other pool) at Composer list rates — use when protecting Other Models budget.
+
+### Monthly projection (Sonnet-primary)
+
+Assume **20 workdays**, mix of EMAIL/CALL:
+
+| Daily volume | Rough Other Models $/mo | vs Pro Plus **$70** included |
+|--------------|-------------------------|------------------------------|
+| 15 EMAIL + 10 CALL | ~$8–16 | Comfortable |
+| 30 EMAIL + 20 CALL | ~$15–30 | Comfortable |
+| 50 EMAIL + 30 CALL | ~$25–50 | OK; watch dashboard |
+| 80 EMAIL + 40 CALL | ~$40–75 | May need Composer mix or on-demand |
+
+**Plus** $60 plan fee. On-demand continues at same API rates if the $70 Other pool is exhausted (quality not silently downgraded).
+
+### Spend control
+
+1. Check Cursor **Usage** mid-month (Other Models vs Cursor Models).  
+2. If Other Models > **~$50** before month-end → switch email chat to **Composer 2.5** for throughput days, or escalate only hard cases to Sonnet/Opus.  
+3. Keep rules/incentive chats on Composer/Auto.  
+4. Avoid Max Mode / 1M context unless a single case truly needs it (cost scales hard).  
+5. Do not run duplicate RE/`--once` for the same Fall # without cause.
+
+## Identity check (every case turn)
+
+- **Grok** → hard stop (error above).  
+- **Claude Sonnet / Opus / Composer / GPT / Auto** → proceed.  
+- If user asked for Sonnet but session is clearly a weak/wrong model for German RE, remind once: set picker to **Claude 4.6 Sonnet**.
 
 ## Honest limit
 
-Workspace rules cannot physically move the Cursor UI picker. If Cursor itself flipped the picker to Grok, the user must set it back to **Auto**. This rule ensures the agent **refuses to work** until that is done.
+Rules cannot flip the Cursor model picker. The user must select **Claude 4.6 Sonnet** in the email processing chat after this policy change.

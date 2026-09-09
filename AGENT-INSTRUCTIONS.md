@@ -8,6 +8,8 @@
 
 ## Chat model
 
+**Pro Plus:** Email processing → **Claude 4.6 Sonnet**. Instructions/Incentive → Composer 2.5 or Auto. **Grok banned.** See `.cursor/knowledge/pro-plus-model-spend-2026.md`.
+
 | Chat | Startup doc | Purpose |
 |------|-------------|---------|
 | **Instructions dashboard** | `AGENT-INSTRUCTIONS.md` | Rules, skills, KB, config |

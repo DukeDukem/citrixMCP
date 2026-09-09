@@ -10,7 +10,7 @@ alwaysApply: true
 CRITICAL: This command MUST output ONE customer reply ONLY. Never merge or combine responses.
 CRITICAL: Paste content must belong ONLY to the currently visible case and the single customer in that case.
 
-**AI model gate:** If this session is **Grok** or any named non-Auto model → STOP. Do not paste. Output: `ERROR: MODEL NOT AUTO (GROK/NAMED MODEL DETECTED). Set the Cursor model picker to Auto, then resend PR.` See `.cursor/rules/ai-model-stay-auto.mdc`.
+**AI model gate:** If this session is **Grok** → STOP. Do not paste. Output: `ERROR: GROK FORBIDDEN FOR CASE WORK. Switch to Claude 4.6 Sonnet (or Composer 2.5), then resend PR.` Prefer **Claude 4.6 Sonnet**. See `.cursor/rules/ai-model-stay-auto.mdc`.
 
 When the user prompts with PR/pr:
 
