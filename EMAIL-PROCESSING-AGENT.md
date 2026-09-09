@@ -26,7 +26,8 @@ MODEL: Cursor picker must stay Auto. Never switch models.
 COMMANDS:
 - login -> Sprinklr login-only + Case Tracker tab; sets FIRST_RE_ONCE_PENDING. Do NOT arm call_listen (STT/teleprompter parked).
 - RE -> run.py = ALWAYS --once (extract currently open case). First case of the day / fresh agent = typed RE push-start. NEVER arm Anwenden on typed RE.
-- After every EMAIL 7-step RE (+ play-ready): AUTO-LF Case Tracker for this Fall # (do NOT wait for typed LF). Transfer Nein or Ja per §3.
+- After every EMAIL case: MUST type full 7-step RE in chat (sections 1–7 from sprinklr-read-answer-email SKILL). NEVER skip, NEVER Auto-LF-only, NEVER “short transfer note” instead of 7-step.
+- After every EMAIL 7-step RE (+ play-ready): AUTO-LF Case Tracker for this Fall # (do NOT wait for typed LF). Transfer Nein or Ja per §3. Auto-LF runs AFTER the 7-step is visible in chat — not instead of it.
 - After AUTO-LF transfer: IMMEDIATELY --arm-weiter (queue) or --arm-extern (email @) + await. Quote: LF TR done for #FALL_ID. No PR.
 - After AUTO-LF non-transfer EMAIL: wait for user PR only. Do NOT arm yet.
 - PR (EMAIL non-transfer) -> paste + verify, then IMMEDIATELY run.py --arm (Anwenden) + finishing quote PR done for #FALL_ID + --await-arm. LF already done at RE.
@@ -75,7 +76,7 @@ DETACHED ARM (mandatory — fixes false "watch died"):
 CHANNEL DETECT (after every case open — RE --once OR after await-arm extract):
 - Look at visible Sprinklr overlay/timeline → print CHANNEL: CALL or CHANNEL: EMAIL (or UNKNOWN).
 - CALL LISTEN / TELEPROMPTER: PARKED (capture_path.json enabled=false). Do NOT run call_listen --arm or --prime. Expect CALL_LISTEN_DISABLED if tried.
-- EMAIL → full 7-step RE → play-ready → AUTO-LF → (transfer arm OR wait for PR).
+- EMAIL → MUST write full 7-step RE in chat (1–7) → play-ready → AUTO-LF → (transfer arm OR wait for PR). Skipping the 7-step is a hard failure.
 - If EMAIL has Anhänge: open/download so the agent can read them for full case understanding (not a separate process). Helper: open_case_attachments.py --view / --download → yoummday temporaries. Rule: sprinklr-attachments.mdc
 - CALL → do NOT run email RE/PR. Immediately AUTO-LF voice + --arm-next (or transfer arm). Do NOT wait for BRIEF. BRIEF optional if I want a handling pack mid-call.
 
@@ -114,7 +115,7 @@ SOUNDS (volume 0.75; do not change unless I ask):
 - Manual: type "sound" → play ready cue
 
 OTHER:
-- Full 7-step RE form for EMAIL cases (sprinklr-read-answer-email SKILL) + AUTO-LF after play-ready.
+- Full 7-step RE form for EMAIL cases is MANDATORY in chat every case (sprinklr-read-answer-email SKILL) + AUTO-LF only after section 7 + play-ready.
 - CALL cases: on CHANNEL detect → AUTO-LF voice → --arm-next (no BRIEF wait; no PR unless I ask).
 - C-... in Kundennummer box is NOT Salcus -> leave empty -> ticketstatus 3.
 - No monitor_emails / get_new_emails fallback for RE modes.
@@ -238,6 +239,12 @@ Use when the case chat is already open and needs this delta (no full GO re-boots
 ```
 UPDATE — apply immediately for this session:
 
+HARD FIX — EMAIL 7-STEP RE IS MANDATORY IN CHAT:
+- Every CHANNEL: EMAIL case (RE or after await-arm extract): you MUST type the full 7-step RE in chat (sections 1–7 per sprinklr-read-answer-email SKILL) BEFORE play-ready and BEFORE Auto-LF.
+- Forbidden: Auto-LF-only turns, arm-only turns, one-line “transfer/handled” instead of 7-step, tool spam with no sections 1–7.
+- Order EMAIL: extract → CHANNEL → attachments if any → sections 1–7 in chat → play-ready → Auto-LF → PR wait or transfer arm.
+- If you skipped 7-step on the current EMAIL case: output the full 7-step NOW for the visible Fall #.
+
 AUTO-LF IS MANDATORY FOR BOTH EMAIL AND CALL (I do not type LF):
 
 EMAIL:
@@ -245,22 +252,18 @@ EMAIL:
 2) Transfer Nein → wait for my PR → then --arm Anwenden + --await-arm
 3) Transfer Ja → --arm-weiter (queue) or --arm-extern (@) + --await-arm; quote LF TR done for #FALL_ID
 
-CALL (CHANGED — no BRIEF gate):
+CALL (no BRIEF gate):
 1) As soon as you see CHANNEL: CALL → do NOT wait for BRIEF. No email RE/PR. Teleprompter/STT parked — do not call_listen --arm/--prime.
 2) SAME TURN immediately Auto-LF voice:
    uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --channel voice
-   (Ticketstatus 3 always. Transfer from Sprinklr resolve/Ziel unless already known.)
-3) SAME TURN after Auto-LF:
-   - Non-transfer → run.py --arm-next + --await-arm; quote LF done for #FALL_ID; I click exact Next
-   - Transfer → --arm-weiter / --arm-extern + await; quote LF TR done for #FALL_ID
-4) Never ask me for BRIEF before Auto-LF. Never wait for typed LF. Never --arm (Anwenden) after a call.
-5) BRIEF is optional only if I want a mid-call handling pack — after Auto-LF already done.
+3) SAME TURN after Auto-LF: --arm-next (or weiter/extern if transfer) + await; quote LF done / LF TR done.
+4) BRIEF optional only after Auto-LF if I want a mid-call pack.
 
 Also still in force:
-- PR alone arms Anwenden (LF already at RE). Senden → often Ignorieren und senden; empty box after send = success.
-- Anhänge: open for case understanding (.png = click card then Schließen @media/preview/close; PDF = View Detail).
+- PR alone arms Anwenden (LF already at RE). Senden → often Ignorieren und senden; empty box + inboundChatConversationItemBrandMessage = sent success.
+- Anhänge: .png click then Schließen; PDF View Detail.
 - Typed LF / LF TR / PR LF = recovery only.
 
-Confirm: CALL Auto-LF on CHANNEL detect (no BRIEF wait). Continue with current case — if a CALL is open now, Auto-LF + arm-next immediately.
+Confirm: EMAIL 7-step mandatory in chat; CALL Auto-LF on CHANNEL detect. Continue — if current case is EMAIL and 7-step missing, write it now.
 ```
 

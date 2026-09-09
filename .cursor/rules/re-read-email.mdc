@@ -9,6 +9,18 @@ alwaysApply: true
 
 **Always stick to the processing form:** Full 7-step output from **sprinklr-read-answer-email** SKILL.md.
 
+### HARD BAN — never skip the 7-step RE (EMAIL)
+
+For every **CHANNEL: EMAIL** case (typed **RE** or after `--await-arm` extract):
+
+1. You **MUST** write the full **7-step RE in chat** before Auto-LF, PR, or any arm.  
+2. **Forbidden shortcuts:** Auto-LF only; “transfer done” one-liner; paste-ready reply without sections 1–5/7; tool-only turn with no 7-step text.  
+3. **Order (EMAIL):** extract → CHANNEL: EMAIL → attachments if any → **sections 1–7 in chat** → `--play-ready` → **Auto-LF** → transfer arm **or** wait for **PR**.  
+4. Transfer-eligible EMAIL still gets all 7 sections (section 6 may be short forward notice).  
+5. **CALL** does **not** use the email 7-step form (Auto-LF voice on CHANNEL detect).  
+
+If you already ran Auto-LF without the 7-step: **STOP**, output the full 7-step for the visible Fall # now, then continue.
+
 **AI model (ABSOLUTE):** Model picker stays **Auto**. **Grok is banned.**
 
 ## Detached arm (mandatory — why watches used to “die”)
@@ -79,10 +91,12 @@ Typical workday start:
 
 Every EMAIL extract (typed RE or `--await-arm`):
 
-1. Full **7-step RE**  
+1. Full **7-step RE written in chat** (sections 1–7 — no skip, no “LF only”)  
 2. **`re_complete_sound.py --play-ready`**  
 3. **Auto-LF** for this Fall # (Transfer Nein or Ja per §3) — user does **not** type `LF`  
 4. If transfer → arm Weiter/Extern immediately; if non-transfer → stop and wait for **PR**
+
+**Auto-LF must never replace or precede the 7-step chat output.**
 
 Every CALL on CHANNEL detect: Auto-LF `--channel voice` → arm Next (or Weiter/Extern if transfer). BRIEF is optional and never blocks Auto-LF.
 
