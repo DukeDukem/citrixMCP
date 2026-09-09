@@ -18,7 +18,8 @@ INSTEAD: Wrap it in a markdown code block:
 ```
 Guten Tag Silvana Spajzer,
 
-vielen Dank, dass Sie uns bezüglich der Hardware-Rückforderung...
+vielen Dank, dass Sie uns bezüglich der
+Hardware-Rückforderung...
 [rest of reply]
 ```
 
@@ -29,6 +30,35 @@ The triple backticks preserve UTF-8 encoding and prevent mojibake corruption.
 - If you paste customer reply as plain text and it shows mojibake (GÃ¼, Ã¤, Ã¶, Ã¼, ÃŸ) → YOU FAILED
 - Always use code block format
 - This applies to ALL customer-facing email replies
+
+## NO HORIZONTAL SCROLL (chat window fit)
+
+Cursor code blocks do **not** soft-wrap. Long single lines force left-right scrolling while reading.
+
+**Hard rule for section 6 (and any customer-reply code block in chat):**
+
+1. Soft-wrap body text so **each line is at most ~72 characters** (target 60–72; hard max **80**).
+2. Break only at spaces / punctuation — **never** mid-word.
+3. Prefer breaking after commas, periods, or natural German phrase boundaries.
+4. Keep blank lines between paragraphs (salutation → thank-you → body → survey → signature).
+5. Long signature/legal lines: wrap the same way (e.g. company address / Pflichtangaben on multiple lines). Exact wording stays; only line breaks change.
+6. Do **not** use one giant paragraph as a single unbroken line.
+7. PR paste / `temp_reply.txt`: same wrapping is fine (email clients wrap anyway).
+
+**Bad (horizontal scroll):**
+```
+vielen Dank, dass Sie uns bezüglich der fehlenden Gutschrift auf Ihrer März-Rechnung aufmerksam gemacht haben. Wir bedauern die Unannehmlichkeiten und empfehlen Ihnen, in Mein o2 unter Rechnungen den aktuellen Stand zu prüfen und bei Bedarf die Rechnung erneut herunterzuladen.
+```
+
+**Good (vertical scroll only):**
+```
+vielen Dank, dass Sie uns bezüglich der fehlenden
+Gutschrift auf Ihrer März-Rechnung aufmerksam
+gemacht haben. Wir bedauern die Unannehmlichkeiten
+und empfehlen Ihnen, in Mein o2 unter Rechnungen
+den aktuellen Stand zu prüfen und bei Bedarf die
+Rechnung erneut herunterzuladen.
+```
 
 ## FORMAT FOR SECTION 6:
 
@@ -41,10 +71,13 @@ Section 6 output should look like:
 ```
 Guten Tag [Name],
 
-[case-specific thank you]
-[body]
-[survey line]
-[signature block]
+[case-specific thank you — wrapped ~72 cols]
+
+[body paragraphs — each line ≤80 chars]
+
+[survey line — wrapped if needed]
+
+[signature block — wrapped if needed]
 ```
 
 ---
@@ -53,6 +86,7 @@ Guten Tag [Name],
 
 1. Is reply in a code block (between triple backticks)?
 2. Does it show correct umlauts (ü, ä, ö, ß) not mojibake (Ã¼, Ã¤, Ã¶, ÃŸ)?
-3. If NO to either → STOP and fix encoding before output
+3. Are body lines wrapped (~72 chars, max 80) so the chat needs **vertical** scroll only — not constant left-right?
+4. If NO to any → STOP and fix before output
 
-This prevents encoding corruption before it reaches the user.
+This prevents encoding corruption and unreadable wide code blocks before they reach the user.

@@ -27,6 +27,7 @@ COMMANDS:
 - login -> Sprinklr login-only + Case Tracker tab; sets FIRST_RE_ONCE_PENDING. Do NOT arm call_listen (STT/teleprompter parked).
 - RE -> run.py = ALWAYS --once (extract currently open case). First case of the day / fresh agent = typed RE push-start. NEVER arm Anwenden on typed RE.
 - After every EMAIL case: MUST type full 7-step RE as VISIBLE chat text (sections 1–7). NEVER hide it under “finished N background tasks”, task dropdowns, or tool-result panels. User must read it without clicking anything. Tools (play-ready / Auto-LF / arms) run AFTER that visible text.
+- Section 6 customer reply: still a UTF-8 code block, but wrap lines to ~72 chars (max 80) so reading is vertical scroll only — no constant left-right scrolling.
 - After every EMAIL 7-step RE (+ play-ready): AUTO-LF Case Tracker for this Fall # (do NOT wait for typed LF). Transfer Nein or Ja per §3. Auto-LF runs AFTER the 7-step is visible in chat — not instead of it, not buried with it in background tasks.
 - After AUTO-LF transfer: IMMEDIATELY --arm-weiter (queue) or --arm-extern (email @) + await. Quote: LF TR done for #FALL_ID. No PR.
 - After AUTO-LF non-transfer EMAIL: wait for user PR only. Do NOT arm yet.
@@ -246,6 +247,12 @@ HARD FIX — EMAIL 7-STEP RE MUST BE VISIBLE CHAT TEXT (NOT BEHIND A MENU):
 - Prefer text before tool calls in the turn (or text-only turn then tools). Forbidden: tools-first / Auto-LF-only with RE hidden in task UI.
 - If the current EMAIL case has no visible 7-step in the main chat thread: output the full 7-step NOW as plain chat text.
 
+HARD FIX — SECTION 6 REPLY WIDTH (NO LEFT-RIGHT SCROLL):
+- Put the customer reply in a markdown code block (UTF-8), but soft-wrap every line to ~72 characters (hard max 80).
+- Break only at spaces/punctuation — never mid-word. Prefer phrase boundaries.
+- Goal: I only scroll DOWN to read section 6, never constantly left-right.
+- Same wrapping for survey + long signature/address lines.
+
 AUTO-LF IS MANDATORY FOR BOTH EMAIL AND CALL (I do not type LF):
 
 EMAIL:
@@ -265,6 +272,6 @@ Also still in force:
 - Anhänge: .png click then Schließen; PDF View Detail.
 - Typed LF / LF TR / PR LF = recovery only.
 
-Confirm: EMAIL 7-step must be visible chat text (not behind background-tasks menu); CALL Auto-LF on CHANNEL detect. Continue — if current EMAIL case has no visible 7-step in the main thread, write it now as plain chat.
+Confirm: EMAIL 7-step visible in main chat; section 6 wrapped ~72 cols (vertical scroll only); CALL Auto-LF on CHANNEL detect. Continue.
 ```
 

@@ -142,7 +142,7 @@ Do **not** arm twice for the same close-out. If a detached watch is already wait
 3. Transfer eligibility  
 4a/4b. Backend / instructions  
 5. Instructions on handling case  
-6. Your response to customer (German, code block)  
+6. Your response to customer (German, code block; wrap lines ~72 chars / max 80 — vertical scroll only)  
 7. Summary of response (EN) — then run **`re_complete_sound.py --play-ready`** (book) — then **Auto-LF**
 
 ## Integrity
