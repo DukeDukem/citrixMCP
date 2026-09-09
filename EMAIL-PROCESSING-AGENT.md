@@ -237,6 +237,20 @@ Confirm you loaded SOUND CUES + DETACHED ARM, then continue with my next command
 
 ---
 
+## Why RE sometimes hides behind “Finished background tasks”
+
+Cursor **collapses tool/subagent work** into rows like `Finished 2 background tasks` or `Explored ….txt`. That is **not** Sprinklr — it is the IDE grouping **Shell / Grep / Task (subagent)** output.
+
+**You lose track when** the agent runs tools or **Task/explore subagents** in the same turn **before** (or instead of) typing the 7-step as normal chat text. The RE did run, but it sits behind a click.
+
+**Agent must:** extract → **full 7-step as plain chat text** (text-only message best) → then play-ready / Auto-LF / arms. **Never** Task/subagent for the 7-step. Rule: `.cursor/rules/re-no-background-tasks-ui.mdc`.
+
+**If you only see a background menu:** type **`RE SHOW`** or **`visible RE`** — agent re-prints the full 7-step for the open Fall # in the main thread.
+
+**Auto picker** can increase subagent use; if menus keep happening, try **Composer 2.5** or **Sonnet** (named) for the email chat.
+
+---
+
 ## UPDATE — paste to **running** case agent (Auto-LF CALL + EMAIL)
 
 Use when the case chat is already open and needs this delta (no full GO re-bootstrap):
@@ -247,8 +261,10 @@ UPDATE — apply immediately for this session:
 HARD FIX — EMAIL 7-STEP RE MUST BE VISIBLE CHAT TEXT (NOT BEHIND A MENU):
 - Every CHANNEL: EMAIL case: type the full 7-step RE (sections 1–7) as normal assistant chat text the user can read immediately.
 - NEVER put the 7-step only under Cursor “finished N background tasks”, collapsed task dropdowns, tool summaries, or anything that requires a click to open.
-- Order: write visible 7-step FIRST → then play-ready → then Auto-LF → then PR wait or transfer arm.
-- Prefer text before tool calls in the turn (or text-only turn then tools). Forbidden: tools-first / Auto-LF-only with RE hidden in task UI.
+- NEVER use Task/subagent/explore for the 7-step (causes “Finished N background tasks” / “Explored …” menus). Parent agent writes 1–7 as plain chat.
+- Turn pattern: extract tool → **text-only message with full 7-step** → then play-ready → Auto-LF → PR or transfer arm. No parallel Grep/KB batch before the 7-step is visible.
+- If I type RE SHOW or visible RE: re-print full 7-step for visible Fall # in main thread (fresh extract if needed).
+- Rule file: .cursor/rules/re-no-background-tasks-ui.mdc
 - If the current EMAIL case has no visible 7-step in the main chat thread: output the full 7-step NOW as plain chat text.
 
 HARD FIX — SECTION 6 CHAT WIDTH vs PR PASTE FORMAT:

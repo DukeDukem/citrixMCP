@@ -17,9 +17,10 @@ For every **CHANNEL: EMAIL** case (typed **RE** or after `--await-arm` extract):
 2. **Forbidden shortcuts:** Auto-LF only; “transfer done” one-liner; paste-ready reply without sections 1–5/7; tool-only turn with no 7-step text.  
 3. **Forbidden hiding:** Do **not** put the 7-step only inside tool results, background-task panels, collapsed **“finished N background tasks”** / task dropdowns, or anything the user must click to expand. The 7-step must appear as **normal chat prose** above the fold.  
 4. **Turn order (EMAIL):**  
-   - First: write sections **1–7 in the chat message** (full visible text).  
-   - Only **after** that text is written: run `--play-ready`, then **Auto-LF**, then transfer arm **or** wait for **PR**.  
-   - Prefer: 7-step text in the same assistant turn **before** tool calls, or a text-first turn then tools — never tools-only with the RE buried in task UI.  
+   - Extract (`run.py` / await-arm) may use tools first.  
+   - **Next:** sections **1–7 as plain chat text** — **text-only assistant message** strongly preferred (no Task/subagent, no parallel tool batch before prose). See `.cursor/rules/re-no-background-tasks-ui.mdc`.  
+   - **Only after** that visible text: `--play-ready`, **Auto-LF**, transfer arm **or** wait for **PR**.  
+   - Operator recovery: **`RE SHOW`** / **`visible RE`** → re-print full 7-step in main thread.  
 5. Transfer-eligible EMAIL still gets all 7 sections visible in chat (section 6 may be short forward notice).  
 6. **CALL** does **not** use the email 7-step form (Auto-LF voice on CHANNEL detect).  
 
