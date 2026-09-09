@@ -28,7 +28,8 @@ LANGUAGE: Address ME (the operator) exclusively in ENGLISH in all chat — RE se
 COMMANDS:
 - login -> Sprinklr login-only + Case Tracker tab; sets FIRST_RE_ONCE_PENDING. Do NOT arm call_listen (STT/teleprompter parked).
 - RE -> run.py = ALWAYS --once (extract currently open case). First case of the day / fresh agent = typed RE push-start. NEVER arm Anwenden on typed RE.
-- After every EMAIL case: MUST type full 7-step RE as VISIBLE chat text (sections 1–7). NEVER hide it under “finished N background tasks”, task dropdowns, or tool-result panels. User must read it without clicking anything. Tools (play-ready / Auto-LF / arms) run AFTER that visible text.
+- EMAIL RE = THREE TURNS: (1) run.py extract only + RE_TEXT_ONLY_GATE — stop; (2) full 7-step sections 1–7 as TEXT-ONLY message — ZERO tools (no Grep/Task/Read terminals/LF); (3) play-ready + Auto-LF + arms. NEVER explore terminal .txt files. NEVER hide 7-step under “finished background tasks”.
+- If I type RE SHOW / visible RE / RE FILE: recover per EMAIL-PROCESSING-AGENT.md troubleshooting. Backup file: .cursor/state/latest_re_visible.md
 - Section 6 in chat: UTF-8 code block soft-wrapped ~72 chars for vertical reading only. **PR / Sprinklr paste** must stay **mail format** (previous length, encoding, signature layout) — never let chat wraps change the pasted email.
 - After every EMAIL 7-step RE (+ play-ready): AUTO-LF Case Tracker for this Fall # (do NOT wait for typed LF). Transfer Nein or Ja per §3. Auto-LF runs AFTER the 7-step is visible in chat — not instead of it, not buried with it in background tasks.
 - After AUTO-LF transfer: IMMEDIATELY --arm-weiter (queue) or --arm-extern (email @) + await. Quote: LF TR done for #FALL_ID. No PR.
@@ -241,13 +242,23 @@ Confirm you loaded SOUND CUES + DETACHED ARM, then continue with my next command
 
 Cursor **collapses tool/subagent work** into rows like `Finished 2 background tasks` or `Explored ….txt`. That is **not** Sprinklr — it is the IDE grouping **Shell / Grep / Task (subagent)** output.
 
-**You lose track when** the agent runs tools or **Task/explore subagents** in the same turn **before** (or instead of) typing the 7-step as normal chat text. The RE did run, but it sits behind a click.
+**Most common cause with Auto:** an **explore** subagent reads a **terminal capture `.txt`** instead of using `run.py` stdout — the RE ends up entirely under that menu.
 
-**Agent must:** extract → **full 7-step as plain chat text** (text-only message best) → then play-ready / Auto-LF / arms. **Never** Task/subagent for the 7-step. Rule: `.cursor/rules/re-no-background-tasks-ui.mdc`.
+### Three-turn protocol (agent must follow)
 
-**If you only see a background menu:** type **`RE SHOW`** or **`visible RE`** — agent re-prints the full 7-step for the open Fall # in the main thread.
+| Turn | Content |
+|------|---------|
+| **1** | `run.py` extract only → optional one-line ack → **stop** (stdout shows `RE_TEXT_ONLY_GATE`) |
+| **2** | **Full 7-step RE** — **text-only message, zero tools** |
+| **3** | play-ready → Auto-LF → PR wait or transfer arm |
 
-**Auto picker** can increase subagent use; if menus keep happening, try **Composer 2.5** or **Sonnet** (named) for the email chat.
+### Your recovery (when chat shows only trays)
+
+1. **`RE SHOW`** / **`visible RE`** — agent re-prints 7-step in main chat  
+2. **`RE FILE`** — agent runs `show_latest_re.py` and pastes the backup  
+3. **Open in editor:** `.cursor/state/latest_re_visible.md` (after section 7) or `latest_extract.md` (after extract)
+
+Rule: `.cursor/rules/re-no-background-tasks-ui.mdc`. **If trays keep happening:** switch email chat from **Auto** to **Composer 2.5** or **Sonnet** (named model).
 
 ---
 
@@ -262,8 +273,8 @@ HARD FIX — EMAIL 7-STEP RE MUST BE VISIBLE CHAT TEXT (NOT BEHIND A MENU):
 - Every CHANNEL: EMAIL case: type the full 7-step RE (sections 1–7) as normal assistant chat text the user can read immediately.
 - NEVER put the 7-step only under Cursor “finished N background tasks”, collapsed task dropdowns, tool summaries, or anything that requires a click to open.
 - NEVER use Task/subagent/explore for the 7-step (causes “Finished N background tasks” / “Explored …” menus). Parent agent writes 1–7 as plain chat.
-- Turn pattern: extract tool → **text-only message with full 7-step** → then play-ready → Auto-LF → PR or transfer arm. No parallel Grep/KB batch before the 7-step is visible.
-- If I type RE SHOW or visible RE: re-print full 7-step for visible Fall # in main thread (fresh extract if needed).
+- Three-turn pattern: (1) run.py only → RE_TEXT_ONLY_GATE → stop; (2) **text-only** full 7-step — ZERO tools; (3) play-ready → Auto-LF → PR or transfer arm. NEVER Read terminals/*.txt or explore/Task.
+- If I type RE SHOW / visible RE: re-print 7-step in main thread. RE FILE: run show_latest_re.py. Backup: .cursor/state/latest_re_visible.md
 - Rule file: .cursor/rules/re-no-background-tasks-ui.mdc
 - If the current EMAIL case has no visible 7-step in the main chat thread: output the full 7-step NOW as plain chat text.
 

@@ -1,65 +1,55 @@
 ---
-description: EMAIL 7-step RE must never live only under Cursor “Finished background tasks” menus.
+description: HARD — EMAIL 7-step RE never under Cursor background-task menus; extract → text-only 7-step → then tools.
 alwaysApply: true
-priority: HIGH
+priority: CRITICAL
 ---
 
-# RE visibility — no background-task menus
+# HARD FIX — RE visibility (no background-task menus)
 
-## Why you see “Finished N background tasks” / “Explored …”
+**Scope:** Email processing chat (`EMAIL-PROCESSING-AGENT.md`). Overrides convenience parallel-tool habits for EMAIL RE.
 
-Cursor **collapses tool and subagent work** into compact rows like:
+## Why “Finished N background tasks” / “Explored ….txt” appears
 
-- `Finished 2 background tasks`
-- `Explored 450519.txt`
+Cursor collapses **Shell / Grep / Task (subagent)** work into compact rows. Common EMAIL RE triggers:
 
-That is **normal Cursor UI** when the agent:
+1. **explore/Task** reading terminal capture files (`Explored 450519.txt`)
+2. **Read** of `.cursor/projects/.../terminals/*.txt` instead of `run.py` Shell stdout
+3. **Tools + 7-step in one message**
+4. **7-step only inside tool output**
 
-1. Uses the **Task** tool (subagents / `explore` / `generalPurpose`)
-2. Runs **many tools in one turn** before (or instead of) main chat prose
-3. Puts the deliverable **inside tool output** rather than as a plain assistant message
+If the 7-step lives only there → **hard failure** for operator UX.
 
-If the **7-step RE** is only inside those collapsed panels, it looks like the case was not processed.
+## Three-turn protocol (EMAIL) — mandatory
 
-## Hard rule (EMAIL)
+| Turn | What | Tools |
+|------|------|-------|
+| **A** | `run.py` / `--await-arm` extract | Extract Shell only |
+| **A end** | Optional one-line ack; **do not** start 1–7 here | Stop when stdout shows **`RE_TEXT_ONLY_GATE`** |
+| **B** | Full **7-step (sections 1–7)** plain chat text | **ZERO** |
+| **C** | play-ready → Auto-LF → arm or wait PR | Tools only |
 
-The **full 7-step RE (sections 1–7)** must appear as **normal assistant chat text** the operator reads **without clicking** any background-task menu.
+**Hard bans:** No Task/explore; no Read terminals/*.txt or latest_extract before turn B; no tools in the 7-step message; no Auto-LF before turn B visible. Matrix/KB from loaded rules/context while writing turn B.
 
-**Forbidden for EMAIL RE:**
+## Operator recovery
 
-- Task / subagent / `explore` to “research” or draft the 7-step
-- Tools-only turn after extract with no visible 7-step above the fold
-- 7-step text **only** under “Finished N background tasks”, tool summaries, or terminal file names
-- Auto-LF / play-ready / arms **before** the visible 7-step is in chat
+| Operator types | Agent / system |
+|----------------|----------------|
+| **`RE SHOW`** / **`visible RE`** | Re-print full 7-step as **plain main-chat text** (no “it’s in the menu”) |
+| **`RE FILE`** | Run `uv run python .cursor/skills/sprinklr-read-answer-email/show_latest_re.py` |
+| **Open file** | `.cursor/state/latest_re_visible.md` or `latest_extract.md` |
 
-## Required turn pattern (EMAIL)
+**Auto picker** often spawns explore → switch to **Composer 2.5** or **Sonnet** (named) if trays persist.
 
-| Step | What | Tools in this message? |
-|------|------|------------------------|
-| **1** | `run.py` extract (or `--await-arm` extract) | **Yes** — extract only |
-| **2** | **Full 7-step RE as plain chat text** (sections 1–7) | **No** — text-only message preferred |
-| **3** | `re_complete_sound.py --play-ready` → Auto-LF → arm or wait for PR | **Yes** — after step 2 is visible |
+## Agent self-recovery
 
-**Between extract and the 7-step:** do **not** spawn Task/subagents. Do **not** batch TransferMatrix grep + KB + attachments in parallel **before** the 7-step is written. Read matrix/KB **during drafting** or in a prior cached context; if a grep is needed, do it **after** the visible 7-step or keep it minimal so step 2 is still the next visible prose block.
+If tools/Auto-LF already ran with **no** visible 7-step for this Fall # in the main thread:
 
-**Preferred:** two assistant messages after extract — (A) full 7-step text only, (B) tools only.
+1. **STOP** further close-out  
+2. Output the **full 7-step now** as plain chat text  
+3. Continue play-ready / Auto-LF / PR / arms (skip duplicate LF if already done)
 
-## If violated — agent recovery
+## Related
 
-If Auto-LF or tools ran but **no visible 7-step** for this Fall # in the main thread:
-
-1. **STOP** further close-out
-2. Output the **full 7-step now** as plain chat text for the visible case
-3. Then continue play-ready / Auto-LF / PR / arms as appropriate (skip duplicate LF if already done)
-
-## Operator recovery command
-
-If the operator only sees a background-task menu and is unsure whether RE ran:
-
-- Type **`RE SHOW`** or **`visible RE`** (optional: `#FALL_ID`)
-
-Agent must re-print the **full 7-step** for the **currently visible** Fall # as plain chat text (from fresh extract if context is missing). Do not say “it’s in the menu above.”
-
-## Auto picker note
-
-**Auto** may route to workflows that use subagents more often. That increases background-task UI. Email processing should still follow this rule; if menus persist, switch picker to **Claude 4.6 Sonnet** or **Composer 2.5** (named model, not Task) for RE turns.
+- `.cursor/rules/re-read-email.mdc` — RE entry + Auto-LF order  
+- `EMAIL-PROCESSING-AGENT.md` — troubleshooting + GO block  
+- `run.py` → `RE_TEXT_ONLY_GATE` after extract  

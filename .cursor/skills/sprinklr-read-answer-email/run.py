@@ -47,6 +47,39 @@ _FAIL_MARKERS = (
 )
 
 
+def _print_re_text_only_gate() -> None:
+    """Tell the agent to stop tooling and post the 7-step as plain chat next."""
+    print("\n" + "=" * 80, flush=True)
+    print("RE_TEXT_ONLY_GATE", flush=True)
+    print("=" * 80, flush=True)
+    print(
+        "AGENT — mandatory next step: send a NEW chat message with the full 7-step RE "
+        "(sections 1–7) as plain visible text ONLY.",
+        flush=True,
+    )
+    print(
+        "That 7-step message must have ZERO tool calls (no Shell, Grep, Task, Read, Write, "
+        "play-ready, Auto-LF, arms).",
+        flush=True,
+    )
+    print(
+        "Do NOT read terminals/*.txt or spawn explore/Task subagents — that creates "
+        "'Finished background tasks' menus and hides the RE.",
+        flush=True,
+    )
+    print(
+        "After the 7-step is visible in chat, run play-ready + Auto-LF in a separate "
+        "tools-only message.",
+        flush=True,
+    )
+    print(
+        "Operator backup if UI collapses: .cursor/state/latest_re_visible.md "
+        "(written when section 7 is detected).",
+        flush=True,
+    )
+    print("=" * 80 + "\n", flush=True)
+
+
 def _write_meta(mode: str, pid: int) -> None:
     import json
     from datetime import datetime, timezone
@@ -174,6 +207,7 @@ def _await_arm(timeout_s: float = 1800.0, poll_s: float = 1.0) -> int:
                 else:
                     print(text[-8000:], flush=True)
                 print("AWAIT_ARM_EXTRACT_DONE", flush=True)
+                _print_re_text_only_gate()
                 return 0
             if any(m in text for m in _FAIL_MARKERS):
                 print("\n" + "=" * 80, flush=True)
@@ -249,11 +283,13 @@ def main() -> int:
 
     if use_once:
         print("MODE: --once (extract currently open case)")
-        return subprocess.call(
+        rc = subprocess.call(
             [sys.executable, str(runner), "--process-current-only", "--extract-only"],
             cwd=str(_REPO_ROOT),
             env=env,
         )
+        _print_re_text_only_gate()
+        return rc
 
     watch_flag = None
     label = None

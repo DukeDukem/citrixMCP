@@ -5766,8 +5766,34 @@ Use cursor-agent's file reading capabilities to read these files before generati
         except UnicodeEncodeError:
             print(_safe_print(body_text))
         print("="*80)
-        print("[INFO] Script finished. Cursor: query KnowledgeBase and write the suggested reply in the chat window.")
-        print("="*80 + "\n")
+        print("[INFO] Script finished. Cursor: next message = full 7-step RE as plain chat text (no tools).")
+        print("="*80)
+        try:
+            _state = _script_dir.parent.parent / "state"
+            _state.mkdir(parents=True, exist_ok=True)
+            _extract_path = _state / "latest_extract.md"
+            _extract_path.write_text(
+                "\n".join(
+                    [
+                        f"# Extract — {display_case_id}",
+                        "",
+                        f"**Subject:** {email_content.get('subject', 'N/A')}",
+                        f"**From:** {email_content.get('from', 'N/A')}",
+                        "",
+                        "## Body",
+                        "",
+                        body_text,
+                        "",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            print(f"LATEST_EXTRACT_FILE {_extract_path}", flush=True)
+        except Exception as e:
+            logger.debug(f"latest_extract write failed: {e}")
+        print("\n" + "=" * 80)
+        print("RE_TEXT_ONLY_GATE — agent: STOP tools; next message = 7-step sections 1–7 only")
+        print("=" * 80 + "\n")
         try:
             if str(_script_dir) not in sys.path:
                 sys.path.insert(0, str(_script_dir))

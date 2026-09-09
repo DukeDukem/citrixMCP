@@ -35,6 +35,7 @@ _SECTION6_PATTERNS = (
     re.compile(r"(?mi)^\s*#{0,3}\s*\*{0,2}\s*6\.\s*Your response to customer"),
     re.compile(r"(?mi)6\.\s*Your response to customer"),
 )
+_LATEST_RE_VISIBLE = _STATE / "latest_re_visible.md"
 _CLOSEOUT_DONE_PATTERNS = (
     re.compile(r"(?mi)\bPR\s*LF\s+done\s+for\s+#?\d+"),
     re.compile(r"(?mi)^\s*#{0,3}\s*\*{0,2}\s*PR\s*LF\s+done\b"),
@@ -104,6 +105,20 @@ def _should_play_re_ready(text: str) -> bool:
     if is_re_pending_sound():
         return True
     return _any(text, _SECTION1_PATTERNS) or _any(text, _SECTION6_PATTERNS)
+
+
+def _save_latest_re_visible(text: str) -> None:
+    """Backup full agent RE to disk when section 7 is present (UI collapse fallback)."""
+    if not text or not _any(text, _SECTION7_PATTERNS):
+        return
+    if not (_any(text, _SECTION1_PATTERNS) or _any(text, _SECTION6_PATTERNS)):
+        return
+    try:
+        _STATE.mkdir(parents=True, exist_ok=True)
+        _LATEST_RE_VISIBLE.write_text(text.strip() + "\n", encoding="utf-8")
+        _log(f"latest_re_visible saved len={len(text)} path={_LATEST_RE_VISIBLE}")
+    except Exception as e:
+        _log(f"latest_re_visible save failed: {e!r}")
 
 
 def _debounce_allow(kind: str) -> bool:
@@ -180,6 +195,7 @@ def main() -> int:
         return _ok()
 
     if _should_play_re_ready(text):
+        _save_latest_re_visible(text)
         if not _debounce_allow("re_ready"):
             _log("re_ready_book debounced")
             return _ok()

@@ -71,7 +71,7 @@ Document what **you** set in the Cursor model picker, not what agents recommend.
 
 | Date | Chat | Picker set | Reason / notes |
 |------|------|------------|----------------|
-| **2026-09-09** | **Email processing** (`EMAIL-PROCESSING-AGENT.md`) | **Auto** | Higher processing and case-solving speed. Usage will **not** match Sonnet-primary estimates below — Auto routes across included models (often Composer / Cursor Models; may use Other Models on harder turns). **Grok still forbidden** if Auto selects it → switch picker manually. |
+| **2026-09-09** | **Email processing** (`EMAIL-PROCESSING-AGENT.md`) | **Auto** | Higher processing and case-solving speed. Usage will **not** match Sonnet-primary estimates below — Auto routes across included models (often Composer / Cursor Models; may use Other Models on harder turns). **Side effect:** Auto often spawns **explore/Task subagents** → Cursor **“Finished background tasks”** menus hide the 7-step RE; if that persists, switch to **Composer 2.5** or **Sonnet** (named). **Grok still forbidden** if Auto selects it → switch picker manually. |
 | *(prior)* | Email processing | Claude 4.6 Sonnet (thinking) | Default recommendation for German RE quality |
 
 **When email chat is on Auto:** treat per-case **Other Models** $ as **variable**; track **Cursor Models vs Other Models** split in [Dashboard → Usage](https://cursor.com/dashboard/spending) separately from Sonnet-only baselines.
