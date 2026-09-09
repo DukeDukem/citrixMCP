@@ -274,11 +274,11 @@ Also still in force:
 - Typed LF / LF TR / PR LF = recovery only.
 
 HARD FIX — SPEICHERN GATE BETWEEN CASES:
-- After each Auto-LF fill, a watch listens for Case Tracker Speichern (<input type="submit" value="Speichern">).
-- Before Auto-LF on a *different* Fall #: if previous Speichern was not registered → fill_case_tracker exits PREVIOUS_LF_SPEICHERN_PENDING / PAUSE_AUTO_LF.
-- Then: warn me in chat that I did not Speichern the previous LF; do NOT Auto-LF / arm close-out for the new case until Speichern is done, then retry Auto-LF for the current Fall #.
-- EMAIL 7-step for the new case may still be written; only Auto-LF+arms pause.
-- Recovery: Speichern then retry LF; or --clear-speichern-pending if already saved; --ignore-speichern-gate only emergency.
+- After each Auto-LF fill, Speichern clicks are captured on Case Tracker (document listener + localStorage lf_speichern_seen), not only via a fragile watch.
+- Before Auto-LF on a *different* Fall #: if previous Speichern was not registered → PREVIOUS_LF_SPEICHERN_PENDING / PAUSE_AUTO_LF.
+- Belated Speichern: on retry Auto-LF, re-read localStorage / form and CLEAR the gate if Speichern already happened — do not keep pausing after I clicked Speichern.
+- Warn me only when still truly unsaved; then retry Auto-LF for the current Fall # after Speichern.
+- Recovery if still stuck after a real save: --clear-speichern-pending then retry; --ignore-speichern-gate only emergency.
 
 Confirm: EMAIL 7-step visible in main chat; section 6 soft-wrap in chat only; PR paste stays mail-format; Speichern gate between cases; CALL Auto-LF on CHANNEL detect. Continue.
 ```
