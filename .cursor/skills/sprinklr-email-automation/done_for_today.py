@@ -34,6 +34,7 @@ _KILL_CMDLINE_MARKERS = (
     "call_listen.py",
     "teleprompter_ui.py",
     "--watch-speichern",
+    "--continue-after-speichern",
 )
 
 # Never kill ourselves or the Cursor host by broad matches alone.
@@ -58,6 +59,7 @@ def _clear_session_flags() -> None:
         "call_teleprompter_ui.json",
         "lf_speichern_pending.json",
         "lf_speichern_watch.log",
+        "lf_speichern_continue.log",
     ):
         path = state_dir / name
         if path.exists():

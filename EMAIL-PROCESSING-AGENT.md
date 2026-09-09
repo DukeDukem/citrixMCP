@@ -54,7 +54,7 @@ AUTO-LF (mandatory — user does not type LF):
 - EMAIL: after 7-step + play-ready → fill_case_tracker.py for Fall # (Transfer from §3 / matrix).
 - CALL: as soon as CHANNEL: CALL → fill_case_tracker.py --channel voice (no BRIEF wait).
 - Speichern stays manual. After each LF fill, script arms Speichern watch (`LF_SPEICHERN_WATCH_ARMED`).
-- Speichern gate: if next case Auto-LF runs and previous Speichern click was NOT registered → script exits with PREVIOUS_LF_SPEICHERN_PENDING / PAUSE_AUTO_LF. Warn me in chat; do NOT Auto-LF the new case until I Speichern the previous LF (then retry Auto-LF). Same Fall # re-LF OK.
+- Speichern gate: if next case Auto-LF runs and previous Speichern was NOT registered → PAUSE_AUTO_LF + **LF_CONTINUE_AFTER_SPEICHERN_ARMED** (exit 3). Warn me to Speichern previous LF; Auto-LF for the **current** case continues automatically after that click. Agent must `--await-speichern-continue`, then on CONTINUE_LF_DONE do transfer arm or wait for PR. Do not ask me to re-run Auto-LF unless continue failed.
 - Typed LF / LF TR / PR LF = recovery only.
 - Rule: lf-log-form.mdc
 
@@ -273,13 +273,13 @@ Also still in force:
 - Anhänge: .png click then Schließen; PDF View Detail.
 - Typed LF / LF TR / PR LF = recovery only.
 
-HARD FIX — SPEICHERN GATE BETWEEN CASES:
-- After each Auto-LF fill, Speichern clicks are captured on Case Tracker (document listener + localStorage lf_speichern_seen), not only via a fragile watch.
-- Before Auto-LF on a *different* Fall #: if previous Speichern was not registered → PREVIOUS_LF_SPEICHERN_PENDING / PAUSE_AUTO_LF.
-- Belated Speichern: on retry Auto-LF, re-read localStorage / form and CLEAR the gate if Speichern already happened — do not keep pausing after I clicked Speichern.
-- Warn me only when still truly unsaved; then retry Auto-LF for the current Fall # after Speichern.
-- Recovery if still stuck after a real save: --clear-speichern-pending then retry; --ignore-speichern-gate only emergency.
+HARD FIX — SPEICHERN GATE + AUTO-CONTINUE:
+- After each Auto-LF fill, Speichern is captured (document listener + localStorage).
+- If Auto-LF on a new Fall # hits missing previous Speichern → PAUSE_AUTO_LF + LF_CONTINUE_AFTER_SPEICHERN_ARMED (exit 3).
+- Then: warn me to click Speichern for the previous LF; immediately run fill_case_tracker.py --await-speichern-continue.
+- When I click Speichern, continue watch Auto-LFs the **current** case itself — no manual retry.
+- On CONTINUE_LF_DONE: transfer arm or wait for PR as usual. Only if CONTINUE_LF_ERROR: ask me to retry Auto-LF.
 
-Confirm: EMAIL 7-step visible in main chat; section 6 soft-wrap in chat only; PR paste stays mail-format; Speichern gate between cases; CALL Auto-LF on CHANNEL detect. Continue.
+Confirm: EMAIL 7-step visible; Speichern pause arms continue-after-Speichern + await; CALL Auto-LF on CHANNEL detect. Continue.
 ```
 

@@ -98,7 +98,7 @@ Every EMAIL extract (typed RE or `--await-arm`):
 1. Full **7-step RE as visible chat text** (sections 1–7 — user must see it without expanding “finished background tasks” / any dropdown)  
 2. **Only then** **`re_complete_sound.py --play-ready`**  
 3. **Only then** **Auto-LF** for this Fall # (Transfer Nein or Ja per §3) — user does **not** type `LF`  
-4. If Auto-LF prints **`ERROR: PREVIOUS_LF_SPEICHERN_PENDING`** / **`PAUSE_AUTO_LF`**: warn the user that previous Case Tracker **Speichern** was not clicked; **do not** arm close-out for the new case; wait for Speichern then retry Auto-LF. See `lf-log-form.mdc` Speichern gate.  
+4. If Auto-LF prints **`PAUSE_AUTO_LF`** + **`LF_CONTINUE_AFTER_SPEICHERN_ARMED`** (exit `3`): warn user to click Speichern for the **previous** LF; Auto-LF for the **current** Fall # continues automatically — run **`fill_case_tracker.py --await-speichern-continue`**, then on **`CONTINUE_LF_DONE`** do transfer arm or wait for **PR**. Do **not** require a manual Auto-LF retry after Speichern.  
 5. If transfer → arm Weiter/Extern immediately; if non-transfer → stop and wait for **PR**
 
 **Auto-LF / tool runs must never replace, precede, or hide the 7-step behind Cursor task UI.**

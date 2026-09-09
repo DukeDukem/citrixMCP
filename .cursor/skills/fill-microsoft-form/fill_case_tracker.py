@@ -26,14 +26,18 @@ except ImportError:
 try:
     from lf_speichern_gate import (
         arm_speichern_for_case,
+        await_speichern_continue,
+        build_continue_lf_args,
         check_speichern_status,
         clear_page_speichern_marks,
         clear_speichern_state,
         gate_previous_speichern,
         mark_speichern_seen,
         read_speichern_state,
+        run_continue_after_speichern,
         run_speichern_watch,
         set_speichern_pending,
+        spawn_continue_after_speichern,
         spawn_speichern_watch,
         write_speichern_state,
     )
@@ -41,14 +45,18 @@ except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from lf_speichern_gate import (
         arm_speichern_for_case,
+        await_speichern_continue,
+        build_continue_lf_args,
         check_speichern_status,
         clear_page_speichern_marks,
         clear_speichern_state,
         gate_previous_speichern,
         mark_speichern_seen,
         read_speichern_state,
+        run_continue_after_speichern,
         run_speichern_watch,
         set_speichern_pending,
+        spawn_continue_after_speichern,
         spawn_speichern_watch,
         write_speichern_state,
     )
@@ -544,6 +552,21 @@ def main() -> int:
         action="store_true",
         help="Fill even if previous case Speichern was not registered",
     )
+    ap.add_argument(
+        "--continue-after-speichern",
+        action="store_true",
+        help="Detached: wait for previous Speichern, then Auto-LF the queued current case",
+    )
+    ap.add_argument(
+        "--await-speichern-continue",
+        action="store_true",
+        help="Poll until continue-after-Speichern Auto-LF finishes",
+    )
+    ap.add_argument(
+        "--no-continue-arm",
+        action="store_true",
+        help="On Speichern gate pause, do not auto-arm continue-after-Speichern",
+    )
     args = ap.parse_args()
 
     if args.clear_speichern_pending:
@@ -553,6 +576,12 @@ def main() -> int:
 
     if args.check_speichern:
         return check_speichern_status(cdp=args.cdp, sync_live=True)
+
+    if args.await_speichern_continue:
+        return await_speichern_continue()
+
+    if args.continue_after_speichern:
+        return run_continue_after_speichern(cdp=args.cdp)
 
     if args.watch_speichern:
         if not args.case_id:
@@ -589,7 +618,49 @@ def main() -> int:
             ignore=bool(args.ignore_speichern_gate),
         )
         if gate_rc is not None:
-            return gate_rc
+            if args.no_continue_arm:
+                return gate_rc
+
+            salcus_value = _normalise_salcus_value(args.salcus) if args.salcus else ""
+            transfer_flag = args.transfer
+            transfer_target = (args.target or "").strip()
+            case_info: dict = {}
+            if sprinklr:
+                try:
+                    sprinklr.bring_to_front()
+                    sprinklr.wait_for_timeout(400)
+                    case_info = extract_case_info_from_sprinklr(sprinklr)
+                    if not salcus_value:
+                        salcus_value = extract_salcus_from_sprinklr(sprinklr, case_info)
+                except Exception:
+                    case_info = {}
+            if transfer_flag is None and not transfer_target:
+                transfer_flag, transfer_target = resolve_transfer(case_info)
+            elif transfer_flag is None:
+                transfer_flag = "1" if transfer_target else "0"
+
+            cont = build_continue_lf_args(
+                case_id=args.case_id,
+                channel=args.channel or "em_care",
+                transfer=transfer_flag,
+                target=transfer_target or None,
+                salcus=salcus_value or None,
+                cdp=args.cdp,
+            )
+            pid = spawn_continue_after_speichern(cont)
+            if pid is None:
+                print(
+                    "ERROR: Could not arm continue-after-Speichern — click Speichern then retry Auto-LF manually.",
+                    flush=True,
+                )
+                return gate_rc
+            print(
+                f"Armed — click Speichern for the previous LF; "
+                f"Auto-LF for #{cont['case_id']} continues automatically.",
+                flush=True,
+            )
+            # 3 = paused with continue watch armed (agent should --await-speichern-continue)
+            return 3
 
         salcus_value = _normalise_salcus_value(args.salcus) if args.salcus else ""
         transfer_flag = args.transfer
