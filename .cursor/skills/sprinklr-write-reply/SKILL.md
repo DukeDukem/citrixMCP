@@ -53,7 +53,7 @@ uv run python .cursor/skills/sprinklr-write-reply/run.py --reply-file=path/to/re
    - Clear the editor content completely.
    - STOP immediately. Do not repaste automatically.
    - Report failure and require fresh RE-based rebuild before next PR.
-7. After CLEAN verification, terminate the write flow immediately (no repaste loop). The user clicks **Senden** (`button[data-testid="replyBox-sendBtn"]`); Sprinklr may show an internal grammar warning — user confirms with **Ignorieren und senden** (same testid). Empty editor after that = mail **sent**, not a failed paste. Do not re-verify emptiness as an error or rewrite for the grammar gate. Neither click is an arm trigger. Auto-LF already ran at RE; after PR success arm Anwenden. Speichern on Case Tracker stays manual.
+7. After CLEAN verification, terminate the write flow immediately (no repaste loop). The user clicks **Senden** (`button[data-testid="replyBox-sendBtn"]`); Sprinklr may show an internal grammar warning — user confirms with **Ignorieren und senden** (same testid). Empty editor after that = mail **sent**, not a failed paste. **Extra proof of send:** new tray item `div[data-testid="inboundChatConversationItemBrandMessage"]` with `email-message-container` / matching body and a timestamp near PR paste time — treat as success, not new inbound or paste failure. Do not re-verify emptiness as an error or rewrite for the grammar gate. Neither send click is an arm trigger. Auto-LF already ran at RE; after PR success arm Anwenden. Speichern on Case Tracker stays manual.
 
 ## Reply content (standard template)
 

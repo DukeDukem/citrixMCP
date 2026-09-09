@@ -93,15 +93,29 @@ After a **CLEAN** post-paste verification, the user sends manually. Sprinklr oft
 
 **Grammar warning (normal, not a real error):** After the first **Senden**, Sprinklr may flag “potential grammatical errors.” That is **Sprinklr’s internal grammar criteria**, not proof the agent pasted bad German and not a failed PR. The user dismisses by clicking the button again when it shows **Ignorieren und senden**.
 
+### Additional send confirmation — outbound bubble in conversation tray
+
+After send succeeds, Sprinklr shows the agent’s reply in the **left conversation / chat tray** as a brand outbound item. Treat this as positive proof the PR was sent:
+
+| Signal | Selector / where |
+|--------|------------------|
+| Brand outbound item | `div[data-testid="inboundChatConversationItemBrandMessage"]` |
+| Email body container inside it | `div[data-element-type="email-message-container"]` with `html-message-content` |
+| Message type | Often `data-testid="messageType"` → **Antwort** |
+| Sent time (top-right of bubble) | e.g. `span` with text like `9 Sep. 26, 08:11` next to Betreff |
+
+**Agent check (optional, when unsure):** If the reply box is empty after Senden and a new `inboundChatConversationItemBrandMessage` appears whose `html-message-content` matches the pasted reply (salutation / key lines) and whose timestamp is near the PR paste time → **email was sent**. Do **not** treat this as a new inbound customer mail or as a failed paste.
+
 **Meaning for the agent:**
 
 1. Until the second confirm (or a single Senden with no gate), the mail may still be unsent — editor can still show the reply. That is OK.
 2. After the user finishes send (Senden, or Senden → Ignorieren und senden), the email **was sent** — PR paste **succeeded**.
 3. The reply editor becoming **empty** (or compose UI resetting) after that is **expected** — **not** `ERROR: POST-PASTE VERIFICATION FAILED`, not “paste didn’t stick”, not a reason to re-PR.
-4. **Neither Senden nor Ignorieren und senden is part of arming** (not Anwenden / Next / Weiter / Weiterleiten). Do **not** watch these buttons to trigger `--arm*`. Arm Anwenden only after PR paste+verify succeeded (per Auto-LF rules), independent of when the user completes send.
-5. Do **not** re-run leak verification against an empty box after send and treat emptiness as failure.
-6. Do **not** “fix” the reply just because Sprinklr showed the grammar gate.
-7. If CLEAN was already returned for this PR, proceed with Anwenden arm / await as usual even if the editor is empty because the user already sent.
+4. A new **brand** tray bubble (`inboundChatConversationItemBrandMessage`) with matching content/timestamp is **extra confirmation of send success**.
+5. **Neither Senden nor Ignorieren und senden is part of arming** (not Anwenden / Next / Weiter / Weiterleiten). Do **not** watch these buttons to trigger `--arm*`. Arm Anwenden only after PR paste+verify succeeded (per Auto-LF rules), independent of when the user completes send.
+6. Do **not** re-run leak verification against an empty box after send and treat emptiness as failure.
+7. Do **not** “fix” the reply just because Sprinklr showed the grammar gate.
+8. If CLEAN was already returned for this PR, proceed with Anwenden arm / await as usual even if the editor is empty because the user already sent.
 
 VIOLATION OF THIS RULE = DATA BREACH. DO NOT PROCEED IF UNCERTAIN.
 
