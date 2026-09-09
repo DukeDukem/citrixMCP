@@ -7,6 +7,7 @@ optionally logs in, fills Case # + channel + defaults, leaves save to the user u
 Usage:
     uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#36698255"
     uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --open-only
+    uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --check-speichern
 """
 from __future__ import annotations
 
@@ -21,6 +22,34 @@ try:
 except ImportError:
     print("ERROR: Run  uv sync  and  uv run playwright install chromium")
     sys.exit(1)
+
+try:
+    from lf_speichern_gate import (
+        check_speichern_status,
+        clear_speichern_state,
+        gate_previous_speichern,
+        install_speichern_listener,
+        mark_speichern_seen,
+        read_speichern_state,
+        run_speichern_watch,
+        set_speichern_pending,
+        spawn_speichern_watch,
+        write_speichern_state,
+    )
+except ImportError:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from lf_speichern_gate import (
+        check_speichern_status,
+        clear_speichern_state,
+        gate_previous_speichern,
+        install_speichern_listener,
+        mark_speichern_seen,
+        read_speichern_state,
+        run_speichern_watch,
+        set_speichern_pending,
+        spawn_speichern_watch,
+        write_speichern_state,
+    )
 
 CASE_TRACKER_URL = "https://roberta.yoummday.com/casetracker/"
 CDP_ENDPOINT = "http://127.0.0.1:9222"
@@ -429,7 +458,28 @@ def fill_case_tracker_fields(
         f"[CASE TRACKER] Kanal: {'Voice (Tel.)' if is_voice or channel_sel == '#channel_voice' else channel_key}"
     )
     transfer_sel = "#transfer1" if transfer_flag == "1" else "#transfer0"
-    page.locator(transfer_sel).click(force=True)
+    # Radio may already be selected but CSS-hidden; force-click can throw "not visible".
+    try:
+        loc = page.locator(transfer_sel)
+        already = loc.evaluate(
+            "el => !!(el.checked || el.getAttribute('selected') !== null)"
+        )
+        if not already:
+            loc.click(force=True, timeout=3000)
+        else:
+            # Ensure checked even if hidden (Roberta sometimes keeps radios off-screen)
+            loc.evaluate("el => { el.checked = true; el.click(); }")
+    except Exception:
+        page.evaluate(
+            """(sel) => {
+              const el = document.querySelector(sel);
+              if (!el) return;
+              el.checked = true;
+              el.dispatchEvent(new Event('click', { bubbles: true }));
+              if (typeof el.onclick === 'function') el.onclick();
+            }""",
+            transfer_sel,
+        )
     if transfer_flag == "1" and transfer_target:
         page.locator('input[name="target"]').fill(transfer_target.strip())
         print(f"[CASE TRACKER] Transfer: Ja -> {transfer_target.strip()}")
@@ -457,6 +507,86 @@ def fill_case_tracker_fields(
         print("[CASE TRACKER] Fields filled — click Speichern manually when ready.")
 
 
+# Speichern-gate helpers (no-op / minimal — fill must not crash if watch code is absent)
+_SPEICHERN_STATE_PATH = REPO_ROOT / ".cursor" / "state" / "lf_speichern_state.json"
+
+
+def _read_speichern_state() -> dict | None:
+    try:
+        if not _SPEICHERN_STATE_PATH.exists():
+            return None
+        with open(_SPEICHERN_STATE_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+
+def _write_speichern_state(st: dict) -> None:
+    try:
+        _SPEICHERN_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(_SPEICHERN_STATE_PATH, "w", encoding="utf-8") as f:
+            json.dump(st, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def _clear_speichern_state() -> None:
+    try:
+        if _SPEICHERN_STATE_PATH.exists():
+            _SPEICHERN_STATE_PATH.unlink()
+    except Exception:
+        pass
+
+
+def _gate_previous_speichern(case_id: str, tracker, ignore: bool = False) -> int | None:
+    """Block fill if prior case Speichern is still pending. Returns exit code or None to continue."""
+    if ignore:
+        return None
+    st = _read_speichern_state()
+    if not st or st.get("speichern_seen"):
+        return None
+    pending = _normalise_case_id(str(st.get("case_id") or ""))
+    current = _normalise_case_id(case_id)
+    if not pending or pending == current:
+        return None
+    print(f"ERROR: LF_SPEICHERN_PENDING for #{pending} — click Speichern or use --ignore-speichern-gate", flush=True)
+    print("PAUSE_AUTO_LF", flush=True)
+    return 2
+
+
+def _mark_speichern_seen(case_id: str, source: str = "") -> None:
+    st = _read_speichern_state() or {}
+    st["case_id"] = _normalise_case_id(case_id)
+    st["speichern_seen"] = True
+    if source:
+        st["source"] = source
+    _write_speichern_state(st)
+
+
+def _set_speichern_pending(case_id: str) -> None:
+    _write_speichern_state(
+        {
+            "case_id": _normalise_case_id(case_id),
+            "speichern_seen": False,
+            "pending": True,
+        }
+    )
+
+
+def _install_speichern_listener(tracker) -> None:
+    return None
+
+
+def _spawn_speichern_watch(case_id: str) -> int | None:
+    return None
+
+
+def _run_speichern_watch(case_id: str, cdp: str) -> int:
+    print(f"[CASE TRACKER] Speichern watch not implemented (case=#{_normalise_case_id(case_id)})", flush=True)
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Open/fill Roberta O2 Case Tracker")
     ap.add_argument("--case-id", help='Sprinklr Case ID, e.g. "#36698255"')
@@ -472,7 +602,40 @@ def main() -> int:
     ap.add_argument("--open-only", action="store_true", help="Only open/reuse Case Tracker tab (login if needed)")
     ap.add_argument("--submit", action="store_true", help="Click Speichern after fill")
     ap.add_argument("--close-tab", action="store_true", help="Close tracker tab after fill (default: leave open)")
+    ap.add_argument(
+        "--watch-speichern",
+        action="store_true",
+        help="Detached: wait for Speichern click on Case Tracker and mark pending LF saved",
+    )
+    ap.add_argument(
+        "--check-speichern",
+        action="store_true",
+        help="Print Speichern pending status (exit 0 if clear/seen, 2 if pending)",
+    )
+    ap.add_argument(
+        "--clear-speichern-pending",
+        action="store_true",
+        help="Clear Speichern pending gate (after manual save or recovery)",
+    )
+    ap.add_argument(
+        "--ignore-speichern-gate",
+        action="store_true",
+        help="Fill even if previous case Speichern was not registered",
+    )
     args = ap.parse_args()
+
+    if args.clear_speichern_pending:
+        clear_speichern_state()
+        print("LF_SPEICHERN_PENDING_CLEARED", flush=True)
+        return 0
+
+    if args.check_speichern:
+        return check_speichern_status()
+
+    if args.watch_speichern:
+        if not args.case_id:
+            ap.error("--case-id is required with --watch-speichern")
+        return run_speichern_watch(args.case_id, args.cdp)
 
     if not args.open_only and not args.case_id:
         ap.error("--case-id is required unless --open-only is set")
@@ -497,6 +660,14 @@ def main() -> int:
             if sprinklr:
                 sprinklr.bring_to_front()
             return 0
+
+        gate_rc = gate_previous_speichern(
+            args.case_id,
+            tracker,
+            ignore=bool(args.ignore_speichern_gate),
+        )
+        if gate_rc is not None:
+            return gate_rc
 
         salcus_value = _normalise_salcus_value(args.salcus) if args.salcus else ""
         transfer_flag = args.transfer
@@ -529,6 +700,19 @@ def main() -> int:
         )
 
         print("[CASE TRACKER] Form filled — stay on this tab; Sprinklr is not forced to front.")
+
+        if args.submit:
+            mark_speichern_seen(args.case_id, source="submit_flag")
+            clear_speichern_state()
+            print("LF_SPEICHERN_CLEARED_AFTER_SUBMIT", flush=True)
+        else:
+            install_speichern_listener(tracker)
+            set_speichern_pending(args.case_id)
+            pid = spawn_speichern_watch(args.case_id)
+            if pid is not None:
+                st = read_speichern_state() or {}
+                st["watch_pid"] = pid
+                write_speichern_state(st)
 
         if args.close_tab:
             try:

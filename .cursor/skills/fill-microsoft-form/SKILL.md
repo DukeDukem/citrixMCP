@@ -89,7 +89,12 @@ uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id 
 
 **Never** log Transfer Ja to our own Care Allgemein team.
 
-Default: does **not** click **Speichern**. Full rules: `.cursor/rules/lf-log-form.mdc`.
+Default: does **not** click **Speichern**. After fill, arms a detached Speichern click watch. Next Auto-LF on a **different** Fall # is **blocked** until Speichern is registered (`ERROR: PREVIOUS_LF_SPEICHERN_PENDING`). Full rules: `.cursor/rules/lf-log-form.mdc`.
+
+```powershell
+uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --check-speichern
+uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --clear-speichern-pending
+```
 
 ### Config (`config.json`)
 

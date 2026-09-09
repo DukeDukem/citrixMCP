@@ -53,7 +53,9 @@ CLOSE-OUT ARMS (do not mix):
 AUTO-LF (mandatory — user does not type LF):
 - EMAIL: after 7-step + play-ready → fill_case_tracker.py for Fall # (Transfer from §3 / matrix).
 - CALL: as soon as CHANNEL: CALL → fill_case_tracker.py --channel voice (no BRIEF wait).
-- Speichern stays manual. Typed LF / LF TR / PR LF = recovery only.
+- Speichern stays manual. After each LF fill, script arms Speichern watch (`LF_SPEICHERN_WATCH_ARMED`).
+- Speichern gate: if next case Auto-LF runs and previous Speichern click was NOT registered → script exits with PREVIOUS_LF_SPEICHERN_PENDING / PAUSE_AUTO_LF. Warn me in chat; do NOT Auto-LF the new case until I Speichern the previous LF (then retry Auto-LF). Same Fall # re-LF OK.
+- Typed LF / LF TR / PR LF = recovery only.
 - Rule: lf-log-form.mdc
 
 CALL LF ARM (disposition Next — not Anwenden):
@@ -271,6 +273,13 @@ Also still in force:
 - Anhänge: .png click then Schließen; PDF View Detail.
 - Typed LF / LF TR / PR LF = recovery only.
 
-Confirm: EMAIL 7-step visible in main chat; section 6 soft-wrap in chat only; PR paste stays mail-format length/encoding; CALL Auto-LF on CHANNEL detect. Continue.
+HARD FIX — SPEICHERN GATE BETWEEN CASES:
+- After each Auto-LF fill, a watch listens for Case Tracker Speichern (<input type="submit" value="Speichern">).
+- Before Auto-LF on a *different* Fall #: if previous Speichern was not registered → fill_case_tracker exits PREVIOUS_LF_SPEICHERN_PENDING / PAUSE_AUTO_LF.
+- Then: warn me in chat that I did not Speichern the previous LF; do NOT Auto-LF / arm close-out for the new case until Speichern is done, then retry Auto-LF for the current Fall #.
+- EMAIL 7-step for the new case may still be written; only Auto-LF+arms pause.
+- Recovery: Speichern then retry LF; or --clear-speichern-pending if already saved; --ignore-speichern-gate only emergency.
+
+Confirm: EMAIL 7-step visible in main chat; section 6 soft-wrap in chat only; PR paste stays mail-format; Speichern gate between cases; CALL Auto-LF on CHANNEL detect. Continue.
 ```
 

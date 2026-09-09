@@ -33,6 +33,7 @@ _KILL_CMDLINE_MARKERS = (
     "sprinklr-call-listen/call_listen.py",
     "call_listen.py",
     "teleprompter_ui.py",
+    "--watch-speichern",
 )
 
 # Never kill ourselves or the Cursor host by broad matches alone.
@@ -55,6 +56,8 @@ def _clear_session_flags() -> None:
         "call_listen_stop",
         "call_teleprompter_latest.txt",
         "call_teleprompter_ui.json",
+        "lf_speichern_pending.json",
+        "lf_speichern_watch.log",
     ):
         path = state_dir / name
         if path.exists():
