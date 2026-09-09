@@ -3258,6 +3258,78 @@ Use cursor-agent's file reading capabilities to read these files before generati
             logger.info(f"Saved latest user-directed reply record for case {case_id} at {LATEST_USER_DIRECTED_REPLY_PATH}")
         except Exception as e:
             logger.warning(f"Could not save latest user-directed reply record: {e}")
+
+    @staticmethod
+    def _normalize_reply_substance(text: str) -> str:
+        """Compare reply wording only (ignore chat soft-wrap vs mail paragraph layout)."""
+        return re.sub(r"\s+", " ", (text or "").strip())
+
+    @staticmethod
+    def _fixed_customer_closing_block() -> str:
+        """Verbatim closing from reply-salutation.mdc (mail layout)."""
+        return (
+            "Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS "
+            "zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich "
+            "mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.\n"
+            "\n"
+            "Freundliche Grüße,\n"
+            "\n"
+            "Ihr o2 Kundenbetreuer\n"
+            "Lukasz Kowalski\n"
+            "\n"
+            "Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de\n"
+            "\n"
+            "Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.\n"
+            "\n"
+            "Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben\n"
+            "\n"
+            "* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz"
+        )
+
+    def _rejoin_chat_soft_wraps_for_mail(self, text: str) -> str:
+        """
+        Convert Cursor chat ~72-char soft-wraps into mail-format paragraphs for Sprinklr paste.
+        Preserves blank-line paragraph breaks and bullet lines; restores fixed signature layout.
+        """
+        raw = (text or "").strip()
+        if not raw:
+            return ""
+
+        survey_marker = "Zur Verbesserung unseres Kundenservices"
+        body = raw
+        if survey_marker in raw:
+            body = raw.split(survey_marker, 1)[0].rstrip()
+
+        blocks = re.split(r"\n\s*\n", body)
+        mail_blocks: list[str] = []
+        for block in blocks:
+            compact = [ln for ln in block.split("\n") if ln.strip() != ""]
+            if not compact:
+                continue
+            if any(ln.lstrip().startswith("- ") for ln in compact):
+                items: list[str] = []
+                current: Optional[str] = None
+                for ln in compact:
+                    s = ln.strip()
+                    if s.startswith("- "):
+                        if current is not None:
+                            items.append(current)
+                        current = s
+                    elif current is not None:
+                        current = f"{current} {s}"
+                    else:
+                        items.append(s)
+                if current is not None:
+                    items.append(current)
+                mail_blocks.append("\n".join(items))
+            else:
+                mail_blocks.append(" ".join(ln.strip() for ln in compact))
+
+        mail_body = "\n\n".join(mail_blocks).strip()
+        closing = self._fixed_customer_closing_block()
+        if survey_marker in raw:
+            return f"{mail_body}\n\n{closing}" if mail_body else closing
+        return mail_body
     
     def create_output_file(self, case_id: str, cursor_response: Dict):
         """
@@ -6053,7 +6125,7 @@ def main():
                     automation.cleanup()
                     sys.exit(1)
 
-                with open(LATEST_RE_REPLY_PATH, "r", encoding="utf-8") as rf:
+                with open(LATEST_RE_REPLY_PATH, "r", encoding="utf-8-sig") as rf:
                     rec = json.load(rf)
                 rec_case_id = str(rec.get("case_id", "")).strip()
                 rec_text = str(rec.get("response_text", "")).strip()
@@ -6070,7 +6142,7 @@ def main():
                 user_override_ok = False
                 if LATEST_USER_DIRECTED_REPLY_PATH.exists():
                     try:
-                        with open(LATEST_USER_DIRECTED_REPLY_PATH, "r", encoding="utf-8") as uf:
+                        with open(LATEST_USER_DIRECTED_REPLY_PATH, "r", encoding="utf-8-sig") as uf:
                             urec = json.load(uf)
                         u_case_id = str(urec.get("case_id", "")).strip()
                         u_text = str(urec.get("response_text", "")).strip()
@@ -6088,9 +6160,18 @@ def main():
                     )
                     automation.cleanup()
                     sys.exit(1)
-                if file_text == rec_text:
-                    print("[INFO] PR source: exact latest RE response for current visible case.")
-                    reply_text = rec_text
+                same_wording = (
+                    automation._normalize_reply_substance(file_text)
+                    == automation._normalize_reply_substance(rec_text)
+                )
+                if file_text == rec_text or same_wording:
+                    print(
+                        "[INFO] PR source: latest RE response for current visible case "
+                        "(mail format — chat soft-wraps rejoined)."
+                    )
+                    # Prefer file if provided (already mail-formatted); else rejoin RE chat wraps.
+                    source = file_text if file_text else rec_text
+                    reply_text = automation._rejoin_chat_soft_wraps_for_mail(source)
                 elif file_text:
                     # Differing payload is only allowed if it matches a previously recorded
                     # user-directed override for this exact case.
@@ -6103,11 +6184,17 @@ def main():
                             )
                             automation.cleanup()
                             sys.exit(1)
-                        with open(LATEST_USER_DIRECTED_REPLY_PATH, "r", encoding="utf-8") as uf:
+                        with open(LATEST_USER_DIRECTED_REPLY_PATH, "r", encoding="utf-8-sig") as uf:
                             urec = json.load(uf)
                         u_case_id = str(urec.get("case_id", "")).strip()
                         u_text = str(urec.get("response_text", "")).strip()
-                        if u_case_id != current_case_id or not u_text or file_text != u_text:
+                        same_override = (
+                            automation._normalize_reply_substance(file_text)
+                            == automation._normalize_reply_substance(u_text)
+                        )
+                        if u_case_id != current_case_id or not u_text or (
+                            file_text != u_text and not same_override
+                        ):
                             print(
                                 "[ERROR] Reply differs from latest RE response and does not match the recorded user-directed override "
                                 "for the visible case. PR blocked.",
@@ -6116,7 +6203,7 @@ def main():
                             automation.cleanup()
                             sys.exit(1)
                         print("[INFO] PR source: recorded user-directed override for current visible case.")
-                        reply_text = u_text
+                        reply_text = automation._rejoin_chat_soft_wraps_for_mail(file_text or u_text)
                     except SystemExit:
                         raise
                     except Exception as ue:

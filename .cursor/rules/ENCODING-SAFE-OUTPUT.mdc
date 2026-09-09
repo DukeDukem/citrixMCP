@@ -33,14 +33,14 @@ The triple backticks preserve UTF-8 encoding and prevent mojibake corruption.
 
 ---
 
-## TWO FORMATS (do not confuse)
+## TWO FORMATS (do not confuse) — SECTION 6 CHAT WIDTH vs PR PASTE
 
 | Where | Line wrapping | Purpose |
 |-------|---------------|---------|
-| **Chat section 6** (Cursor) | Soft-wrap ~72 chars (max 80) | Read with vertical scroll only |
-| **PR / Sprinklr paste** (`temp_reply.txt`, write-reply) | **Mail format** — previous length & layout | What the customer receives |
+| **Chat section 6** (Cursor only) | Soft-wrap ~72 chars (max 80) | Scroll **down** to read in chat |
+| **PR / Sprinklr paste** (`temp_reply.txt`, `reply_*.txt`, write-reply) | **Mail format** — previous paragraph length & layout | What the customer receives |
 
-**Chat wrap must NEVER change what gets pasted into Sprinklr.**
+**Hard split:** Chat soft-wrap is for reading in Cursor only. PR must **not** use that wrapping. Same wording/encoding; normal blank-line paragraphs; fixed signature layout from `reply-salutation.mdc`. On every PR: **rejoin** chat soft-wraps within paragraphs before writing the paste file.
 
 ### A) Chat display only (section 6)
 
