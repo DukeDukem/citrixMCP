@@ -13,6 +13,7 @@
 - **Email processing chat:** Cursor picker → **Claude 4.6 Sonnet** (thinking). Escalation: Opus. Throughput/budget: Composer 2.5.
 - **Instructions / Incentive chats:** Composer 2.5 or Auto (save Other Models pool).
 - **Grok banned** for all case work.
+- **On-demand / overage usage: DISABLED** — never recommend enabling it; near Other Models cap → Composer 2.5 or pause until cycle reset.
 - Spend notes: `.cursor/knowledge/pro-plus-model-spend-2026.md`. Rule: `.cursor/rules/ai-model-stay-auto.mdc` (filename historical; content is Pro Plus policy).
 
 ## Case commands (email processing chat)

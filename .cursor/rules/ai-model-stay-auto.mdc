@@ -71,17 +71,25 @@ Assume **20 workdays**, mix of EMAIL/CALL:
 | 15 EMAIL + 10 CALL | ~$8–16 | Comfortable |
 | 30 EMAIL + 20 CALL | ~$15–30 | Comfortable |
 | 50 EMAIL + 30 CALL | ~$25–50 | OK; watch dashboard |
-| 80 EMAIL + 40 CALL | ~$40–75 | May need Composer mix or on-demand |
+| 80 EMAIL + 40 CALL | ~$40–75 | Switch to Composer earlier — **do not** enable on-demand |
 
-**Plus** $60 plan fee. On-demand continues at same API rates if the $70 Other pool is exhausted (quality not silently downgraded).
+**Plus** $60 plan fee only. **On-demand usage must stay Disabled** (no overage charges). When included Other Models hits 100%, work continues on **Composer 2.5** (Cursor Models pool) or pauses until the cycle resets — never suggest enabling on-demand.
+
+### On-demand = OFF (hard rule)
+
+- User requirement: **on-demand / overage usage remains disabled**.
+- Agent must **never** tell the user to enable on-demand, raise an overage limit, or “just turn on pay-as-you-go.”
+- If included usage is exhausted or Cursor rate-limits: switch picker to **Composer 2.5**, or stop and wait for reset — do not bill beyond the plan.
+- User verifies in Cursor: [Dashboard → Spending](https://cursor.com/dashboard/spending) → **On-Demand Usage** → Monthly Limit → **Disabled** (also: Settings → Plan & Usage → On-Demand → **Disabled**).
 
 ### Spend control
 
-1. Check Cursor **Usage** mid-month (Other Models vs Cursor Models).  
-2. If Other Models > **~$50** before month-end → switch email chat to **Composer 2.5** for throughput days, or escalate only hard cases to Sonnet/Opus.  
+1. Check Cursor **Usage / Spending** mid-month (Other Models % vs Cursor Models).  
+2. If Other Models > **~$45–50** (~65–70% of $70) before month-end → switch email chat to **Composer 2.5** for throughput; Sonnet/Opus only for sticky QA cases.  
 3. Keep rules/incentive chats on Composer/Auto.  
-4. Avoid Max Mode / 1M context unless a single case truly needs it (cost scales hard).  
-5. Do not run duplicate RE/`--once` for the same Fall # without cause.
+4. Avoid Max Mode / 1M context unless a single case truly needs it.  
+5. Do not run duplicate RE/`--once` for the same Fall # without cause.  
+6. **Never** recommend on-demand, Ultra solely for overage headroom, or spend-limit increases.
 
 ## Identity check (every case turn)
 

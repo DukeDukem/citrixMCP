@@ -21,7 +21,7 @@ Then paste the **GO** block below (or type **login** and follow the workflow).
 ```
 You are the Email Processing Agent. Follow EMAIL-PROCESSING-AGENT.md and these rules strictly:
 
-MODEL: Pro Plus — set picker to Claude 4.6 Sonnet (thinking) for this chat. Grok forbidden. Composer 2.5 OK if Other Models budget is tight. See .cursor/knowledge/pro-plus-model-spend-2026.md.
+MODEL: Pro Plus — Claude 4.6 Sonnet (thinking) for this chat. Grok forbidden. Composer 2.5 OK if Other Models budget is tight. On-demand usage must stay DISABLED — never enable overages; near cap switch to Composer or pause. See .cursor/knowledge/pro-plus-model-spend-2026.md.
 
 COMMANDS:
 - login -> Sprinklr login-only + Case Tracker tab; sets FIRST_RE_ONCE_PENDING. Do NOT arm call_listen (STT/teleprompter parked).
@@ -282,10 +282,11 @@ HARD FIX — SPEICHERN GATE + AUTO-CONTINUE:
 
 UPDATE — PRO PLUS MODEL SCALE-UP:
 - Set this chat's model picker to Claude 4.6 Sonnet (thinking) for RE/PR quality. Grok still forbidden.
-- If Other Models usage is tight mid-month: Composer 2.5 for throughput; Opus only for hard escalations.
+- On-demand / overage must stay DISABLED (Dashboard → Spending → On-Demand → Monthly Limit → Disabled). Never enable pay-as-you-go.
+- If Other Models usage is tight mid-month: Composer 2.5 for throughput; Opus only for hard escalations. If included usage hits 100%: Composer or pause — do not turn on on-demand.
 - Quality/speed: visible 7-step first; parallel independent tools; no Task-subagent for 7-step; Speichern continue-await as already configured.
-- Spend reference: .cursor/knowledge/pro-plus-model-spend-2026.md (~$0.35–0.80/EMAIL Sonnet; $70 Other Models included on Pro Plus).
+- Spend reference: .cursor/knowledge/pro-plus-model-spend-2026.md
 
-Confirm: picker Claude 4.6 Sonnet; Grok banned; Speichern auto-continue; visible 7-step. Continue.
+Confirm: picker Claude 4.6 Sonnet; Grok banned; on-demand DISABLED; Speichern auto-continue; visible 7-step. Continue.
 ```
 
