@@ -1,6 +1,8 @@
 # CALL vs EMAIL — visual markers (2026-09-11)
 
-Reference cases: **Fall #57937085**, **Fall #57934518**, **Fall #57938822** — *Unbekannter Kunde* (call channel).
+Reference cases:
+- **CALL:** **Fall #57937085**, **#57934518**, **#57938822** — *Unbekannter Kunde*
+- **EMAIL sidetray:** **Fall #57675993** — *Natalia Nuzhna* (`BrandEmailCircleClr`)
 
 Screenshots saved in Cursor assets (2026-09-11 session).
 
@@ -14,9 +16,11 @@ Item: `button[data-testid="collapsed-case-item"]`
 | Channel | Badge icon | Script stdout |
 |---------|------------|---------------|
 | **CALL** | `svg[data-icon-name="BrandVoiceCircleClr"]` (green voice circle) | `SIDETRAY_CHANNEL: CALL` → `SIDETRAY_CALL_SKIP_CLICK` → `SIDETRAY_CALL_AUTO_OPEN` (no click) |
-| **EMAIL** | Mail/Email/Message-family icon (varies) | `SIDETRAY_CHANNEL: EMAIL` → `CASE_ITEM_AUTO_CLICKED` |
+| **EMAIL** | `svg[data-icon-name="BrandEmailCircleClr"]` (blue envelope circle) | `SIDETRAY_CHANNEL: EMAIL` → `CASE_ITEM_AUTO_CLICKED` |
 
-Poll interval ~0.25s from arm trigger (no fixed 4s delay). Optional `SIDETRAY_EMPTY` when tray clears between cases. Sidetray watch always runs; only EMAIL icons are clicked.
+**EMAIL example (Fall #57675993):** `button[data-testid="collapsed-case-item"]` with `aria-label="Fall Nr. 57675993 von Natalia Nuzhna"`, avatar + blue `BrandEmailCircleClr` badge; item height often ~8.6rem (CALL ~6rem). Script uses DOM locators inside `[data-entityid="CollapsedPreviewsList"]`, not pixel coordinates.
+
+Poll interval ~0.25s from arm trigger (no fixed 4s delay). Optional `SIDETRAY_EMPTY` when tray clears between cases. Sidetray watch always runs; **EMAIL icons are clicked**; **CALL icons are not**.
 
 ---
 

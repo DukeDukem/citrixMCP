@@ -5142,13 +5142,21 @@ Use cursor-agent's file reading capabilities to read these files before generati
 
     @staticmethod
     def _sidetray_icon_to_channel(icon_name: str) -> str:
-        """Map sidetray badge icon to CALL / EMAIL / unknown."""
+        """
+        Map sidetray badge icon to CALL / EMAIL / unknown.
+
+        Verified icons (CollapsedPreviewsList collapsed-case-item):
+        - CALL: BrandVoiceCircleClr (green) — overlay auto-opens; no click
+        - EMAIL: BrandEmailCircleClr (blue) — click to open (e.g. Fall #57675993)
+        """
         name = (icon_name or "").strip()
         if not name:
             return "unknown"
         if "Voice" in name or name == "BrandVoiceCircleClr":
             return "call"
-        if any(token in name for token in ("Email", "Mail", "Message", "Envelope", "Chat")):
+        if name == "BrandEmailCircleClr" or any(
+            token in name for token in ("Email", "Mail", "Message", "Envelope", "Chat")
+        ):
             return "email"
         return "unknown"
 

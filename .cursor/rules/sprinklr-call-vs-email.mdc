@@ -14,6 +14,7 @@ alwaysApply: true
 | **#57114650** | 2026-09-05 | Uwe Kommer — disposition overlay |
 | **#57937085** | 2026-09-11 | Unbekannter Kunde — live timer, queue transfer, no-reply bar |
 | **#57938822** | 2026-09-11 | Sidetray CALL icon — `BrandVoiceCircleClr` on `collapsed-case-item` |
+| **#57675993** | 2026-09-11 | Sidetray EMAIL icon — `BrandEmailCircleClr` on `collapsed-case-item` (Natalia Nuzhna) |
 
 Artifacts: `.cursor/reports/sprinklr-call-overlay-2026-09-05.png`, `CALL-VS-EMAIL-MARKERS-2026-09-11.md`
 
@@ -157,7 +158,9 @@ After Next → sidetray poll → next case → **CHANNEL: CALL|EMAIL** again.
 | **CALL badge** | `svg[data-icon-name="BrandVoiceCircleClr"]` (green voice circle on avatar) |
 | Script stdout | `SIDETRAY_WATCH_ARMED` → optional `SIDETRAY_EMPTY` → `SIDETRAY_CHANNEL: CALL` → **`SIDETRAY_CALL_SKIP_CLICK`** → **`SIDETRAY_CALL_AUTO_OPEN`** (no sidetray click) |
 
-Email sidetray icons are **clicked** to open the case. CALL icons are **not clicked** — the call overlay opens automatically; monitoring still polls for both.
+**EMAIL sidetray:** `svg[data-icon-name="BrandEmailCircleClr"]` (blue) — **clicked** (`CASE_ITEM_AUTO_CLICKED`). Example Fall **#57675993**, aria-label `Fall Nr. 57675993 von Natalia Nuzhna`. Same container as CALL; DOM locators only (no pixel coordinates).
+
+CALL icons are **not clicked** — overlay auto-opens; monitoring still polls for both.
 
 ### A) Live / voice overlays (strongest)
 
