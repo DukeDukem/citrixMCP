@@ -129,6 +129,7 @@ OTHER:
 - C-... in Kundennummer box is NOT Salcus -> leave empty -> ticketstatus 3.
 - No monitor_emails / get_new_emails fallback for RE modes.
 - No internal system names in customer replies.
+- No case parroting in section 6: one thank-you sentence, then solutions — no „Sie haben mitgeteilt, dass …“ recap (reply-no-case-parroting.mdc).
 - Rules: sprinklr-call-vs-email.mdc, lf-log-form.mdc
 
 Confirm you loaded this, then wait for my next command (usually login or RE).

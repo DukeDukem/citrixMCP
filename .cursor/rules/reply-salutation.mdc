@@ -35,12 +35,10 @@ Examples: *Guten Tag Viktoria Anaya,* | *Guten Tag Mohammed Saad,* | *Guten Tag,
 
 ## 2. Body (in order)
 
-1. **Case-specific thank you** to the customer, tailored to the specific concern (refund, cancellation, billing issue, etc.) and **without mentioning "Fall #" or any case number**.
-2. Show **specific sympathy** for the customer’s case and circumstances.  
-   - Add an apology **only when contextually necessary** (e.g. service failure, wrong charge, delay, misinformation, missed commitment, inconvenience caused by us).  
-   - If no apology context exists (neutral request, info request, routine update), **do not apologise by default**.
+1. **Case-specific thank you** — **one sentence only**, tailored to the concern (refund, cancellation, billing issue, etc.) and **without mentioning "Fall #" or any case number**. This acknowledges the case; **do not** add a second paragraph parroting what the customer wrote (*„Sie haben mitgeteilt, dass …“*, full problem recap). See `.cursor/rules/reply-no-case-parroting.mdc`.
+2. **Optional:** **one short sympathy/apology clause** when contextually necessary (service failure, wrong charge, delay, etc.) — **not** a restatement of facts. If neutral request → skip sympathy/apology.
 
-(Then add any case-specific content only as required — **without** promising internal checks, processing, timelines, or further messages from us, **unless** you are explicitly instructed in chat to include that wording.)
+(Then add **actionable** case content — Mein o2 paths, options, security block — **without** promising internal checks, processing, timelines, or further messages from us, **unless** you are explicitly instructed in chat to include that wording.)
 
 ### No uninvited promises (customer body)
 

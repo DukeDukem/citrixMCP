@@ -58,6 +58,7 @@ When the user prompts with PR/pr:
    - Verify identifier safety: no full customer number/phone number, and any suffix reference must belong to the visible case only.
    - Enforce no-uninvited-promises rule before paste: reject wording that promises internal checks, processing updates, or follow-up messages unless the user explicitly instructed those exact promises.
    - Enforce no-internal-systems rule: reject any mention of Authentifizierungsmatrix, Sabio, TIM, Wissensbasis, TransferMatrix, Sprinklr, Marquez, Themen-ID, or internal queue names (see `.cursor/rules/reply-no-internal-systems.mdc`). If found → ERROR: INTERNAL SYSTEM NAME IN CUSTOMER REPLY. DO NOT PASTE.
+   - Enforce no-case-parroting rule: reject *„Sie haben mitgeteilt“* / *„Sie schreiben“* / long narrative recap before actionable content (see `.cursor/rules/reply-no-case-parroting.mdc`). If found → ERROR: CASE PARROTING IN CUSTOMER REPLY. DO NOT PASTE. Rewrite to one thank-you sentence + solutions.
    - If any check fails → REJECT and output: ERROR: DUPLICATE OR PROMISE-BLOCKED RESPONSE DETECTED. Rewrite to a single clean reply before pasting.
 3. Write that ONE reply to a file (freshly generated for this case; never append to existing reply file)
 4. Run the write-reply script with that file path and the --no-fill-case-tracker flag

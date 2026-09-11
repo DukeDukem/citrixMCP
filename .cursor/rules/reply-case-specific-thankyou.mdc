@@ -20,3 +20,9 @@ When drafting **customer-facing email replies** (e.g. in Sprinklr read-email / R
 - *"vielen Dank, dass Sie uns über diesen Fehler informiert haben"* / "thank you for reporting this error to us"
 
 The thank you should **reflect the specific issue** (refund, cancellation, plan change, billing error, product complaint, etc.) so the customer feels heard and understood.
+
+## One sentence only — no parroting after it
+
+- **Length:** **One sentence** (~15–25 words). It **replaces** a long recap — do **not** follow with *„Sie haben mitgeteilt, dass …“* or a paragraph restating the customer's full story.
+- After the thank-you, go **directly** to actionable content (Mein o2 steps, alternatives, security block).
+- See `.cursor/rules/reply-no-case-parroting.mdc`.

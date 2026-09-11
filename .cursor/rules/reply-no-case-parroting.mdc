@@ -1,0 +1,50 @@
+---
+description: Customer replies — no long restatement of the case; brief opening acknowledgment only.
+alwaysApply: true
+---
+
+# No case parroting in customer replies (section 6 / PR)
+
+**Hard rule:** The customer already knows their situation. **Do not** repeat it back in detail.
+
+## Opening acknowledgment — enough in one sentence
+
+After the salutation, **one case-specific thank-you sentence** acknowledges the concern. That is sufficient. Then go **straight to self-service steps, options, or the security block** — not a narrative recap.
+
+**Target:** thank-you line = **one sentence**, ~15–25 words. **No second paragraph** that re-explains what the customer wrote.
+
+## Forbidden patterns (German customer body)
+
+Do **not** open or fill the body with long parroting such as:
+
+- *„Sie haben mitgeteilt, dass …“* / *„Sie schreiben, dass …“* / *„Wie Sie beschreiben, …“*
+- *„Gleichzeitig …“* chains restating every sub-issue the customer listed
+- Multi-sentence summaries of verification codes, SIM access, billing, contract questions **before** giving any actionable answer
+- Quoting the customer's ask back as prose (*„Sie bitten um schriftliche Klärung, welcher Vertrag …“*) when the thank-you already covered the topic
+
+## Bad vs good
+
+**Bad (parroting — do not send):**
+
+> vielen Dank für Ihre Nachricht. Sie haben mitgeteilt, dass bei der Anmeldung in Mein o2 ein Verifizierungscode an die Rufnummer …3888 gesendet wird, dass Sie jedoch keinen Zugriff auf die zugehörige SIM-Karte haben und die Verifizierung deshalb nicht abschließen können. Gleichzeitig werden weiterhin Beträge abgebucht. Sie bitten um schriftliche Klärung, welcher Vertrag und Tarif hinter der Rufnummer …3888 steht, sowie um eine alternative Möglichkeit zur Identitätsprüfung.
+
+**Good (acknowledge → act):**
+
+> vielen Dank für Ihre Anfrage zur Mein-o2-Anmeldung und der SMS-Verifizierung auf Ihre Rufnummer mit …3888 am Ende.
+>
+> [Concrete Mein o2 / o2.de paths, alternative verification options, what customer can send — no recap paragraph.]
+
+## Sympathy / apology
+
+- **Optional one short clause** only when context warrants (e.g. *„Es ist verständlich, dass fehlender SIM-Zugriff die Anmeldung erschwert.“*).
+- Sympathy must **not** restate facts already in the thank-you or duplicate the customer's full story.
+
+## Pre-output gate (section 6 / PR)
+
+Before paste, scan the body (after salutation, before survey block):
+
+1. If **„Sie haben mitgeteilt“** / **„Sie schreiben“** / **„Wie Sie beschreiben“** appears → **rewrite** to a single thank-you sentence + solutions.
+2. If the first **two paragraphs** are both narrative recap with **no actionable step** → **rewrite**.
+3. Thank-you + sympathy combined must stay **≤ 2 short sentences** before solution content.
+
+Agent sections 1–5 may still summarize the case for the operator in **English**. This rule applies to **German customer text only**.
