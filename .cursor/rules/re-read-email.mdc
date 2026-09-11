@@ -71,9 +71,9 @@ Script remembers **closed Fall #**, skips that sidebar item, polls ~25s for a di
 ## Normal workday
 
 1. **login** → Case Tracker tab.
-2. Operator **RE** once (first case) → 7-step (visible chat) + Auto-LF → **immediately** `--closeout-anwenden` (background + notify) → rest, awaiting PR or arm.
-3. Operator **PR** → agent pastes reply only (arm already running). Quote: `PR done for #FALL_ID`.
-4. Operator clicks **Anwenden** → arm fires → sidetray poll → new case → agent **auto** processes (CALL or EMAIL) — no operator input.
+2. Operator **RE** once (first case) → Turn A (extract + Auto-LF + arm) → Turn B (7-step visible chat) → rest.
+3. Operator **PR** → agent pastes reply only (arm already running from Turn A). Quote: `PR done for #FALL_ID`.
+4. Operator clicks **Anwenden** → arm fires → sidetray poll → new case → agent **auto** Turn A + Turn B — no operator input.
 5. Repeat: operator types **PR** only. Agent handles everything else.
 
 **Operator types:** **login**, **RE** (first case only), **PR**, **DONE**. Never **NEXT**, **LF**, or case 2+ **RE**.
@@ -84,23 +84,33 @@ Script remembers **closed Fall #**, skips that sidebar item, polls ~25s for a di
 [Monitoring active: arm fired → sidetray click]
 
 EMAIL case:
-  sidetray click → extract → 7-step visible in chat → Auto-LF
-  → --closeout-anwenden (background, arm armed) → rest
-  → await:  PR (paste) | reiteration (change reply/LF) | arm fires (no reply needed)
-  → arm fires → [Monitoring active] → next case
+  sidetray click → TURN A (tools only):
+    extract (Fall #, Quelle, Ziel, Kundennummer, channel)
+    Auto-LF best-guess (parallel/immediately after extract)
+    --closeout-anwenden/weiter/extern (arm armed, monitoring disarmed)
+  → TURN B (zero tools — visible chat only):
+    CHANNEL: EMAIL + Fall #
+    7-step RE sections 1–7
+    play-ready note
+  → agent rests, awaiting:
+      PR          → paste only → "PR done for #FALL_ID"
+      reiterate LF → re-run fill_case_tracker with corrected values
+      reiterate PR → rewrite reply section 6
+      arm fires   → [Monitoring active] → next case
 
 CALL case:
-  case pops up → CHANNEL: CALL → Auto-LF voice
-  → --closeout-next/weiter (arm armed) → rest
-  → await:  BRIEF (optional KB/TM lookup from operator) | arm fires
-  → arm fires → [Monitoring active] → next case
+  case pops up → CHANNEL: CALL → Auto-LF voice → --closeout-next/weiter
+  → agent rests, awaiting:
+      BRIEF (optional) → KB/TM lookup / talk-track
+      arm fires        → [Monitoring active] → next case
 
 Transfer (EMAIL or CALL):
-  Auto-LF TR → --closeout-weiter/extern (arm armed) → rest
+  Auto-LF TR at extract time → --closeout-weiter/extern → rest → no PR
   → arm fires → [Monitoring active] → next case
 ```
 
-**PR is independent of arming.** Arm is already running when PR arrives. Agent pastes and finishes — arm detects Anwenden when operator clicks it.
+**Auto-LF timing: Turn A — at extract start, before 7-step.** Best-guess from Quelle/Ziel/channel. Reiterate if needed after 7-step reveals different path.  
+**PR is independent of arming.** Arm already running from Turn A. Agent pastes and finishes.
 
 ### HARD — Prowler without RE/LF
 
@@ -144,13 +154,25 @@ Transfer (EMAIL or CALL):
 
 Every EMAIL extract (auto after login, `--await-arm`, or recovery `--once`):
 
-1. **Immediately** write the full **7-step RE** as visible chat text (turn-B — operator must see it without expanding any dropdown / background-task panel / file). **Never** stop after extract with only an ack. **Do NOT paste the customer email body / Subject / From into chat** — operator sees it in Sprinklr; it is noise here.  
-2. **Only then** **`re_complete_sound.py --play-ready`**  
-3. **Only then** **Auto-LF** for this Fall # (Transfer Nein or Ja per §3) — user does **not** type `LF`  
-4. If Auto-LF prints **`PAUSE_AUTO_LF`** + **`LF_CONTINUE_AFTER_SPEICHERN_ARMED`** (exit `3`): warn user to click Speichern for the **previous** LF; Auto-LF for the **current** Fall # continues automatically — run **`fill_case_tracker.py --await-speichern-continue`**, then on **`CONTINUE_LF_DONE`** do transfer arm or wait for **PR**. Do **not** require a manual Auto-LF retry after Speichern.  
-5. **Immediately after Auto-LF** (both transfer and non-transfer): start background close-out arm — do **not** wait for PR to arm.
-   - Non-transfer: **`--closeout-anwenden`** (background + notify). Rest and await PR or reiteration.
-   - Transfer: **`--closeout-weiter`** / **`--closeout-extern`** (no PR needed).
+**Turn A (tools only — extract + Auto-LF + arm, no chat prose):**
+
+1. `run.py` extract — stdout provides Fall #, Quelle, Ziel, Kundennummer, channel
+2. **Immediately** `fill_case_tracker.py` best-guess from extract data (parallel / next tool call in same turn)
+3. If Auto-LF prints **`PAUSE_AUTO_LF`** + **`LF_CONTINUE_AFTER_SPEICHERN_ARMED`** (exit `3`): arm `--await-speichern-continue`; continue after Speichern click; do not block Turn B
+4. **Immediately** background close-out arm:
+   - Non-transfer best-guess: **`--closeout-anwenden`**
+   - Transfer best-guess: **`--closeout-weiter`** (queue) or **`--closeout-extern`** (email `@`)
+
+**Turn B (ZERO tools — visible chat prose only):**
+
+1. `CHANNEL: EMAIL` + Fall # header
+2. Full **7-step RE sections 1–7** as plain visible chat text — no dropdowns, no tools
+3. `play-ready` note (no script call needed — just note it)
+4. If 7-step reveals Auto-LF was wrong (different transfer target / Nein vs Ja): note it; agent awaits operator reiterate-LF instruction or proceeds with best-guess
+
+**Turn C:** None. Arm already running. Agent rests.
+
+**Do NOT paste the customer email body / Subject / From** — operator sees it in Sprinklr.
 
 **Auto-LF / tool runs must never replace, precede, or hide the 7-step behind Cursor task UI.**
 

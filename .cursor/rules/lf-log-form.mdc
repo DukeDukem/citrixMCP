@@ -20,26 +20,44 @@ The agent fills Case Tracker **while processing** each newly opened case. The op
 
 ### When to Auto-LF
 
-| Channel | When (same agent turn as analysis) | Tracker |
-|---------|--------------------------------------|---------|
-| **EMAIL** | Auto-triggered on new case extract (login / `--await-arm` / **`SIDETRAY_EMAIL_PROCESSING_IMMEDIATE`** after sidetray click) — agent continues **immediately** when extract stdout is ready; **only after the full 7-step RE is visible as normal chat text** (then play-ready). Operator does **not** type **RE** first. | E-Mail Care; Transfer **Nein** or **Ja** + target from §3/4a |
-| **CALL** | As soon as **CHANNEL: CALL** is known (no BRIEF wait) | **`--channel voice`**; Transfer via `resolve_transfer()` / Ziel unless already decided |
+| Channel | When | Tracker |
+|---------|------|---------|
+| **EMAIL** | **At extract start** — parallel to extract in Turn A, before 7-step RE. Best-guess from Fall #, Quelle, Ziel, channel available in extract stdout. | E-Mail Care; Transfer best-guess from Quelle/Ziel/TransferMatrix |
+| **CALL** | As soon as **CHANNEL: CALL** is known (no BRIEF wait) | **`--channel voice`**; Transfer via `resolve_transfer()` / Ziel |
 
-### Order (EMAIL)
+### Best-guess Auto-LF (EMAIL — at extract time)
 
-1. Extract / CHANNEL: EMAIL  
-2. Full **7-step RE as visible chat text** (TransferMatrix first for §3) — **mandatory; never skip; never only inside background-task UI**  
-3. **`re_complete_sound.py --play-ready`** (book)  
-4. **Immediately Auto-LF** for this Fall # (see RUN LF below)  
-   Tools for steps 3–4 run **after** step 2 is already written as main-thread chat prose.  
-5. Branch on transfer — **arm immediately after Auto-LF in both cases**:
+At extract, the agent has: **Fall #**, **Quelle**, **Ziel**, **Kundennummer** (sidebar), **channel = EMAIL**.  
+Use these to make a best-guess:
 
-| RE §3 Transfer eligible | After Auto-LF success |
-|-------------------------|------------------------|
-| **No** (we answer) | **Immediately** background `--closeout-anwenden` + notify. Rest and await **PR** (paste), reiteration, or arm firing. Finishing quote: `LF done for #FALL_ID — armed, awaiting PR or Anwenden.` |
-| **Yes** (queue / email target) | No PR. **`--closeout-weiter`** (queue) or **`--closeout-extern`** (email `@`) + await. Finishing quote: `LF TR done for #FALL_ID` |
+| Ziel / Quelle | Best-guess |
+|---|---|
+| Ziel = queue / email address | Transfer Ja → that Ziel |
+| Ziel = `CARE_ALLGEMEIN` / unset | Transfer Nein |
+| Quelle = Care Widerruf (not Webform) | Transfer Ja → `CBC_XF_E_WIDERRUF` |
+| Kundennummer = numeric | Salcus = those digits; Ticketstatus 1 |
+| Kundennummer = `C-…` / unset | Salcus empty; Ticketstatus 3 |
 
-**PR does not start the arm.** Arm starts at Auto-LF time. PR just pastes the reply independently.
+If the 7-step RE later reveals a different transfer target, operator sends **reiterate LF** → agent re-runs `fill_case_tracker.py` with corrected values. Auto-LF at extract is always the starting point.
+
+### Order (EMAIL) — three turns
+
+**Turn A (tools only, no operator-facing chat prose):**
+1. `run.py` extract (stdout: Fall #, Quelle, Ziel, channel, Kundennummer)
+2. `fill_case_tracker.py --case-id "#FALL_ID"` — best-guess from extract data (parallel / immediately after)
+3. `--closeout-anwenden` or `--closeout-weiter/extern` — arm starts immediately
+
+**Turn B (ZERO tools — visible chat only):**
+1. `CHANNEL: EMAIL` + Fall #
+2. Full **7-step RE sections 1–7** as plain chat text — mandatory, never hidden
+3. `re_complete_sound.py --play-ready` note
+
+**Turn C:** None. Arm already running. Agent rests, awaiting PR or reiteration.
+
+**Transfer arm (if best-guess = Transfer Ja):** `--closeout-weiter` (queue) or `--closeout-extern` (email `@`). No PR. Finishing quote: `LF TR done for #FALL_ID`.  
+**Non-transfer arm:** `--closeout-anwenden`. Await PR (paste only). Finishing quote: `LF done for #FALL_ID — awaiting PR or Anwenden.`
+
+**PR does not start the arm.** Arm starts in Turn A. PR just pastes the reply.
 
 ### Order (CALL) — Auto-LF on CHANNEL detect (no BRIEF gate)
 

@@ -4,135 +4,39 @@ DETACHED_ARM_EXTRACT_READY
 ================================================================================
 CUSTOMER EMAIL (for Cursor to read — then query KnowledgeBase and write suggested reply in chat):
 ================================================================================
-Case ID: Fall #56071842
-Subject: Re: Einlassung Telefonica und Blau
-From: andreas.schulze@hotmail.com
+Case ID: Fall #56093570
+Subject: Kündigung meines bestehenden Mobilfunkvertrages
+From: kundenservice@congstar.de
 ----------------------------------------
 Body:
-Guten Tag,
-es gibt erneut keine Reaktion Ihrerseits. 
-Heute wurde wieder etwas abgebucht:
+Absender
+Sophie Leipnitz
+an der Holzgasse 13
+86673 Bergheim
+E-Mail-Adresse: matthias.leipnitz@gmx.de
+Rufnummer: 015227235354
 
+Empfänger
+O2-Germany
+E-Mail-Adresse: impressum@cc.o2online.de
 
+28.08.2026
 
-Kd-Nr.: 6032268894, Rg-Nr.: 1642617960/8, Ihre Tarifrechnung
+Sehr geehrte Damen und Herren,
 
+hiermit kündige ich meinen Mobilfunkvertrag mit der oben genannten Rufnummer fristgerecht zum nächstmöglichen Zeitpunkt. Bitte senden Sie mir eine schriftliche Bestätigung über den Zugang meiner Kündigungserklärung unter Angabe des Beendigungszeitpunktes an die oben genannte E-Mail- oder postalische Adresse.
 
+Mit freundlichen Grüßen
+Sophie Leipnitz
 
+congstar übermittelt die Kündigungserklärung im Auftrag des Absenders.
 
-Noch einmal! Ich habe keinerlei Vertragsverhältnis mit ihnen!
+Die gesetzlichen Pflichtangaben finden Sie unter:
+congstar.de/pflichtangaben
 
-Beenden Sie das! 
-
-Ich habe die Rückbuchung veranlasst. 
-
-Eine Kündigung kann ich nicht einstellen, weil mir keinerlei Daten zum Vertrag bekannt sind!
-
-
-
-
-Ich habe nie eine Einzugsermächtigung erteilt. 
-
-Und rufe diese erneut proforma zurück!
-
-
-
-
-Andreas Schulze
-
-
-
-
-Am 30.06.2026 um 17:52 schrieb Andreas Schulze <andreas.schulze@hotmail.com>:
-
-
-﻿
-Guten Tag,
-rufen Sie mich doch mal an. 
-Wenn der Vertrag so lange existiert, warum wird er erst seit kurzem berechnet. Zudem existiert bereits eine Anzeige. 
-Müsste ihrem Haus vorliegen. 
-Hier nochmal im Anhang. 
-Sie erreichen mich unter 017663729937. 
-
-
-VG,
-Andreas Schulze
-
-
-Am 30.06.2026 um 17:44 schrieb Impressum <impressum@cc.o2online.de>:
-
-
-﻿
-
-Guten Tag Andreas Schulze,
-
- 
-
-vielen Dank für Ihre Nachricht. Ich kann gut nachvollziehen, dass die wiederholten Abbuchungen für Sie sehr ärgerlich sind, und möchte Ihnen gerne bei der Klärung des Sachverhalts helfen.
-
- 
-
-Nach Prüfung der vorliegenden Daten möchte ich Sie darüber informieren, dass der Vertrag mit der Rufnummer +49 178 XX79438 bereits seit dem 15.11.2011 auf Ihren Namen registriert ist. Der Vertrag ist monatlich kündbar.
-
- 
-
-Falls Sie den Vertrag nicht weiter nutzen möchten, wäre der einfachste Weg eine Kündigung. Diese können Sie bequem online über folgendes Formular einreichen:
-
- 
-
-Kündigung Ihres Blau Vertrags
-
- 
-
-Sollten Sie jedoch den Verdacht haben, dass es sich um einen Identitätsmissbrauch handelt, unterstützen wir Sie selbstverständlich gerne bei der weiteren Klärung. In diesem Fall würden wir Ihr Anliegen an die zuständige Fachabteilung weiterleiten. Hierfür ist es jedoch erforderlich, dass zusätzlich eine Anzeige bei der Polizei erstattet wird.
-
- 
-
-Bitte nutzen Sie für die Meldung eines möglichen Identitätsmissbrauchs das folgende Formular und senden Sie uns dieses ausgefüllt zurück:
-
- 
-
-Formular Identitätsmissbrauch
-
- 
-
-Vielen Dank für Ihre Kooperation und Ihr Verständnis im Voraus.
-
- 
-
-Sollten Sie hierzu noch Fragen haben oder weitere Unterstützung benötigen, helfe ich Ihnen gerne weiter.
-
- 
-
-Ich hoffe, diese Information hilft Ihnen weiter. Für weitere Fragen stehe ich Ihnen selbstverständlich gerne zur Verfügung.
-
- 
-
-Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
-
- 
-
-Freundliche Grüße und einen schönen Tag noch,
-
- 
-
-V. Litvinova
-
-Ihr Blau Team
-
- 
-
-Viele Fragen lassen sich auch ganz einfach über die Mein Blau App oder Online unter www.blau.de/service klären.
-
- 
-
-Blau ist eine Marke von: Telefónica Germany GmbH & Co. OHG
-
- 
-
-Bitte finden Sie hier unsere handelsrechtlichen Pflichtangaben:
-
-http://www.blau.de/impressum
+congstar - eine Marke der Telekom Deutschland GmbH
+Bayenwerft 12-14
+50678 Köln
 ================================================================================
 [INFO] Script finished. Cursor: next message = full 7-step RE as plain chat text (no tools).
 ================================================================================
@@ -148,8 +52,8 @@ ARMED_RE_START_SOUND
 ARMED_EXTRACT_DONE_SOUND
 WEITER_RE_EXTRACT_DONE
 EXTRACT_READY_WRITTEN C:\Users\PC ENTER\Desktop\Citrix\.cursor\state\extract_ready.json
-2026-09-11 19:37:16,182 - INFO - Cleaning up...
-2026-09-11 19:37:16,214 - INFO - Cleanup complete
+2026-09-11 19:58:07,089 - INFO - Cleaning up...
+2026-09-11 19:58:07,112 - INFO - Cleanup complete
 Chrome already running with remote debugging.
 Starting email automation script...
 
