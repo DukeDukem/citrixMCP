@@ -233,6 +233,16 @@ def _spawn_detached(runner: Path, watch_flag: str, env: dict, *, auto_await: boo
         raise
 
     _write_meta(watch_flag, proc.pid)
+
+    # Arm the monitoring window — hook only fires between here and mark_consumed()
+    try:
+        if str(_SKILL_DIR) not in sys.path:
+            sys.path.insert(0, str(_SKILL_DIR))
+        from extract_ready_state import set_monitoring_armed
+        set_monitoring_armed(True)
+    except Exception as e:
+        print(f"[WARN] monitoring_armed set failed: {e}", flush=True)
+
     print(f"MODE: {watch_flag} (DETACHED)")
     print(f"ARM_WATCH_DETACHED pid={proc.pid}")
     print(f"ARM_WATCH_LOG {_ARM_LOG}")

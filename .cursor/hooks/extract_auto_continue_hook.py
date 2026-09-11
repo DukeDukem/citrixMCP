@@ -97,10 +97,10 @@ def main() -> int:
 
     # Only fire in the email processing session — not the instructions/rules chat
     if not _SESSION_FLAG.exists():
-        _log("email_session_not_active — skip")
         sys.stdout.write("{}\n")
         sys.stdout.flush()
         return 0
+
     try:
         _sess = json.loads(_SESSION_FLAG.read_text(encoding="utf-8"))
         if not _sess.get("active"):
@@ -110,6 +110,21 @@ def main() -> int:
             return 0
     except Exception:
         pass
+
+    # Gate: monitoring window — only active between arm fire and mark_consumed().
+    # Outside this window (waiting for PR, idle, between cases) the hook is silent.
+    # Window: set True in _spawn_detached() → set False in mark_consumed().
+    try:
+        if str(_READ_SKILL) not in sys.path:
+            sys.path.insert(0, str(_READ_SKILL))
+        from extract_ready_state import is_monitoring_armed
+        if not is_monitoring_armed():
+            _log("monitoring_not_armed — hook silent (outside arm window)")
+            sys.stdout.write("{}\n")
+            sys.stdout.flush()
+            return 0
+    except Exception as e:
+        _log(f"monitoring_armed_check_failed={e!r} — allowing (safe default)")
 
     if loop_count >= _LOOP_LIMIT:
         _log("loop_limit_reached")

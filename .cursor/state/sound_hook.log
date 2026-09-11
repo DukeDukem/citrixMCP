@@ -2565,3 +2565,7 @@
 2026-09-11T17:21:59Z closeout_dexter ok=False
 2026-09-11T17:21:59Z event='stop' text_len=0 pending=True keys=['conversation_id', 'generation_id', 'model', 'model_id', 'status', 'loop_count', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name']
 2026-09-11T17:21:59Z no_sound_match
+2026-09-11T17:26:07Z event='afterAgentResponse' text_len=851 pending=True keys=['conversation_id', 'generation_id', 'model', 'model_id', 'model_params', 'text', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name']
+2026-09-11T17:26:07Z no_sound_match
+2026-09-11T17:26:08Z event='stop' text_len=0 pending=True keys=['conversation_id', 'generation_id', 'model', 'model_id', 'model_params', 'status', 'loop_count', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id']
+2026-09-11T17:26:08Z no_sound_match

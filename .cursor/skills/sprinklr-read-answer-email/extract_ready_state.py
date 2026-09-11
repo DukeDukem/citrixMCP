@@ -8,6 +8,37 @@ from pathlib import Path
 
 _STATE_DIR = Path(__file__).resolve().parents[2] / "state"
 _READY_FILE = _STATE_DIR / "extract_ready.json"
+_MONITORING_FILE = _STATE_DIR / "monitoring_armed.json"
+
+
+# ---------------------------------------------------------------------------
+# Monitoring-armed gate
+# Active window: arm fires → mark_consumed() called (extract processed)
+# Outside that window the stop hook must be silent.
+# ---------------------------------------------------------------------------
+
+def set_monitoring_armed(armed: bool) -> None:
+    """Set/clear the monitoring armed flag."""
+    try:
+        _STATE_DIR.mkdir(parents=True, exist_ok=True)
+        _MONITORING_FILE.write_text(
+            json.dumps({"armed": armed, "at": _now_iso()}, indent=2),
+            encoding="utf-8",
+        )
+        print(f"MONITORING_ARMED={armed}", flush=True)
+    except Exception as e:
+        print(f"[WARN] monitoring_armed write failed: {e}", flush=True)
+
+
+def is_monitoring_armed() -> bool:
+    """True only during the arm window (arm start → extract consumed)."""
+    if not _MONITORING_FILE.exists():
+        return False
+    try:
+        data = json.loads(_MONITORING_FILE.read_text(encoding="utf-8"))
+        return bool(data.get("armed"))
+    except Exception:
+        return False
 
 
 def _now_iso() -> str:
@@ -86,6 +117,8 @@ def mark_consumed() -> None:
         _READY_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
     except Exception:
         pass
+    # Disarm monitoring: window is arm → consumed. No hook fires after this.
+    set_monitoring_armed(False)
 
 
 def is_pending_pickup() -> bool:

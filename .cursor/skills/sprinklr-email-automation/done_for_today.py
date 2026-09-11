@@ -63,6 +63,7 @@ def _clear_session_flags() -> None:
         "email_session_active.json",
         "extract_ready.json",
         "auto_continue_dispatched.json",
+        "monitoring_armed.json",
     ):
         path = state_dir / name
         if path.exists():
