@@ -2606,3 +2606,27 @@
 2026-09-11T18:00:19Z no_sound_match
 2026-09-11T18:00:20Z event='stop' text_len=0 pending=True keys=['conversation_id', 'generation_id', 'model', 'model_id', 'status', 'loop_count', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name']
 2026-09-11T18:00:20Z no_sound_match
+2026-09-11T18:07:08Z event='afterAgentResponse' text_len=1819 pending=True keys=['conversation_id', 'generation_id', 'model', 'model_id', 'model_params', 'text', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name']
+2026-09-11T18:07:08Z re_ready_book ok=True
+2026-09-11T18:07:09Z event='stop' text_len=0 pending=False keys=['conversation_id', 'generation_id', 'model', 'model_id', 'model_params', 'status', 'loop_count', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id']
+2026-09-11T18:07:09Z no_sound_match
+2026-09-11T18:08:30Z event='afterAgentResponse' text_len=213 pending=False keys=['conversation_id', 'generation_id', 'model', 'model_id', 'text', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name', 'cursor_version']
+2026-09-11T18:08:30Z no_sound_match
+2026-09-11T18:08:31Z event='stop' text_len=0 pending=False keys=['conversation_id', 'generation_id', 'model', 'model_id', 'status', 'loop_count', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name']
+2026-09-11T18:08:31Z no_sound_match
+2026-09-11T18:10:37Z event='afterAgentResponse' text_len=58 pending=True keys=['conversation_id', 'generation_id', 'model', 'model_id', 'text', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name', 'cursor_version']
+2026-09-11T18:10:37Z no_sound_match
+2026-09-11T18:10:37Z event='stop' text_len=0 pending=True keys=['conversation_id', 'generation_id', 'model', 'model_id', 'status', 'loop_count', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name']
+2026-09-11T18:10:37Z no_sound_match
+2026-09-11T18:11:55Z event='afterAgentResponse' text_len=58 pending=True keys=['conversation_id', 'generation_id', 'model', 'model_id', 'text', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name', 'cursor_version']
+2026-09-11T18:11:55Z no_sound_match
+2026-09-11T18:11:56Z event='stop' text_len=0 pending=True keys=['conversation_id', 'generation_id', 'model', 'model_id', 'status', 'loop_count', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name']
+2026-09-11T18:11:56Z no_sound_match
+2026-09-11T18:17:20Z event='afterAgentResponse' text_len=130 pending=True keys=['conversation_id', 'generation_id', 'model', 'model_id', 'text', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name', 'cursor_version']
+2026-09-11T18:17:20Z no_sound_match
+2026-09-11T18:17:20Z event='stop' text_len=0 pending=True keys=['conversation_id', 'generation_id', 'model', 'model_id', 'status', 'loop_count', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name']
+2026-09-11T18:17:20Z no_sound_match
+2026-09-11T18:20:13Z event='afterAgentResponse' text_len=152 pending=True keys=['conversation_id', 'generation_id', 'model', 'model_id', 'text', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name', 'cursor_version']
+2026-09-11T18:20:13Z closeout_dexter ok=False
+2026-09-11T18:20:14Z event='stop' text_len=0 pending=True keys=['conversation_id', 'generation_id', 'model', 'model_id', 'status', 'loop_count', 'input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_tokens', 'session_id', 'hook_event_name']
+2026-09-11T18:20:14Z no_sound_match
