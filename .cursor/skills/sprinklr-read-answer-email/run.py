@@ -100,7 +100,25 @@ def _print_call_lf_gate() -> None:
 def _emit_post_extract_gate(combined_output: str) -> None:
     if "CHANNEL: CALL" in combined_output or "CHANNEL_CALL_DETECTED" in combined_output:
         _print_call_lf_gate()
-    elif "CUSTOMER EMAIL (for Cursor to read" in combined_output or "CHANNEL: EMAIL" in combined_output:
+        return
+    if "Blocked empty CUSTOMER EMAIL" in combined_output:
+        _print_call_lf_gate()
+        return
+    if "CUSTOMER EMAIL (for Cursor to read" in combined_output:
+        body_marker = "Body:"
+        idx = combined_output.rfind(body_marker)
+        if idx >= 0:
+            after_body = combined_output[idx + len(body_marker) : idx + len(body_marker) + 120]
+            stripped = after_body.strip()
+            if not stripped or stripped.startswith("=") or stripped.startswith("N/A"):
+                if "CHANNEL: EMAIL" not in combined_output or "Subject: N/A" in combined_output:
+                    _print_call_lf_gate()
+                    print(
+                        "WARNING: Empty CUSTOMER EMAIL body — use CALL_LF_GATE not RE.",
+                        flush=True,
+                    )
+                    return
+    if "CHANNEL: EMAIL" in combined_output or "CUSTOMER EMAIL (for Cursor to read" in combined_output:
         _print_re_text_only_gate()
 
 

@@ -1,6 +1,6 @@
 # CALL vs EMAIL — visual markers (2026-09-11)
 
-Reference case: **Fall #57937085** — *Unbekannter Kunde* (call channel).
+Reference cases: **Fall #57937085**, **Fall #57934518** — *Unbekannter Kunde* (call channel).
 
 Screenshots saved in Cursor assets (2026-09-11 session).
 

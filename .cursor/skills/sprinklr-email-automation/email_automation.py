@@ -1161,6 +1161,19 @@ class EmailAutomation:
                 continue
         return None
     
+    def _is_empty_email_extract(self, email_content: dict) -> bool:
+        """True when extract has no real email body/headers (typical CALL timeline case)."""
+        body = (email_content.get("body") or "").strip()
+        from_ = (email_content.get("from") or "").strip()
+        subject = (email_content.get("subject") or "").strip()
+        if len(body) >= 40:
+            return False
+        if from_ and from_ not in ("N/A", "-") and "@" in from_:
+            return False
+        if subject and subject not in ("N/A", "-") and len(subject) > 3:
+            return False
+        return len(body) < 40
+
     def _detect_case_channel_once(self) -> str:
         """
         Detect CALL vs EMAIL from open case DOM (timeline + email body).
@@ -1171,26 +1184,39 @@ class EmailAutomation:
         try:
             data = self.page.evaluate(
                 """() => {
-                    const bodyText = document.body ? (document.body.innerText || '') : '';
+                    const chunks = [];
+                    if (document.body) chunks.push(document.body.innerText || '');
+                    document.querySelectorAll(
+                        '[data-testid="inboundChatConversationItemFanMessage"],'
+                        + '[data-testid="inboundChatConversationItemBrandMessage"],'
+                        + '[data-testid*="ChatConversation"], [role="main"], main'
+                    ).forEach(el => {
+                        const t = (el.innerText || '').trim();
+                        if (t.length > 10) chunks.push(t);
+                    });
+                    const scanText = chunks.join('\\n');
                     const callPhrases = [
                         'Anruf angenommen', 'Anruf beendet', 'Anruf wurde getrennt',
                         'Eingehender Anruf', 'in Wartestellung', 'Wartestellung',
+                        'derzeit in Wartestellung', 'aus der Warteschleife entfernt',
                         'Im Gespräch', 'In Warteschlange übertragen',
                         'Blindübertragung abgeschlossen', 'Blindübertragung',
                         'Aufzeichnung', 'Disposition Plan', 'Disposition Codes',
-                        'VOIP Nailed Up', 'Mikrofon angeschlossen'
+                        'VOIP Nailed Up', 'Mikrofon angeschlossen',
+                        'WQ_IBV_O2_CARE'
                     ];
                     let callHits = 0;
                     for (const p of callPhrases) {
-                        if (bodyText.includes(p)) callHits++;
+                        if (scanText.includes(p)) callHits++;
                     }
-                    const noReplyBar = bodyText.includes(
+                    const noReplyBar = scanText.includes(
                         'Sie können auf das Gespräch nicht antworten'
-                    ) || bodyText.includes('auf das Gespräch nicht antworten');
+                    ) || scanText.includes('auf das Gespräch nicht antworten');
                     if (noReplyBar) callHits += 5;
-                    const anrufBullet = (bodyText.match(/Anruf\\s*[•·]/g) || []).length;
+                    const anrufBullet = (scanText.match(/Anruf\\s*[•·]/g) || []).length;
                     if (anrufBullet > 0) callHits += Math.min(anrufBullet, 3);
-                    const eingehenderAnruf = /Eingehender Anruf/i.test(bodyText);
+                    if (/\\bAnruf\\b/.test(scanText)) callHits += 1;
+                    const eingehenderAnruf = /Eingehender Anruf/i.test(scanText);
                     if (eingehenderAnruf) callHits += 2;
                     const audioNodes = document.querySelectorAll(
                         '[data-testid*="audio"], [data-testid*="call-button"], '
@@ -1205,8 +1231,8 @@ class EmailAutomation:
                         const t = (el.innerText || '').trim();
                         if (t.length > maxEmailBody) maxEmailBody = t.length;
                     }
-                    const hasVonEmail = /Von:\\s*[^\\n]+@[^\\n]+/i.test(bodyText);
-                    const hasBetreff = /Betreff:/i.test(bodyText);
+                    const hasVonEmail = /Von:\\s*[^\\n]+@[^\\n]+/i.test(scanText);
+                    const hasBetreff = /Betreff:/i.test(scanText);
                     const emailContainers = document.querySelectorAll(
                         '[data-element-type="email-message-container"]'
                     ).length;
@@ -1214,13 +1240,17 @@ class EmailAutomation:
                         callHits, anrufBullet, audioNodes, maxEmailBody,
                         hasVonEmail, hasBetreff, emailContainers,
                         htmlMsgCount: htmlMsgs.length,
-                        noReplyBar, eingehenderAnruf
+                        noReplyBar, eingehenderAnruf,
+                        scanTextLen: scanText.length
                     };
                 }"""
             )
         except Exception as e:
             logger.debug(f"Channel detect evaluate failed: {e}")
+            self._last_channel_snapshot = {"error": str(e)}
             return "unknown"
+
+        self._last_channel_snapshot = data
 
         if data.get("noReplyBar"):
             return "call"
@@ -1228,13 +1258,12 @@ class EmailAutomation:
         call_hits = int(data.get("callHits") or 0)
         max_body = int(data.get("maxEmailBody") or 0)
         anruf_bullet = int(data.get("anrufBullet") or 0)
-        html_count = int(data.get("htmlMsgCount") or 0)
 
+        if call_hits >= 1 and max_body < 40:
+            return "call"
         if call_hits >= 2 and max_body < 80:
             return "call"
         if anruf_bullet >= 1 and max_body < 50:
-            return "call"
-        if call_hits >= 1 and max_body < 30 and html_count == 0:
             return "call"
         if max_body >= 80:
             return "email"
@@ -1248,7 +1277,7 @@ class EmailAutomation:
             return "call"
         return "unknown"
 
-    def _detect_case_channel(self, poll_s: float = 0.5, max_wait_s: float = 4.0) -> str:
+    def _detect_case_channel(self, poll_s: float = 0.5, max_wait_s: float = 8.0) -> str:
         """Poll briefly after case open (post-arm) until CALL vs EMAIL stabilizes."""
         deadline = time.time() + max_wait_s
         votes: dict[str, int] = {"call": 0, "email": 0}
@@ -5784,10 +5813,22 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 except Exception as e:
                     logger.debug(f"Wait for domcontentloaded: {e}")
 
-                channel = self._detect_case_channel(poll_s=0.5, max_wait_s=4.0)
+                try:
+                    self.page.locator("text=/Anruf/").first.wait_for(
+                        state="attached", timeout=8000
+                    )
+                except Exception:
+                    pass
+
+                channel = self._detect_case_channel(poll_s=0.4, max_wait_s=8.0)
                 channel_label = channel.upper() if channel in ("call", "email") else "UNKNOWN"
+                snap = getattr(self, "_last_channel_snapshot", {})
                 print(f"CHANNEL: {channel_label}", flush=True)
-                print(f"[INFO] Channel detection (post-open poll): {channel_label}", flush=True)
+                print(
+                    f"[INFO] Channel detection (post-open poll): {channel_label} "
+                    f"debug={snap}",
+                    flush=True,
+                )
 
                 if extract_only and channel == "call":
                     self._print_call_case_and_exit(
@@ -5814,12 +5855,28 @@ Use cursor-agent's file reading capabilities to read these files before generati
                     email_content = {'body': '', 'subject': '', 'from': ''}
 
                 if extract_only:
-                    body_len = len((email_content.get('body') or '').strip())
-                    if body_len < 30 and self._detect_case_channel_once() == "call":
-                        self._print_call_case_and_exit(
-                            case_id, cue_on_extract_start=cue_on_extract_start
+                    if self._is_empty_email_extract(email_content):
+                        print(
+                            "[INFO] Empty email extract — re-polling CALL markers (Fall "
+                            f"{case_id})...",
+                            flush=True,
                         )
-                        return True
+                        channel_retry = self._detect_case_channel(
+                            poll_s=0.4, max_wait_s=8.0
+                        )
+                        ch_once = self._detect_case_channel_once()
+                        snap = getattr(self, "_last_channel_snapshot", {})
+                        print(
+                            f"CHANNEL_DETECT_DEBUG empty_extract retry={channel_retry} "
+                            f"once={ch_once} {snap}",
+                            flush=True,
+                        )
+                        if channel_retry != "email" and ch_once != "email":
+                            self._print_call_case_and_exit(
+                                case_id,
+                                cue_on_extract_start=cue_on_extract_start,
+                            )
+                            return True
                     self._print_customer_email_and_exit(
                         case_id, email_content, cue_on_extract_start=cue_on_extract_start
                     )
@@ -5898,6 +5955,17 @@ Use cursor-agent's file reading capabilities to read these files before generati
         cue_on_extract_start: bool = False,
     ) -> None:
         """Print the customer email to stdout so Cursor can read it; then script is done. Cursor queries KB and writes suggested reply in chat."""
+        if self._is_empty_email_extract(email_content):
+            ch = self._detect_case_channel_once()
+            if ch != "email":
+                print(
+                    "[WARN] Blocked empty CUSTOMER EMAIL — routing as CALL.",
+                    flush=True,
+                )
+                self._print_call_case_and_exit(
+                    case_id, cue_on_extract_start=cue_on_extract_start
+                )
+                return
         print("CHANNEL: EMAIL", flush=True)
         display_case_id = case_id
         if case_id and case_id.startswith('#'):
