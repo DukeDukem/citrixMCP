@@ -159,7 +159,7 @@ Do **not** arm twice for the same close-out. If a detached watch is already wait
 **Language:** Sections **1–5** and **7** → **English** (to the operator). Section **6** → **German only** (customer). All other agent chat to the user → English. See `.cursor/rules/agent-english-user-customer-german.mdc`.
 
 1. Customer summary (EN)  
-2. Verification (EN)  
+2. Verification (EN) — **compressed** 2–4 lines; status + key ids only; no tables (`.cursor/rules/re-verification-format.mdc`)  
 3. Transfer eligibility (EN)  
 4a/4b. Backend / instructions (EN)  
 5. Instructions on handling case (EN)  

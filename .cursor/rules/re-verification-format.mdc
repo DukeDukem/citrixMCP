@@ -1,0 +1,54 @@
+---
+description: RE section 2 Verification — short status + key identifiers only (no field tables).
+alwaysApply: true
+---
+
+# RE section 2 — Verification (compressed)
+
+**Scope:** Email processing chat — **section 2** of the 7-step RE only. Agent-facing **English**.
+
+Full verification **logic** (3 Eckdaten, 2-of-3 exception, PKK ban, Marquez note) stays in `sprinklr-read-answer-email` SKILL.md. **Section 2 output** must stay **short**.
+
+## Length (strict)
+
+- **Target: 2–4 lines.** Hard **max ~60 words** (excluding the section header).
+- **One short paragraph** or **status line + one identifier line**. **No tables**, no bullet grids, no field-by-field Sprinklr/webform dumps.
+
+## Required content (in order)
+
+1. **Status (one line):** exactly one of:
+   - **Customer verified: Yes**
+   - **Customer verified: No**
+   - **Awaiting manual verification by user**
+2. **Key identifiers (one line):** comma-separated **only what drove the status** — e.g. `Name, DOB, address, IBAN …00; Kundennummer missing`.
+3. **Optional third line (only if needed):** 2-of-3 note (`neither identifier is Von: email`) OR one auth-matrix channel hint (`E-Mail handling OK per matrix` / `Refer Web/App/Hotline — insufficient Eckdaten`).
+
+## Cut out (mandatory)
+
+- Multi-row **Field | Status** tables
+- Repeating the same data from webform, email body, and sidebar in separate rows
+- Long MSISDN / IBAN / Kundennummer values — use partial refs in section 2 only (`…523`, `IBAN …00`) per `.cursor/rules/reply-no-full-numbers.mdc`
+- Thread chronology, attachment lists, date play-by-play (dates belong in section 1 if urgent)
+- Duplicating section 1 case facts under the guise of “verification”
+
+## Micro-template
+
+```
+**2. Verification**
+
+**Customer verified: Yes** — Name, Kundennummer (…523), DOB, IBAN …45 in webform/thread.
+```
+
+```
+**2. Verification**
+
+**Awaiting manual verification by user** — Name, Kundennummer (…891); neither is Von: email.
+```
+
+```
+**2. Verification**
+
+**Customer verified: No** — Name only; need 2+ more Eckdaten (no Von: email as identifier).
+```
+
+Apply on **every** EMAIL 7-step RE section 2.

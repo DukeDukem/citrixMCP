@@ -40,7 +40,7 @@ You **must** output the following sections in this order. Do not occlude or merg
 | # | Section | Content |
 |---|---------|--------|
 | **1** | **Customer case summary** | **English.** **Target: 35–50 words, hard max 60.** Ultra-easy to scan: Fall # + name, **one concrete problem** (no vague “issue”), **what they want now**. Optional: **one** short clause on prior o2/brand only if it changes understanding; optional one-line date/deadline if it matters. **No** thread chronology, filler, emotions, or process narration. One paragraph, no bullets. Follow `.cursor/rules/case-summary-format.mdc`. |
-| **2** | **Verification** | **English.** **Customer verified: Yes**, **Customer verified: No**, or **Awaiting manual verification by user**. If Yes, list verified key data. If Awaiting manual verification, list the 2 identifiers found (and state that neither is the Von: email). Never ask for PKK. |
+| **2** | **Verification** | **English.** **Compressed** — 2–4 lines, ~60 words max. One status: **Customer verified: Yes** / **No** / **Awaiting manual verification by user**. One comma-separated line of **key identifiers only** (what drove the status). **No tables**, no field-by-field dumps. 2-of-3: note neither id is Von: email. Never ask for PKK. Rule: `.cursor/rules/re-verification-format.mdc`. |
 | **3** | **Transfer eligibility** | **English.** **If verified:** Query **KnowledgeBase/TransferMatrix.md** **first** (authoritative). Identify Thema and Fall; state **Ziel-Kontakt** + **Action** (handling hint). **Transfer eligible: Yes** (other queue/email) or **No** (`CBC_CARE_ALLGEMEIN` / HANDLE DIRECTLY / Kein Transfer). **If KB routing conflicts with the matrix → matrix wins** (`.cursor/rules/transfer-matrix-priority.mdc`). |
 | **4a** | **Transfer goal (if transferable)** | **English.** If Transfer eligible = Yes: state **Transfer goal** = matrix **Ziel-Kontakt** and **Action** (e.g. "Transfer in Sprinklr" or "Forward to email"). **Routing is final from the matrix** — keep remaining sections short; do not re-route from KB. |
 | **4b** | **If not transferable** | **English.** If Transfer eligible = No: lead with the matrix **Action / handling hint** next to Ziel-Kontakt (HANDLE DIRECTLY instructions, Mein o2 paths, Themen-ID refs in the Action cell, Kein Transfer notes). **Then** query KB only for compatible process detail. Skip 4a. |
@@ -124,13 +124,15 @@ If the customer has **exactly 2** of the key identifiers listed above (name, Kun
 
 So: with **Awaiting manual verification**, the agent always produces a **case-specific draft reply**. You then either approve it (reply with this) or reject verification and ask for the **standard verification inquiry** (unverified template).
 
-### Output in chat
+### Output in chat (section 2 — compressed)
 
-All agent-facing output in the Cursor chat (summaries, explanations, verification result) must be written **in English**, even if the customer email is in German.
+All agent-facing output in the Cursor chat must be **in English**, even if the customer email is in German.
 
-- Provide a clear status in English: **Customer verified: Yes**, **Customer verified: No**, or **Awaiting manual verification by user**.
-- If Yes: list the key verified data you found (e.g. "Name, Kundennummer, last 4 IBAN"), in **English**.
-- If Awaiting manual verification: list the **2** identifiers found and state that neither is the Von: (From:) email address.
+**Section 2 format:** Follow `.cursor/rules/re-verification-format.mdc` — **status line + one identifier line**; no tables.
+
+- **Customer verified: Yes** — e.g. `Name, Kundennummer (…523), DOB, IBAN …00`.
+- **Customer verified: No** — e.g. `Name only; missing Kundennummer/IBAN/DOB`.
+- **Awaiting manual verification by user** — name the **2** identifiers; state neither is Von: email.
 
 ### If customer is NOT VERIFIED
 

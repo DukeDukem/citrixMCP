@@ -124,6 +124,7 @@ SOUNDS (volume 0.75; do not change unless I ask):
 
 OTHER:
 - Full 7-step RE form for EMAIL cases is MANDATORY in chat every case (sprinklr-read-answer-email SKILL) + AUTO-LF only after section 7 + play-ready.
+- Section 2 Verification: compressed only (status + key identifiers, ~60 words max, no tables) — re-verification-format.mdc.
 - CALL cases: on CHANNEL detect → AUTO-LF voice → --arm-next (no BRIEF wait; no PR unless I ask).
 - C-... in Kundennummer box is NOT Salcus -> leave empty -> ticketstatus 3.
 - No monitor_emails / get_new_emails fallback for RE modes.
