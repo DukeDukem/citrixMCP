@@ -319,9 +319,11 @@ UPDATE — PRO PLUS MODEL (user choice):
 - Sonnet still recommended for hard German RE; Grok still forbidden if Auto routes to it.
 - On-demand / overage must stay DISABLED (Dashboard → Spending → On-Demand → Monthly Limit → Disabled). Never enable pay-as-you-go.
 - If Other Models usage is tight mid-month: Composer 2.5 for throughput; Opus only for hard escalations. If included usage hits 100%: Composer or pause — do not turn on on-demand.
-- Quality/speed: visible 7-step first; parallel independent tools; no Task-subagent for 7-step; Speichern continue-await as already configured.
+- Quality/speed: three-turn RE (no tools in 7-step message); no Task/explore; no parallel Grep/KB before visible 7-step; Speichern continue-await as configured.
 - Spend reference: .cursor/knowledge/pro-plus-model-spend-2026.md
 
-Confirm: picker Auto (logged 2026-09-09); Grok banned; on-demand DISABLED; Speichern auto-continue; visible 7-step; English to me / German customer reply. Continue.
+NOT ACTIVE (reverted 2026-09-11): Verfügbar day-start / --arm-verfuegbar. login = login-only + Case Tracker only.
+
+Confirm: baseline 0a98818; picker Auto; Grok banned; on-demand DISABLED; three-turn RE + RE SHOW/RE FILE; Speichern continue; English to me / German customer reply. Continue.
 ```
 

@@ -23,7 +23,7 @@ When in doubt in a mixed thread: if the user sends **only** `RE`, `PR`, `LF`, `l
 
 | Command | Blocked action |
 |---------|----------------|
-| **RE** / **re** | read-email script, 7-step case output |
+| **RE** / **re** / **RE SHOW** / **RE FILE** | read-email script, 7-step case output, RE recovery |
 | **PR** / **pr** | paste reply, write-reply script |
 | **LF** / **lf** / **LF TR** | fill_case_tracker.py, log form / transfer close-out |
 | **login** | Sprinklr login-only / startup automation |

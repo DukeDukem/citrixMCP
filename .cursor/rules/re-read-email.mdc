@@ -20,7 +20,7 @@ For every **CHANNEL: EMAIL** case (typed **RE** or after `--await-arm` extract):
    - Extract (`run.py` / await-arm) may use tools first.  
    - **Next:** sections **1–7 as plain chat text** — **text-only assistant message** strongly preferred (no Task/subagent, no parallel tool batch before prose). See `.cursor/rules/re-no-background-tasks-ui.mdc`.  
    - **Only after** that visible text: `--play-ready`, **Auto-LF**, transfer arm **or** wait for **PR**.  
-   - Operator recovery: **`RE SHOW`** / **`visible RE`** → re-print full 7-step in main thread.  
+   - Operator recovery: **`RE SHOW`** / **`visible RE`** → re-print full 7-step in main thread; **`RE FILE`** → `show_latest_re.py`.  
 5. Transfer-eligible EMAIL still gets all 7 sections visible in chat (section 6 may be short forward notice).  
 6. **CALL** does **not** use the email 7-step form (Auto-LF voice on CHANNEL detect).  
 
