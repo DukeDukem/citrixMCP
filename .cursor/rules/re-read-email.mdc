@@ -71,12 +71,36 @@ Script remembers **closed Fall #**, skips that sidebar item, polls ~25s for a di
 ## Normal workday
 
 1. **login** → Case Tracker tab.
-2. Operator **RE** once (first case) → 7-step + Auto-LF → wait **PR**.
-3. Operator **PR** → agent starts **background `--closeout-anwenden`** + notify.
-4. Operator clicks **Anwenden** (Sprinklr only) → extract → notify/stop hook → agent **auto** 7-step + Auto-LF.
-5. Repeat **PR** only until **DONE**.
+2. Operator **RE** once (first case) → 7-step (visible chat) + Auto-LF → **immediately** `--closeout-anwenden` (background + notify) → rest, awaiting PR or arm.
+3. Operator **PR** → agent pastes reply only (arm already running). Quote: `PR done for #FALL_ID`.
+4. Operator clicks **Anwenden** → arm fires → sidetray poll → new case → agent **auto** processes (CALL or EMAIL) — no operator input.
+5. Repeat: operator types **PR** only. Agent handles everything else.
 
 **Operator types:** **login**, **RE** (first case only), **PR**, **DONE**. Never **NEXT**, **LF**, or case 2+ **RE**.
+
+## Full case lifecycle
+
+```
+[Monitoring active: arm fired → sidetray click]
+
+EMAIL case:
+  sidetray click → extract → 7-step visible in chat → Auto-LF
+  → --closeout-anwenden (background, arm armed) → rest
+  → await:  PR (paste) | reiteration (change reply/LF) | arm fires (no reply needed)
+  → arm fires → [Monitoring active] → next case
+
+CALL case:
+  case pops up → CHANNEL: CALL → Auto-LF voice
+  → --closeout-next/weiter (arm armed) → rest
+  → await:  BRIEF (optional KB/TM lookup from operator) | arm fires
+  → arm fires → [Monitoring active] → next case
+
+Transfer (EMAIL or CALL):
+  Auto-LF TR → --closeout-weiter/extern (arm armed) → rest
+  → arm fires → [Monitoring active] → next case
+```
+
+**PR is independent of arming.** Arm is already running when PR arrives. Agent pastes and finishes — arm detects Anwenden when operator clicks it.
 
 ### HARD — Prowler without RE/LF
 
@@ -124,9 +148,11 @@ Every EMAIL extract (auto after login, `--await-arm`, or recovery `--once`):
 2. **Only then** **`re_complete_sound.py --play-ready`**  
 3. **Only then** **Auto-LF** for this Fall # (Transfer Nein or Ja per §3) — user does **not** type `LF`  
 4. If Auto-LF prints **`PAUSE_AUTO_LF`** + **`LF_CONTINUE_AFTER_SPEICHERN_ARMED`** (exit `3`): warn user to click Speichern for the **previous** LF; Auto-LF for the **current** Fall # continues automatically — run **`fill_case_tracker.py --await-speichern-continue`**, then on **`CONTINUE_LF_DONE`** do transfer arm or wait for **PR**. Do **not** require a manual Auto-LF retry after Speichern.  
-5. If transfer → arm Weiter/Extern immediately; if non-transfer → stop and wait for **PR**
+5. **Immediately after Auto-LF** (both transfer and non-transfer): start background close-out arm — do **not** wait for PR to arm.
+   - Non-transfer: **`--closeout-anwenden`** (background + notify). Rest and await PR or reiteration.
+   - Transfer: **`--closeout-weiter`** / **`--closeout-extern`** (no PR needed).
 
-**Auto-LF / tool runs must never replace, precede, or hide the extract/7-step behind Cursor task UI.**
+**Auto-LF / tool runs must never replace, precede, or hide the 7-step behind Cursor task UI.**
 
 Every CALL on CHANNEL detect: Auto-LF `--channel voice` → arm Next (or Weiter/Extern if transfer). BRIEF is optional and never blocks Auto-LF.
 
@@ -136,34 +162,30 @@ Every CALL on CHANNEL detect: Auto-LF `--channel voice` → arm Next (or Weiter/
 
 **FORBIDDEN:** Asking the operator for **NEXT**, **RE** (case 2+), **LF**, or any continue/pickup command. Agent recovers internally (`--pickup` / re-await). Operator only clicks Sprinklr UI (Senden / Anwenden / Weiter / Next / Speichern).
 
-## Auto-closeout after **PR** (EMAIL non-transfer)
+## After **PR** (EMAIL non-transfer)
 
-LF was already done at RE time. When user sends **PR** / **pr** and paste + verify succeed:
+Arm (`--closeout-anwenden`) already started at Auto-LF time. PR just pastes the reply:
 
-1. **Mandatory last shell action** — background + notify (do **not** ask for NEXT):
-   ```powershell
-   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --closeout-anwenden
-   ```
-   Use Shell `block_until_ms: 0` + `notify_on_output` pattern:
-   `AWAIT_ARM_EXTRACT_DONE|RE_TEXT_ONLY_GATE|CALL_LF_GATE|DETACHED_ARM_EXTRACT_READY`
-2. Chat: `PR done for #FALL_ID — Closeout listening. Click Anwenden when ready.`
-   **Senden is independent** — not an arm criterion, no ordering with Anwenden. Operator clicks either in any order.
-3. On notify **or** stop-hook `[AUTO_PIPELINE]`: **immediate** full 7-step + Auto-LF. Never idle after Prowler.
+1. Paste reply + verify clean.
+2. Quote: `PR done for #FALL_ID`.
+3. **No new arm command.** Arm is already running from Auto-LF step.
+4. Operator clicks Senden (independent) + Anwenden (arm reacts) in any order.
 
-**Do not** arm Anwenden at Auto-LF time for non-transfer EMAIL (wait for PR).
+**Senden is independent** — not an arm criterion, no ordering with Anwenden.
 
-### Closeout after transfer / CALL
+### Close-out arm table (all paths — arm starts at Auto-LF, not at PR)
 
-| Trigger | Closeout (background + notify) | Operator Sprinklr click |
-|---------|--------------------------------|-------------------------|
-| **PR** (EMAIL non-transfer) | **`--closeout-anwenden`** | Anwenden |
-| **Auto-LF TR** (queue) | **`--closeout-weiter`** | Transfer UI → exact Weiter |
-| **Auto-LF TR** (email `@`) | **`--closeout-extern`** | Externer Transfer → Weiterleiten |
-| **CALL** Auto-LF | **`--closeout-next`** | exact Next |
+| Case type | Close-out command (at Auto-LF time) | Operator Sprinklr click |
+|---|---|---|
+| **EMAIL non-transfer** | **`--closeout-anwenden`** (background + notify) | Anwenden |
+| **EMAIL transfer (queue)** | **`--closeout-weiter`** | Transfer UI → exact Weiter |
+| **EMAIL transfer (email `@`)** | **`--closeout-extern`** | Externer Transfer → Weiterleiten |
+| **CALL non-transfer** | **`--closeout-next`** | exact Next |
+| **CALL transfer** | **`--closeout-weiter`** / **`--closeout-extern`** | Weiter / Weiterleiten |
 
 **Prowler = extract done** — never stop idle; agent fixes internally; never push recovery commands to the operator.
 
-Do **not** arm twice for the same close-out.
+Do **not** arm twice for the same close-out. Do **not** start a new arm on PR — arm was already started at Auto-LF.
 
 ## 7-step output
 

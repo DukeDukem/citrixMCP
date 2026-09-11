@@ -1,5 +1,5 @@
 ---
-description: Operator types only login, RE (first case), PR — zero extra commands. Agent + hooks auto-continue.
+description: Operator types only login, RE (first case), PR — zero extra commands. Full workflow defined here.
 alwaysApply: true
 ---
 
@@ -12,50 +12,83 @@ alwaysApply: true
 | Input | When |
 |-------|------|
 | **login** | Once per session start |
-| **RE** | **First case of session only** (initial extract + 7-step + Auto-LF) |
-| **PR** | End of each non-transfer EMAIL case (after Auto-LF at RE time) |
+| **RE** | **First case of session only** |
+| **PR** | Each non-transfer EMAIL case — pastes reply |
 | **DONE** | End of workday |
+| **BRIEF** (optional) | During a CALL — provides KB/TM context; does not gate Auto-LF |
+| Reiteration / correction | Any case — agent updates reply/LF, stays in armed+resting state |
 
-**Physical Sprinklr clicks** (Anwenden, Weiter, Next, Senden, transfer UI) are **not** chat commands — operator clicks only.
+**Physical Sprinklr clicks** (Anwenden, Weiter, Next, Senden, Speichern, transfer UI) are **not** chat commands.
 
 ## Forbidden operator commands (never ask for these)
 
-- **NEXT**, **RE** (case 2+), **LF**, **LF TR**, **RE SHOW**, **pickup**, **await**, or any “type X to continue” after Prowler / extract / arm.
+**NEXT**, **RE** (case 2+), **LF**, **LF TR**, **RE SHOW**, **pickup**, **await**, or any "type X to continue".
 
-If automation stalls, agent **fixes internally** (`--pickup`, `--closeout-*`, re-await) — **never** push work back to the operator.
+If automation stalls, agent **fixes internally** — never push work back to the operator.
 
-## Agent auto-pipeline (no operator input between cases)
+---
 
-### First case
+## Full case lifecycle (agent handles everything)
 
-1. **login** → Case Tracker tab (login-only script).
-2. Operator **RE** once → extract → 7-step → play-ready → Auto-LF → wait **PR**.
+### Monitoring window
+Active only between **arm click** (Anwenden/Weiter/Next) and **new case sidetray click**.
+Hook (`extract_auto_continue_hook.py`) and sidetray poll run only during this window. Silent everywhere else.
 
-### Every case after first
+### EMAIL case
 
-1. Operator **PR** only (paste path).
-2. **Same PR turn (mandatory):** start **background** closeout listen (last shell action before turn ends):
-
-```powershell
-uv run python .cursor/skills/sprinklr-read-answer-email/run.py --closeout-anwenden
+```
+[Monitoring: arm fired → sidetray click]
+  → agent clicks sidetray item (CASE_ITEM_AUTO_CLICKED)
+  → case opens → extract → 7-step visible in chat (automatic, no operator RE)
+  → Auto-LF → --closeout-anwenden (background, monitoring disarmed)
+  → agent rests, awaiting:
+      PR  (operator pastes reply)              → paste + verify → PR done for #FALL_ID
+      reiteration (change reply / LF)          → agent updates → stays resting
+      arm fires (Anwenden without PR, edge)    → [monitoring active] → next case
+  → operator clicks Anwenden → arm fires → [monitoring active] → next case
 ```
 
-Use `--closeout-weiter` / `--closeout-extern` after transfer Auto-LF; `--closeout-next` after CALL Auto-LF.
+### CALL case
 
-- `block_until_ms: 0` (background) + `notify_on_output` pattern: `AWAIT_ARM_EXTRACT_DONE|RE_TEXT_ONLY_GATE|CALL_LF_GATE|DETACHED_ARM_EXTRACT_READY`
-- Operator clicks Sprinklr close-out button only.
-3. On notify **or** stop-hook `[AUTO_PIPELINE]` follow-up: **immediate** 7-step (EMAIL) or voice Auto-LF (CALL) — **no new operator message**.
-4. Wait **PR** again.
+```
+[Monitoring: arm fired → case pops up (no click)]
+  → CHANNEL: CALL → Auto-LF voice
+  → --closeout-next/weiter/extern (background, monitoring disarmed)
+  → agent rests, awaiting:
+      BRIEF  (operator pastes call context) → KB/TM lookup, talk-track — no new LF
+      arm fires (Next/Weiter)               → [monitoring active] → next case
+```
 
-## Prowler = extract done
+### Transfer (EMAIL or CALL)
 
-Prowler (`ARMED_RE_START_SOUND`) means extract finished. Agent **must** continue RE + Auto-LF automatically via notify or stop hook — **never** stop idle.
+```
+  Auto-LF TR → --closeout-weiter/extern (background)
+  → agent rests
+  → operator completes transfer UI → arm fires → [monitoring active] → next case
+  (no PR)
+```
+
+---
+
+## Arm timing (critical — changed from previous rule)
+
+**Arm starts at Auto-LF time, not at PR time.**
+
+| Case | When `--closeout-*` starts |
+|---|---|
+| EMAIL non-transfer | **Immediately after Auto-LF** (before PR) |
+| EMAIL transfer | Immediately after Auto-LF TR |
+| CALL | Immediately after Auto-LF voice |
+
+**PR (EMAIL non-transfer):** Agent just pastes the reply. Arm is already running. No arm command at PR time.
+
+---
 
 ## Stop hook backup
 
-`.cursor/hooks/extract_auto_continue_hook.py` on **stop** submits `[AUTO_PIPELINE]` follow-up when `extract_ready.json` is pending — no operator typing.
+`.cursor/hooks/extract_auto_continue_hook.py` fires `[AUTO_PIPELINE]` only during the monitoring window (`monitoring_armed.json = true`). Silent outside it — no false flags during wait-for-PR.
 
 ## Transfer / CALL
 
-- Transfer Auto-LF → `--closeout-weiter` or `--closeout-extern` (background + notify) — no PR.
-- CALL Auto-LF → `--closeout-next` (background + notify) — no PR unless asked.
+- Transfer Auto-LF → `--closeout-weiter` or `--closeout-extern` — no PR.
+- CALL Auto-LF → `--closeout-next` — no PR unless operator provides BRIEF and requests a reply.

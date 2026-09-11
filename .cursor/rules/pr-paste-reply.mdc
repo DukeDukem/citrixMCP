@@ -79,21 +79,16 @@ When the user prompts with PR/pr:
 - No data leaks
 - **User sends manually** via Sprinklr **Senden** (see below) — agent does **not** click Senden and does **not** treat post-send empty editor as a paste failure
 - Write-reply flow terminates immediately after one paste + verification step (no repaste loop)
-- **After PR succeeds (EMAIL non-transfer):** Auto-LF already ran at RE time. **Immediately** start **background** closeout listen (last action before turn ends — operator types nothing else):
-
-```powershell
-uv run python .cursor/skills/sprinklr-read-answer-email/run.py --closeout-anwenden
-```
-
-Shell: `block_until_ms: 0` + notify on `AWAIT_ARM_EXTRACT_DONE|RE_TEXT_ONLY_GATE|CALL_LF_GATE|DETACHED_ARM_EXTRACT_READY`. On notify → auto 7-step + Auto-LF. Finishing quote: `PR done for #FALL_ID — Closeout listening. Click Anwenden when ready.`
+- **After PR succeeds (EMAIL non-transfer):** Paste + verify is the entire PR action. **No arm command here.** `--closeout-anwenden` was already started at Auto-LF time (right after the 7-step). Finishing quote: `PR done for #FALL_ID`.
+- Agent does **not** run `--closeout-anwenden` at PR time. Arm is already live in the background.
+- **PR LF** remains valid **recovery** if Auto-LF was skipped (PR then LF then arm).
+- Transfer cases: no PR; arm already started at Auto-LF time.
 
 **Hard rule — Senden is NOT part of arming and has NO ordering requirement with Anwenden:**
 - Senden = sends the reply email to the customer. Completely independent.
-- Anwenden = closes the Sprinklr case. This is what the closeout arm watches.
-- Operator may click Senden before Anwenden, after, or not at all — closeout arm does not care.
-- Agent must **never** say "Senden, then Anwenden" or imply any ordering between them. See `.cursor/rules/operator-minimal-input.mdc`.
-- **PR LF** remains a valid **recovery** command (PR then LF then arm) if Auto-LF was skipped.
-- Transfer cases: no PR; Auto-LF Transfer Ja at RE already armed Weiter/Extern.
+- Anwenden = closes the Sprinklr case. Closeout arm already watches for this from Auto-LF time.
+- Operator may click Senden before Anwenden, after, or not at all — arm does not care.
+- Agent must **never** say "Senden, then Anwenden" or imply any ordering.
 
 ### User clicks **Senden** (not an arm; not a paste error)
 
@@ -125,10 +120,10 @@ After send succeeds, Sprinklr shows the agent’s reply in the **left conversati
 2. After the user finishes send (Senden, or Senden → Ignorieren und senden), the email **was sent** — PR paste **succeeded**.
 3. The reply editor becoming **empty** (or compose UI resetting) after that is **expected** — **not** `ERROR: POST-PASTE VERIFICATION FAILED`, not “paste didn’t stick”, not a reason to re-PR.
 4. A new **brand** tray bubble (`inboundChatConversationItemBrandMessage`) with matching content/timestamp is **extra confirmation of send success**.
-5. **Neither Senden nor Ignorieren und senden is part of arming** (not Anwenden / Next / Weiter / Weiterleiten). Do **not** watch these buttons to trigger `--arm*`. Arm Anwenden only after PR paste+verify succeeded (per Auto-LF rules), independent of when the user completes send.
+5. **Neither Senden nor Ignorieren und senden is part of arming** (not Anwenden / Next / Weiter / Weiterleiten). Do **not** watch these buttons to trigger `--arm*`. Arm (`--closeout-anwenden`) was already started at Auto-LF time — independent of PR and Senden.
 6. Do **not** re-run leak verification against an empty box after send and treat emptiness as failure.
 7. Do **not** “fix” the reply just because Sprinklr showed the grammar gate.
-8. If CLEAN was already returned for this PR, proceed with Anwenden arm / await as usual even if the editor is empty because the user already sent.
+8. If CLEAN was already returned for this PR, the paste is done. Arm (`--closeout-anwenden`) was already running from Auto-LF — no further action needed even if editor is empty.
 
 VIOLATION OF THIS RULE = DATA BREACH. DO NOT PROCEED IF UNCERTAIN.
 

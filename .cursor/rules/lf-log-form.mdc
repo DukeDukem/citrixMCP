@@ -32,12 +32,14 @@ The agent fills Case Tracker **while processing** each newly opened case. The op
 3. **`re_complete_sound.py --play-ready`** (book)  
 4. **Immediately Auto-LF** for this Fall # (see RUN LF below)  
    Tools for steps 3–4 run **after** step 2 is already written as main-thread chat prose.  
-5. Branch on transfer:
+5. Branch on transfer — **arm immediately after Auto-LF in both cases**:
 
 | RE §3 Transfer eligible | After Auto-LF success |
 |-------------------------|------------------------|
-| **No** (we answer) | Do **not** arm yet. Wait for user **PR** (paste). After PR succeeds → **`--arm`** Anwenden + await. Finishing quote: `PR done for #FALL_ID` |
-| **Yes** (queue / email target) | No PR. **`--arm-weiter`** (queue) or **`--arm-extern`** (email `@`) + await. Finishing quote: `LF TR done for #FALL_ID` |
+| **No** (we answer) | **Immediately** background `--closeout-anwenden` + notify. Rest and await **PR** (paste), reiteration, or arm firing. Finishing quote: `LF done for #FALL_ID — armed, awaiting PR or Anwenden.` |
+| **Yes** (queue / email target) | No PR. **`--closeout-weiter`** (queue) or **`--closeout-extern`** (email `@`) + await. Finishing quote: `LF TR done for #FALL_ID` |
+
+**PR does not start the arm.** Arm starts at Auto-LF time. PR just pastes the reply independently.
 
 ### Order (CALL) — Auto-LF on CHANNEL detect (no BRIEF gate)
 
@@ -188,13 +190,20 @@ Prefer `[data-testid="htmlText"]` first; else `span.spr-text-03` for unset. Neve
 
 ---
 
-## AFTER Auto-LF / close-out arms
+## AFTER Auto-LF — arm immediately (all paths)
 
-| Case outcome | Arm | Finishing quote |
-|--------------|-----|-----------------|
-| EMAIL non-transfer — after **PR** (LF already done at RE) | **`--arm`** → await Anwenden | `PR done for #FALL_ID` (or `PR LF done` if manual PR LF) |
-| EMAIL transfer — after Auto-LF | **`--arm-weiter`** or **`--arm-extern`** | `LF TR done for #FALL_ID` |
-| CALL — after Auto-LF voice | **`--arm-next`** (or weiter/extern if transfer) | `LF done for #FALL_ID` |
+Arm starts right after Auto-LF succeeds — **never** wait for PR to arm.
+
+| Case outcome | Close-out command (background) | Finishing quote |
+|---|---|---|
+| **EMAIL non-transfer** | **`--closeout-anwenden`** immediately after Auto-LF | `LF done for #FALL_ID — armed, awaiting PR or Anwenden.` |
+| **EMAIL transfer** | **`--closeout-weiter`** or **`--closeout-extern`** | `LF TR done for #FALL_ID` |
+| **CALL non-transfer** | **`--closeout-next`** | `LF done for #FALL_ID` |
+| **CALL transfer** | **`--closeout-weiter`** / **`--closeout-extern`** | `LF TR done for #FALL_ID` |
+
+**PR (EMAIL non-transfer):** Just pastes the reply — arm is already running. No new arm on PR. Finishing quote: `PR done for #FALL_ID`.
+
+Do **not** arm Anwenden at PR time. Do **not** wait for PR before arming.
 
 Do **not** arm Anwenden at Auto-LF time for EMAIL non-transfer — wait for **PR**.  
 Do **not** wait for typed `LF` before arming transfer / CALL paths.

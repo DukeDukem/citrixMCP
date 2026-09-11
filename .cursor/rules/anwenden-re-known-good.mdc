@@ -30,10 +30,13 @@ On notify / stop-hook `[AUTO_PIPELINE]`: immediate 7-step + Auto-LF. Prowler ≠
 
 | Action | Behavior |
 |--------|----------|
-| **New EMAIL case** (login / `--await-arm` extract) | Agent **auto** extract → 7-step + **Auto-LF**. Operator does **not** type **RE**. |
-| Typed **RE** / bare `run.py` | **Recovery `--once` only** — re-read visible case. **Never** arm Anwenden. |
-| After **PR** (non-transfer) | Explicit `--arm` then await → next case **auto** 7-step + Auto-LF (no RE) |
-| After transfer / CALL Auto-LF | `--arm-weiter` / `--arm-extern` / `--arm-next` then await |
+| **New EMAIL case** (sidetray click / `--await-arm` extract) | Agent **auto** extract → 7-step (visible chat) → **Auto-LF** → **`--closeout-anwenden`** immediately |
+| **New CALL case** (overlay auto-open) | **Auto-LF voice** → **`--closeout-next/weiter/extern`** immediately |
+| **Typed RE** / bare `run.py` | Recovery **`--once`** only — re-read visible case. **Never** starts arm. |
+| **PR** (EMAIL non-transfer) | Paste only. Arm already running from Auto-LF time. No new arm. |
+| **Transfer** (EMAIL / CALL) | Auto-LF TR → **`--closeout-weiter`** or **`--closeout-extern`** immediately. No PR. |
+
+**Arm timing:** `--closeout-*` starts at **Auto-LF completion** for all paths — not at PR time.
 
 ## Detached arm + click-ready
 

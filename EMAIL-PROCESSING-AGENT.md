@@ -28,7 +28,7 @@ LANGUAGE: Address ME (the operator) exclusively in ENGLISH in all chat — RE se
 COMMANDS (operator types ONLY these in chat):
 - login -> Sprinklr login-only + Case Tracker tab. Do NOT arm call_listen (STT parked).
 - RE -> FIRST CASE OF SESSION ONLY (run.py --once -> 7-step -> Auto-LF). Case 2+: NEVER ask for RE.
-- PR -> paste reply (non-transfer EMAIL). Then background --closeout-anwenden + notify. Operator never types NEXT/LF/RE again.
+- PR -> paste reply only (non-transfer EMAIL). --closeout-anwenden already running from Auto-LF time. No arm at PR. Operator never types NEXT/LF/RE again.
 - DONE -> end session. Rule: .cursor/rules/operator-minimal-input.mdc
 - EMAIL sidetray click -> CASE_ITEM_AUTO_CLICKED -> SIDETRAY_EMAIL_PROCESSING_IMMEDIATE -> extract runs immediately in script; agent immediately continues 7-step + Auto-LF when await-arm/extract stdout completes (no pause, no new operator message).
 - Typed RE / run.py --once = RECOVERY ONLY (re-read visible case, await-arm failed). NEVER arm Anwenden on recovery RE.
@@ -37,8 +37,8 @@ COMMANDS (operator types ONLY these in chat):
 - Section 6 in chat: UTF-8 code block soft-wrapped ~72 chars for vertical reading only. **PR / Sprinklr paste** must stay **mail format** (previous length, encoding, signature layout) — never let chat wraps change the pasted email.
 - After every EMAIL 7-step RE (+ play-ready): AUTO-LF Case Tracker for this Fall # (do NOT wait for typed LF). Transfer Nein or Ja per §3. Auto-LF runs AFTER the 7-step is visible in chat — not instead of it, not buried with it in background tasks.
 - After AUTO-LF transfer: IMMEDIATELY --arm-weiter (queue) or --arm-extern (email @) + await. Quote: LF TR done for #FALL_ID. No PR.
-- After AUTO-LF non-transfer EMAIL: wait for user PR only. Do NOT arm yet.
-- PR (EMAIL non-transfer) -> paste + verify, then IMMEDIATELY background run.py --closeout-anwenden (block_until_ms=0, notify on extract gates) + PR done for #FALL_ID. LF already done at RE. Operator clicks Anwenden only.
+- After AUTO-LF non-transfer EMAIL: IMMEDIATELY background --closeout-anwenden (arm armed). Then rest and await PR or reiteration.
+- PR (EMAIL non-transfer) -> paste + verify only. --closeout-anwenden already running from Auto-LF time. Quote: PR done for #FALL_ID. No new arm at PR. Operator clicks Senden (independent) + Anwenden (arm reacts) in any order.
 - After CLEAN PR: closeout-anwenden is already listening. Senden is a SEPARATE INDEPENDENT process — it is NOT an arming criterion and has NO ordering relationship with Anwenden. I click Senden whenever I want to send the reply; I click Anwenden whenever I want to close the case. Either can happen in any order. Sprinklr may show a grammar warning — I click Ignorieren und senden (same testid). Empty reply box after Senden = mail sent, NOT a paste failure. Outbound bubble (inboundChatConversationItemBrandMessage) = extra send confirmation, not new inbound.
 - PR LF / LF / LF TR -> optional recovery/override only (same arms as before).
 - CALL: On CHANNEL: CALL → SAME TURN Auto-LF --channel voice (do NOT wait for BRIEF or typed LF) → --arm-next (or weiter/extern if transfer) + await. Quote: LF done for #FALL_ID. Never Anwenden after a call. BRIEF optional for talk-track only.
@@ -75,7 +75,7 @@ CALL LF ARM (disposition Next — not Anwenden):
 - After extract: CHANNEL detect again → process + AUTO-LF.
 
 DETACHED ARM (mandatory — fixes false "watch died"):
-- After PR (EMAIL non-transfer): run.py --arm → ARM_WATCH_DETACHED + READY_FOR_YOUR_CLICK: Anwenden + Dexter → "Armed — click Anwenden now" + finishing quote → THEN --await-arm.
+- After PR (EMAIL non-transfer): paste + verify only. --closeout-anwenden was started at Auto-LF time. No new arm at PR. Finishing quote: PR done for #FALL_ID.
 - After CALL Auto-LF: run.py --arm-next → NEXT_RE_ARMED + READY_FOR_YOUR_CLICK: Next + Dexter → "Armed — click Next now" + finishing quote → THEN --await-arm.
 - After transfer Auto-LF: --arm-weiter or --arm-extern → READY_FOR_YOUR_CLICK + Dexter → finishing quote → --await-arm.
 - Dexter / READY_FOR_YOUR_CLICK = safe to click NOW. Do NOT wait for await to finish before clicking. Await only waits for extract after your click.
@@ -219,7 +219,7 @@ SOUND CUES + DETACHED ARM (keep working as usual; do not change volumes/files un
 Volumes are 0.75 in config.json.
 
 CRITICAL — CLICK-READY vs AWAIT SPINNER:
-- After PR (EMAIL non-transfer; Auto-LF already at RE): run.py --arm → READY_FOR_YOUR_CLICK + Dexter → "Armed — click Anwenden now" + finishing quote → THEN --await-arm.
+- After PR (EMAIL non-transfer): paste + verify only. --closeout-anwenden already running from Auto-LF. Finishing quote: PR done for #FALL_ID.
 - After CALL Auto-LF: run.py --arm-next → READY_FOR_YOUR_CLICK: Next + Dexter → "Armed — click Next now" + finishing quote → THEN --await-arm.
 - Dexter / READY_FOR_YOUR_CLICK = I may click NOW. Await spinner is NOT "wait longer before clicking".
 - After transfer Auto-LF: --arm-weiter or --arm-extern → same (Dexter + READY_FOR_YOUR_CLICK) → --await-arm.
@@ -259,7 +259,7 @@ Cursor **collapses tool/subagent work** into rows like `Finished 2 background ta
 |------|---------|
 | **1** | `run.py` extract only → **no** operator-facing one-liner (stdout shows `RE_TEXT_ONLY_GATE`) |
 | **2** | **Full 7-step RE (sections 1–7)** — **text-only message, zero tools**. Do this **immediately**. Do NOT paste customer email body/Subject/From — operator sees it in Sprinklr. Banned: “extracted — 7-step next” without writing 7-step. |
-| **3** | play-ready → Auto-LF → PR wait or transfer arm |
+| **3** | play-ready → Auto-LF → **immediately** --closeout-anwenden/weiter/extern (arm armed) → rest + await PR or arm-fires |
 
 ### Your recovery (when chat shows only trays / no extract)
 
@@ -309,7 +309,7 @@ SELECTORS (for your awareness only — script handles clicks):
 STILL IN FORCE (no change):
 - Three-turn EMAIL RE (visible 7-step, zero tools in step 2)
 - Auto-LF at RE for EMAIL; Auto-LF on CHANNEL: CALL detect
-- PR → --arm Anwenden; CALL → --arm-next; transfer → --arm-weiter / --arm-extern
+- Auto-LF done → --closeout-anwenden (non-transfer) / --closeout-weiter/extern (transfer) / --closeout-next (CALL) immediately. PR just pastes; no arm at PR time.
 - English to me / German customer reply; Grok banned; on-demand DISABLED
 
 Confirm: sidetray poll active, no 4s wait, trust SIDETRAY_CHANNEL + CHANNEL stdout. Continue current case — no login restart.
@@ -404,7 +404,7 @@ AUTO-TRIGGER (agent runs without RE command):
 AUTO PIPELINE (EMAIL):
 1) Extract (turn A — tools)
 2) Full 7-step visible chat text (turn B — zero tools; draft while reading email from extract)
-3) play-ready → Auto-LF → wait PR or transfer arm (turn C)
+3) play-ready → Auto-LF → immediately --closeout-anwenden/weiter/extern (arm) → rest, await PR or arm fires (turn C)
 
 OPERATOR NORMAL COMMANDS: login, PR, close-out clicks (Anwenden/Weiter/Next), DONE — NOT RE, NOT LF.
 
@@ -442,7 +442,7 @@ HARD FIX — EMAIL 7-STEP RE MUST BE VISIBLE CHAT TEXT (NOT BEHIND A MENU):
 - Every CHANNEL: EMAIL case: type the full 7-step RE (sections 1–7) as normal assistant chat text the user can read immediately.
 - NEVER put the 7-step only under Cursor “finished N background tasks”, collapsed task dropdowns, tool summaries, or anything that requires a click to open.
 - NEVER use Task/subagent/explore for the 7-step (causes “Finished N background tasks” / “Explored …” menus). Parent agent writes 1–7 as plain chat.
-- Three-turn pattern: (1) run.py only → RE_TEXT_ONLY_GATE → stop; (2) **text-only** full 7-step — ZERO tools; (3) play-ready → Auto-LF → PR or transfer arm. NEVER Read terminals/*.txt or explore/Task.
+- Three-turn pattern: (1) run.py only → RE_TEXT_ONLY_GATE → stop; (2) **text-only** full 7-step — ZERO tools; (3) play-ready → Auto-LF → immediately --closeout-anwenden/weiter (arm) → rest, await PR or arm fires. NEVER Read terminals/*.txt or explore/Task.
 - If I type RE SHOW / visible RE: re-print 7-step in main thread. RE FILE: run show_latest_re.py. Backup: .cursor/state/latest_re_visible.md
 - Rule file: .cursor/rules/re-no-background-tasks-ui.mdc
 - If the current EMAIL case has no visible 7-step in the main chat thread: output the full 7-step NOW as plain chat text.
@@ -456,7 +456,7 @@ AUTO-LF IS MANDATORY FOR BOTH EMAIL AND CALL (I do not type LF):
 
 EMAIL:
 1) After 7-step RE + play-ready → fill_case_tracker.py for this Fall #
-2) Transfer Nein → wait for my PR → then --arm Anwenden + --await-arm
+2) Transfer Nein → --closeout-anwenden immediately (background) → rest → wait for my PR (paste only)
 3) Transfer Ja → --arm-weiter (queue) or --arm-extern (@) + --await-arm; quote LF TR done for #FALL_ID
 
 CALL (no BRIEF gate):
@@ -467,7 +467,7 @@ CALL (no BRIEF gate):
 4) BRIEF optional only after Auto-LF if I want a mid-call pack.
 
 Also still in force:
-- PR alone arms Anwenden (LF already at RE). Senden → often Ignorieren und senden; empty box + inboundChatConversationItemBrandMessage = sent success.
+- PR pastes reply only (arm already running from Auto-LF). Senden → often Ignorieren und senden; empty box + inboundChatConversationItemBrandMessage = sent success.
 - Anhänge: .png click then Schließen; PDF View Detail.
 - Typed LF / LF TR / PR LF = recovery only.
 

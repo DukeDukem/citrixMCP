@@ -1,10 +1,10 @@
 {
   "ready": true,
   "consumed": false,
-  "at": "2026-09-11T17:22:28.275772+00:00",
+  "at": "2026-09-11T17:37:16.557741+00:00",
   "marker": "WEITER_RE_EXTRACT_DONE",
   "source": "await_arm",
-  "case_id": "#56066641",
+  "case_id": "#56071842",
   "channel": "EMAIL",
   "gate": "RE_TEXT_ONLY_GATE",
   "extract_file": "C:\\Users\\PC ENTER\\Desktop\\Citrix\\.cursor\\state\\latest_extract.md",
