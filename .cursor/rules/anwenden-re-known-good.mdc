@@ -42,7 +42,7 @@ If `--await-arm` aborted → **re-run `--await-arm`**. If log has `ERROR: NEXT C
 
 1. Remember **closed Fall #** while case still open.
 2. **Sidetray poll** (no fixed delay): from arm trigger, poll `[data-entityid="CollapsedPreviewsList"]` every ~0.25s until a new `collapsed-case-item` appears whose aria-label is **not** that Fall # (timeout ~30s). Stdout: `SIDETRAY_WATCH_ARMED`, optional `SIDETRAY_EMPTY`, then `SIDETRAY_CHANNEL: CALL|EMAIL|UNKNOWN`.
-3. **EMAIL** sidetray → **click** item (`CASE_ITEM_AUTO_CLICKED`). **CALL** sidetray → **do not click**; wait for overlay auto-open (`SIDETRAY_CALL_SKIP_CLICK` → `SIDETRAY_CALL_AUTO_OPEN`). Monitoring runs for both.
+3. **EMAIL** sidetray → **click** item (`CASE_ITEM_AUTO_CLICKED` → **`SIDETRAY_EMAIL_PROCESSING_IMMEDIATE`**) → script **immediately** extract in same chain. Agent **immediately** 7-step + Auto-LF when extract stdout ready — no operator RE. **CALL** sidetray → **do not click**; wait for overlay auto-open (`SIDETRAY_CALL_SKIP_CLICK` → `SIDETRAY_CALL_AUTO_OPEN`). Monitoring runs for both.
 4. Retry if still console / same Fall; on hard fail → stop arm + `ERROR: NEXT CASE NOT OPEN — run run.py --once` (do **not** wait for another Weiterleiten).
 
 **CALL sidetray icon:** `svg[data-icon-name="BrandVoiceCircleClr"]` (green voice badge). Example Fall **#57938822**.  

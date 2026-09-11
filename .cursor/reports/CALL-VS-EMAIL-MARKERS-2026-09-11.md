@@ -16,7 +16,7 @@ Item: `button[data-testid="collapsed-case-item"]`
 | Channel | Badge icon | Script stdout |
 |---------|------------|---------------|
 | **CALL** | `svg[data-icon-name="BrandVoiceCircleClr"]` (green voice circle) | `SIDETRAY_CHANNEL: CALL` → `SIDETRAY_CALL_SKIP_CLICK` → `SIDETRAY_CALL_AUTO_OPEN` (no click) |
-| **EMAIL** | `svg[data-icon-name="BrandEmailCircleClr"]` (blue envelope circle) | `SIDETRAY_CHANNEL: EMAIL` → `CASE_ITEM_AUTO_CLICKED` |
+| **EMAIL** | `svg[data-icon-name="BrandEmailCircleClr"]` (blue envelope circle) | `SIDETRAY_CHANNEL: EMAIL` → `CASE_ITEM_AUTO_CLICKED` → **`SIDETRAY_EMAIL_PROCESSING_IMMEDIATE`** → extract → agent auto 7-step + Auto-LF |
 
 **EMAIL example (Fall #57675993):** `button[data-testid="collapsed-case-item"]` with `aria-label="Fall Nr. 57675993 von Natalia Nuzhna"`, avatar + blue `BrandEmailCircleClr` badge; item height often ~8.6rem (CALL ~6rem). Script uses DOM locators inside `[data-entityid="CollapsedPreviewsList"]`, not pixel coordinates.
 

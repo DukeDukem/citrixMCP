@@ -15,7 +15,8 @@ alwaysApply: true
 
 | Trigger | Agent action (EMAIL) |
 |---------|----------------------|
-| **`--await-arm` extract** completes (`CUSTOMER EMAIL` + `RE_TEXT_ONLY_GATE`) | Immediately three-turn RE → Auto-LF → wait **PR** or transfer arm |
+| **EMAIL sidetray click** (`CASE_ITEM_AUTO_CLICKED` → `SIDETRAY_EMAIL_PROCESSING_IMMEDIATE`) | Script **immediately** opens case + extract — **zero operator input** |
+| **`--await-arm` extract** completes (`DETACHED_ARM_EXTRACT_READY` / `CUSTOMER EMAIL` + `RE_TEXT_ONLY_GATE`) | Agent **same workflow** immediately continues three-turn RE → Auto-LF → wait **PR** or transfer arm — **no new user message, no typed RE** |
 | **First case after login** — case visible in Sprinklr | Agent auto-runs `run.py --once` (consumes `FIRST_RE_ONCE_PENDING`) — **do not wait for typed RE** |
 | **CALL** (`CHANNEL: CALL` / `CALL_LF_GATE`) | Auto-LF voice + close-out arm — no 7-step, no PR unless asked |
 
@@ -51,7 +52,8 @@ Cursor **aborts** long-running agent shells (~20s) when a turn ends. That used t
 | 1 | `run.py --arm` (or `--arm-weiter` / `--arm-extern`) | `ARM_WATCH_DETACHED` + `READY_FOR_YOUR_CLICK` + Dexter; parent exits; **no console window** |
 | 2 | Chat + finishing quote | `Armed — click … now.` + `PR done` / `LF done` / `LF TR done` |
 | 3 | `run.py --await-arm` | Poll until extract **or** fail-fast on `ERROR: NEXT CASE NOT OPEN` |
-| 4 | Full **7-step RE** + `--play-ready` + **Auto-LF** | Book cue after section 7; then fill Case Tracker (see `lf-log-form.mdc`) |
+| 3b | **EMAIL sidetray path** | On `CASE_ITEM_AUTO_CLICKED` script runs extract **immediately** in same automation chain — agent must **not** pause for operator input before 7-step |
+| 4 | Full **7-step RE** + `--play-ready` + **Auto-LF** | Start **immediately** when await-arm / extract stdout completes — book cue after section 7; then Case Tracker (see `lf-log-form.mdc`) |
 
 - **Click-ready = Dexter + READY_FOR_YOUR_CLICK** — do not wait for await to finish before clicking.
 - If **`--await-arm`** is aborted by Cursor → **re-run `--await-arm`** (detached watch still running).

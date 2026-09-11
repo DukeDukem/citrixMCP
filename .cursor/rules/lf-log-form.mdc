@@ -22,7 +22,7 @@ The agent fills Case Tracker **while processing** each newly opened case. The op
 
 | Channel | When (same agent turn as analysis) | Tracker |
 |---------|--------------------------------------|---------|
-| **EMAIL** | Auto-triggered on new case extract (login / `--await-arm`) — **only after the full 7-step RE is visible as normal chat text** (not under “finished background tasks”; then play-ready). Operator does **not** type **RE** first. | E-Mail Care; Transfer **Nein** or **Ja** + target from §3/4a |
+| **EMAIL** | Auto-triggered on new case extract (login / `--await-arm` / **`SIDETRAY_EMAIL_PROCESSING_IMMEDIATE`** after sidetray click) — agent continues **immediately** when extract stdout is ready; **only after the full 7-step RE is visible as normal chat text** (then play-ready). Operator does **not** type **RE** first. | E-Mail Care; Transfer **Nein** or **Ja** + target from §3/4a |
 | **CALL** | As soon as **CHANNEL: CALL** is known (no BRIEF wait) | **`--channel voice`**; Transfer via `resolve_transfer()` / Ziel unless already decided |
 
 ### Order (EMAIL)

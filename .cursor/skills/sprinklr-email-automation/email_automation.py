@@ -5369,6 +5369,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
 
                 self._sidetray_skip_click = False
                 print("CASE_ITEM_AUTO_CLICKED", flush=True)
+                print("SIDETRAY_EMAIL_PROCESSING_IMMEDIATE", flush=True)
                 if exclude:
                     print(f"excluded_closed_fall: #{exclude}", flush=True)
                 return True
@@ -5416,7 +5417,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
             exclude_fall_digits=closed_digits,
         ):
             print(
-                f"[ERROR] {mode_label}: next-case click failed. "
+                f"[ERROR] {mode_label}: next-case open failed. "
                 "Do not wait for another transfer click — use run.py --once if case is open.",
                 flush=True,
             )

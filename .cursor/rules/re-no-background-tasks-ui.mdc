@@ -27,6 +27,16 @@ The agent starts turns **A→B→C automatically** when:
 
 Do **not** wait for the operator to type **RE** before extract, 7-step, or Auto-LF.
 
+## Immediate post–sidetray-click (EMAIL)
+
+When stdout shows **`CASE_ITEM_AUTO_CLICKED`** + **`SIDETRAY_EMAIL_PROCESSING_IMMEDIATE`**:
+
+1. Script already clicked the new EMAIL sidetray item and is extracting **in the same automation run**.
+2. Agent runs **`--await-arm`** (if not already in that turn) and on **`DETACHED_ARM_EXTRACT_READY`** / **`RE_TEXT_ONLY_GATE`** **immediately** continues turn B (7-step) — **no pause**, no “waiting for RE”, no extra operator message.
+3. Turn C (play-ready + Auto-LF) follows as soon as turn B is visible in chat.
+
+**Hard ban:** Stopping after sidetray click or extract without writing the 7-step + Auto-LF for that Fall #.
+
 ## Three-turn protocol (EMAIL) — mandatory
 
 | Turn | What | Tools |

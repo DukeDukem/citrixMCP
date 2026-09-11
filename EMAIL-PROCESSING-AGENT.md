@@ -28,6 +28,7 @@ LANGUAGE: Address ME (the operator) exclusively in ENGLISH in all chat — RE se
 COMMANDS:
 - login -> Sprinklr login-only + Case Tracker tab; sets FIRST_RE_ONCE_PENDING. Do NOT arm call_listen (STT/teleprompter parked).
 - NO TYPED RE in normal flow. Agent AUTO-processes every new EMAIL case: extract -> three-turn 7-step -> Auto-LF. Operator types PR only (plus login, DONE, close-out clicks).
+- EMAIL sidetray click -> CASE_ITEM_AUTO_CLICKED -> SIDETRAY_EMAIL_PROCESSING_IMMEDIATE -> extract runs immediately in script; agent immediately continues 7-step + Auto-LF when await-arm/extract stdout completes (no pause, no new operator message).
 - Typed RE / run.py --once = RECOVERY ONLY (re-read visible case, await-arm failed). NEVER arm Anwenden on recovery RE.
 - EMAIL RE = THREE TURNS: (1) run.py extract only + RE_TEXT_ONLY_GATE — stop; (2) full 7-step sections 1–7 as TEXT-ONLY message — ZERO tools (no Grep/Task/Read terminals/LF); (3) play-ready + Auto-LF + arms. NEVER explore terminal .txt files. NEVER hide 7-step under “finished background tasks”.
 - If I type RE SHOW / visible RE / RE FILE: recover per EMAIL-PROCESSING-AGENT.md troubleshooting. Backup file: .cursor/state/latest_re_visible.md
@@ -307,6 +308,25 @@ STILL IN FORCE (no change):
 - English to me / German customer reply; Grok banned; on-demand DISABLED
 
 Confirm: sidetray poll active, no 4s wait, trust SIDETRAY_CHANNEL + CHANNEL stdout. Continue current case — no login restart.
+```
+
+---
+
+## UPDATE — paste to **running** case agent (IMMEDIATE post–sidetray-click processing)
+
+```
+UPDATE — IMMEDIATE EMAIL PROCESSING AFTER SIDETRAY CLICK:
+
+When a new EMAIL arrives in CollapsedPreviewsList (BrandEmailCircleClr):
+1) Script clicks -> CASE_ITEM_AUTO_CLICKED -> SIDETRAY_EMAIL_PROCESSING_IMMEDIATE
+2) Extract runs immediately in the same automation chain (no operator RE)
+3) On --await-arm / DETACHED_ARM_EXTRACT_READY / RE_TEXT_ONLY_GATE:
+   IMMEDIATELY continue three-turn RE (7-step visible -> play-ready -> Auto-LF)
+4) Do NOT stop, pause, or wait for a new user message between sidetray click and 7-step + Auto-LF.
+
+CALL sidetray: still no click (SIDETRAY_CALL_AUTO_OPEN) -> Auto-LF voice only.
+
+Confirm: immediate post-click processing. Continue.
 ```
 
 ---
