@@ -1161,6 +1161,99 @@ class EmailAutomation:
                 continue
         return None
     
+    def _detect_case_channel_once(self) -> str:
+        """
+        Detect CALL vs EMAIL from open case DOM (timeline + email body).
+
+        CALL: Anruf timeline / call UI, no substantial html-message-content email body.
+        EMAIL: html-message-content with real email body and/or Von/Betreff headers.
+        """
+        try:
+            data = self.page.evaluate(
+                """() => {
+                    const bodyText = document.body ? (document.body.innerText || '') : '';
+                    const callPhrases = [
+                        'Anruf angenommen', 'Anruf beendet', 'Anruf wurde getrennt',
+                        'Eingehender Anruf', 'in Wartestellung', 'Im Gespräch',
+                        'Aufzeichnung', 'Disposition Plan', 'Disposition Codes',
+                        'VOIP Nailed Up', 'Mikrofon angeschlossen'
+                    ];
+                    let callHits = 0;
+                    for (const p of callPhrases) {
+                        if (bodyText.includes(p)) callHits++;
+                    }
+                    const anrufBullet = (bodyText.match(/Anruf\\s*[•·]/g) || []).length;
+                    if (anrufBullet > 0) callHits += Math.min(anrufBullet, 3);
+                    const audioNodes = document.querySelectorAll(
+                        '[data-testid*="audio"], [data-testid*="call-button"], '
+                        + '[data-testid*="omniMedia"], [data-testid="audio_pres"]'
+                    ).length;
+                    if (audioNodes > 0) callHits += 2;
+                    const htmlMsgs = Array.from(
+                        document.querySelectorAll('[data-testid="html-message-content"]')
+                    );
+                    let maxEmailBody = 0;
+                    for (const el of htmlMsgs) {
+                        const t = (el.innerText || '').trim();
+                        if (t.length > maxEmailBody) maxEmailBody = t.length;
+                    }
+                    const hasVonEmail = /Von:\\s*[^\\n]+@[^\\n]+/i.test(bodyText);
+                    const hasBetreff = /Betreff:/i.test(bodyText);
+                    const emailContainers = document.querySelectorAll(
+                        '[data-element-type="email-message-container"]'
+                    ).length;
+                    return {
+                        callHits, anrufBullet, audioNodes, maxEmailBody,
+                        hasVonEmail, hasBetreff, emailContainers,
+                        htmlMsgCount: htmlMsgs.length
+                    };
+                }"""
+            )
+        except Exception as e:
+            logger.debug(f"Channel detect evaluate failed: {e}")
+            return "unknown"
+
+        call_hits = int(data.get("callHits") or 0)
+        max_body = int(data.get("maxEmailBody") or 0)
+        anruf_bullet = int(data.get("anrufBullet") or 0)
+        html_count = int(data.get("htmlMsgCount") or 0)
+
+        if call_hits >= 2 and max_body < 80:
+            return "call"
+        if anruf_bullet >= 1 and max_body < 50:
+            return "call"
+        if call_hits >= 1 and max_body < 30 and html_count == 0:
+            return "call"
+        if max_body >= 80:
+            return "email"
+        if data.get("hasVonEmail") and max_body >= 30:
+            return "email"
+        if data.get("hasBetreff") and max_body >= 30:
+            return "email"
+        if int(data.get("emailContainers") or 0) > 0 and max_body >= 50:
+            return "email"
+        if call_hits >= 1 and max_body < 80:
+            return "call"
+        return "unknown"
+
+    def _detect_case_channel(self, poll_s: float = 0.5, max_wait_s: float = 4.0) -> str:
+        """Poll briefly after case open (post-arm) until CALL vs EMAIL stabilizes."""
+        deadline = time.time() + max_wait_s
+        votes: dict[str, int] = {"call": 0, "email": 0}
+        last = "unknown"
+        while time.time() < deadline:
+            last = self._detect_case_channel_once()
+            if last in votes:
+                votes[last] += 1
+                if votes[last] >= 2:
+                    return last
+            time.sleep(poll_s)
+        if votes["call"] > votes["email"]:
+            return "call"
+        if votes["email"] > votes["call"]:
+            return "email"
+        return last
+
     def _detect_page_state(self) -> str:
         """
         Detect which page we're currently on
@@ -5674,20 +5767,47 @@ Use cursor-agent's file reading capabilities to read these files before generati
                     return False
                 if case_id in self.processed_case_ids and not chat_only and not extract_only:
                     print(f"[INFO] Case {case_id} already processed. Writing reply anyway (will update editor).")
-                # Wait for page and email content to be loaded (no fixed sleep)
                 try:
                     self.page.wait_for_load_state('domcontentloaded', timeout=8000)
-                    inbound = self.page.locator('[data-testid="inboundChatConversationItemFanMessage"]').last
-                    inbound.wait_for(state='attached', timeout=8000)
-                    body_in_last = inbound.locator('[data-testid="html-message-content"]').first
-                    body_in_last.wait_for(state='visible', timeout=6000)
                 except Exception as e:
-                    logger.debug(f"Wait for email DOM: {e}")
+                    logger.debug(f"Wait for domcontentloaded: {e}")
+
+                channel = self._detect_case_channel(poll_s=0.5, max_wait_s=4.0)
+                channel_label = channel.upper() if channel in ("call", "email") else "UNKNOWN"
+                print(f"CHANNEL: {channel_label}", flush=True)
+                print(f"[INFO] Channel detection (post-open poll): {channel_label}", flush=True)
+
+                if extract_only and channel == "call":
+                    self._print_call_case_and_exit(
+                        case_id, cue_on_extract_start=cue_on_extract_start
+                    )
+                    return True
+
+                # EMAIL: wait for html-message-content when expected
+                if channel != "call":
+                    try:
+                        inbound = self.page.locator(
+                            '[data-testid="inboundChatConversationItemFanMessage"]'
+                        ).last
+                        inbound.wait_for(state='attached', timeout=8000)
+                        body_in_last = inbound.locator(
+                            '[data-testid="html-message-content"]'
+                        ).first
+                        body_in_last.wait_for(state='visible', timeout=6000)
+                    except Exception as e:
+                        logger.debug(f"Wait for email DOM: {e}")
+
                 email_content = self.extract_email_content()
                 if not email_content:
                     email_content = {'body': '', 'subject': '', 'from': ''}
-                # Extract-only: print the email and exit; Cursor will do KB + suggested reply in chat
+
                 if extract_only:
+                    body_len = len((email_content.get('body') or '').strip())
+                    if body_len < 30 and self._detect_case_channel_once() == "call":
+                        self._print_call_case_and_exit(
+                            case_id, cue_on_extract_start=cue_on_extract_start
+                        )
+                        return True
                     self._print_customer_email_and_exit(
                         case_id, email_content, cue_on_extract_start=cue_on_extract_start
                     )
@@ -5724,6 +5844,41 @@ Use cursor-agent's file reading capabilities to read these files before generati
         print("[INFO] Please open an email case (Fall #...) in the browser, then run this skill again.")
         return False
 
+    def _print_call_case_and_exit(
+        self,
+        case_id: str,
+        cue_on_extract_start: bool = False,
+    ) -> None:
+        """CALL case after extract — no CUSTOMER EMAIL block; agent does voice Auto-LF only."""
+        display_case_id = case_id
+        if case_id and case_id.startswith('#'):
+            numeric_part = re.sub(r'\D', '', case_id)
+            if numeric_part:
+                if len(numeric_part) < 8:
+                    numeric_part = numeric_part.zfill(8)
+                elif len(numeric_part) > 8:
+                    numeric_part = numeric_part[:8]
+                display_case_id = f"Fall #{numeric_part}"
+        print("\n" + "=" * 80, flush=True)
+        print("CHANNEL: CALL", flush=True)
+        print("CHANNEL_CALL_DETECTED", flush=True)
+        print("=" * 80, flush=True)
+        print("Case ID:", display_case_id, flush=True)
+        print(
+            "Signals: Anruf timeline / call events — NO html-message-content email body.",
+            flush=True,
+        )
+        print(
+            "Do NOT run email 7-step RE or PR. Auto-LF --channel voice + --arm-next (or transfer arm).",
+            flush=True,
+        )
+        print("=" * 80, flush=True)
+        print("CALL_LF_GATE", flush=True)
+        print("=" * 80 + "\n", flush=True)
+        if cue_on_extract_start:
+            self._cue_armed_re_start_sound()
+            print("ARMED_EXTRACT_DONE_SOUND", flush=True)
+
     def _print_customer_email_and_exit(
         self,
         case_id: str,
@@ -5731,6 +5886,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
         cue_on_extract_start: bool = False,
     ) -> None:
         """Print the customer email to stdout so Cursor can read it; then script is done. Cursor queries KB and writes suggested reply in chat."""
+        print("CHANNEL: EMAIL", flush=True)
         display_case_id = case_id
         if case_id and case_id.startswith('#'):
             numeric_part = re.sub(r'\D', '', case_id)

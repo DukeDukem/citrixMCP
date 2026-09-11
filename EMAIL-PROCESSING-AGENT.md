@@ -80,7 +80,7 @@ DETACHED ARM (mandatory — fixes false "watch died"):
 - NEVER start a second --arm* while one detached watch is still waiting.
 
 CHANNEL DETECT (after every case open — RE --once OR after await-arm extract):
-- Look at visible Sprinklr overlay/timeline → print CHANNEL: CALL or CHANNEL: EMAIL (or UNKNOWN).
+- Trust extract stdout: CHANNEL: CALL + CALL_LF_GATE → voice Auto-LF (no 7-step). CHANNEL: EMAIL + CUSTOMER EMAIL → three-turn RE. Script polls DOM ~4s post-open (Anruf timeline vs html-message-content body).
 - CALL LISTEN / TELEPROMPTER: PARKED (capture_path.json enabled=false). Do NOT run call_listen --arm or --prime. Expect CALL_LISTEN_DISABLED if tried.
 - EMAIL → MUST write full 7-step RE as VISIBLE chat text (1–7; not behind “finished background tasks”) → play-ready → AUTO-LF → (transfer arm OR wait for PR). Skipping or hiding the 7-step is a hard failure.
 - If EMAIL has Anhänge: open/download so the agent can read them for full case understanding (not a separate process). Helper: open_case_attachments.py --view / --download → yoummday temporaries. Rule: sprinklr-attachments.mdc

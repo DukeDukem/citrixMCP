@@ -39,6 +39,7 @@ _EXTRACT_MARKERS = (
     "EXTERN_RE_EXTRACT_DONE",
     "NEXT_RE_EXTRACT_DONE",
     "CUSTOMER EMAIL (for Cursor to read",
+    "CHANNEL_CALL_DETECTED",
     "RE_PENDING_SOUND",
 )
 _FAIL_MARKERS = (
@@ -78,6 +79,29 @@ def _print_re_text_only_gate() -> None:
         flush=True,
     )
     print("=" * 80 + "\n", flush=True)
+
+
+def _print_call_lf_gate() -> None:
+    """After CHANNEL: CALL extract — voice Auto-LF, no email 7-step."""
+    print("\n" + "=" * 80, flush=True)
+    print("CALL_LF_GATE", flush=True)
+    print("=" * 80, flush=True)
+    print(
+        "AGENT — CHANNEL: CALL confirmed by script. Do NOT run email 7-step RE or PR.",
+        flush=True,
+    )
+    print(
+        "Same turn: Auto-LF --channel voice → --arm-next (or weiter/extern if transfer) → await.",
+        flush=True,
+    )
+    print("=" * 80 + "\n", flush=True)
+
+
+def _emit_post_extract_gate(combined_output: str) -> None:
+    if "CHANNEL: CALL" in combined_output or "CHANNEL_CALL_DETECTED" in combined_output:
+        _print_call_lf_gate()
+    elif "CUSTOMER EMAIL (for Cursor to read" in combined_output or "CHANNEL: EMAIL" in combined_output:
+        _print_re_text_only_gate()
 
 
 def _write_meta(mode: str, pid: int) -> None:
@@ -207,7 +231,7 @@ def _await_arm(timeout_s: float = 1800.0, poll_s: float = 1.0) -> int:
                 else:
                     print(text[-8000:], flush=True)
                 print("AWAIT_ARM_EXTRACT_DONE", flush=True)
-                _print_re_text_only_gate()
+                _emit_post_extract_gate(text[idx:] if idx >= 0 else text)
                 return 0
             if any(m in text for m in _FAIL_MARKERS):
                 print("\n" + "=" * 80, flush=True)
@@ -283,13 +307,21 @@ def main() -> int:
 
     if use_once:
         print("MODE: --once (extract currently open case)")
-        rc = subprocess.call(
+        proc = subprocess.run(
             [sys.executable, str(runner), "--process-current-only", "--extract-only"],
             cwd=str(_REPO_ROOT),
             env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
         )
-        _print_re_text_only_gate()
-        return rc
+        if proc.stdout:
+            print(proc.stdout, end="" if proc.stdout.endswith("\n") else "\n", flush=True)
+        if proc.stderr:
+            print(proc.stderr, end="" if proc.stderr.endswith("\n") else "\n", file=sys.stderr, flush=True)
+        _emit_post_extract_gate((proc.stdout or "") + (proc.stderr or ""))
+        return proc.returncode
 
     watch_flag = None
     label = None

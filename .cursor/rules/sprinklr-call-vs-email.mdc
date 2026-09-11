@@ -20,13 +20,20 @@ After **any** of these, **before** drafting an email 7-step RE / PR:
 2. Armed path: `--await-arm` returns extract / case is open after Anwenden / Weiter / Weiterleiten  
 3. User opens a case and asks you to handle it  
 
-**First line of analysis must state channel:**
+### Script detection (authoritative — post-open poll ~4s)
 
-- `CHANNEL: CALL`  
-- `CHANNEL: EMAIL`  
-- `CHANNEL: UNKNOWN — confirm before RE/PR`
+Extract runs **`_detect_case_channel()`** after case open (post-arm). Stdout includes:
 
-Use **visible Sprinklr overlay + timeline + Case Informationen** (see markers below). Prefer overlay (**Im Gespräch**, Disposition) over Quelle alone.
+| Script output | Meaning | Agent path |
+|---------------|---------|------------|
+| **`CHANNEL: CALL`** + **`CHANNEL_CALL_DETECTED`** + **`CALL_LF_GATE`** | Anruf timeline / call UI; **no** email body | Voice Auto-LF + Next/weiter/extern — **no** 7-step RE/PR |
+| **`CHANNEL: EMAIL`** + **`CUSTOMER EMAIL`** + **`RE_TEXT_ONLY_GATE`** | `html-message-content` email body present | Three-turn 7-step RE |
+
+**First line of agent analysis must echo the script line:** `CHANNEL: CALL` or `CHANNEL: EMAIL`.
+
+If script says **CALL**, do **not** override to EMAIL because of chat bubbles or empty extract. If script says **EMAIL**, proceed with RE.
+
+Manual/visual check (below) only when stdout shows **`CHANNEL: UNKNOWN`**.
 
 | Channel | Next step |
 |---------|-----------|
@@ -177,7 +184,8 @@ Care Webform / mail Quelle, readable **html-message-content** bodies, no Im Gesp
 
 ## Detection order
 
-1. **Im Gespräch** or Disposition overlay → **CALL**  
-2. **Eingehender Anruf** / **Anruf beendet** / audio testids → **CALL**  
-3. `html-message-content` + no call overlays → **EMAIL**  
-4. Else → **UNKNOWN**
+1. **Script stdout** after extract: `CHANNEL: CALL` / `CHANNEL: EMAIL` (DOM poll post-open)  
+2. **Im Gespräch** or Disposition overlay → **CALL**  
+3. **Anruf angenommen** / **Anruf beendet** / **Anruf •** timeline / **Eingehender Anruf** → **CALL** (no email body)  
+4. Substantial **`html-message-content`** + Von/Betreff → **EMAIL**  
+5. Else → **UNKNOWN** — ask operator; do not PR
