@@ -41,3 +41,5 @@ processed_case_ids.json
 .cursor/state/latest_extract.md
 .cursor/state/latest_re_visible.md
 .cursor/state/dexter_debounce.json
+
+scratchspace/
