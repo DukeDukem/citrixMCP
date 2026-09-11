@@ -1,17 +1,29 @@
 ---
-description: When the user types RE, run post-login --once extract or Anwenden-gated arm; produce full 7-step RE output.
+description: Auto-process every new EMAIL case (7-step + Auto-LF) on extract — no typed RE in normal flow. Typed RE = recovery only.
 alwaysApply: true
 ---
 
-# RE = Read Email (post-login --once + Anwenden arm)
+# Read Email — auto on new case (no typed RE in normal flow)
 
 **Chat scope:** Email processing chat only (`EMAIL-PROCESSING-AGENT.md`).
 
+**Operator does NOT type RE** to receive the 7-step RE or Auto-LF. The agent runs the full EMAIL pipeline **automatically** as soon as a new case is detected.
+
 **Always stick to the processing form:** Full 7-step output from **sprinklr-read-answer-email** SKILL.md.
+
+### Auto-trigger (normal workday — no RE command)
+
+| Trigger | Agent action (EMAIL) |
+|---------|----------------------|
+| **`--await-arm` extract** completes (`CUSTOMER EMAIL` + `RE_TEXT_ONLY_GATE`) | Immediately three-turn RE → Auto-LF → wait **PR** or transfer arm |
+| **First case after login** — case visible in Sprinklr | Agent auto-runs `run.py --once` (consumes `FIRST_RE_ONCE_PENDING`) — **do not wait for typed RE** |
+| **CALL** (`CHANNEL: CALL` / `CALL_LF_GATE`) | Auto-LF voice + close-out arm — no 7-step, no PR unless asked |
+
+**Typed RE / `run.py --once`** = **recovery only** (re-read visible case, `--await-arm` failed, manual refresh). Not the operator’s normal command.
 
 ### HARD BAN — never skip the 7-step RE (EMAIL)
 
-For every **CHANNEL: EMAIL** case (typed **RE** or after `--await-arm` extract):
+For every **CHANNEL: EMAIL** case (auto extract after login, `--await-arm`, or recovery `--once`):
 
 1. You **MUST** write the full **7-step RE as visible chat text** (plain assistant message the user can read without opening any UI menu).  
 2. **Forbidden shortcuts:** Auto-LF only; “transfer done” one-liner; paste-ready reply without sections 1–5/7; tool-only turn with no 7-step text.  
@@ -52,16 +64,19 @@ Cursor **aborts** long-running agent shells (~20s) when a turn ends. That used t
 
 Script remembers **closed Fall #**, skips that sidebar item, polls ~25s for a different case, retries if still console/same Fall. Hard fail → stop arm + `--once` tip (no second Weiterleiten wait).
 
-## When user sends **RE** / **re**
+## Normal workday (operator never types RE)
 
-**Hard rule:** Typed **RE** always means **extract the currently open case now** (`--once`). It must **never** arm Anwenden / wait for an Anwenden click.
+1. **login** (once) → Case Tracker tab; agent **auto-extracts** first visible case (`run.py --once`) — no RE prompt.
+2. Agent writes full **7-step RE** + **Auto-LF** automatically.
+3. Non-transfer → operator **PR** only → agent arms Anwenden + **`--await-arm`**.
+4. Operator clicks Anwenden / Weiter / Extern / Next → **`--await-arm`** extract → agent **auto** 7-step + Auto-LF again (no RE).
+5. Repeat until **DONE**.
 
-Typical workday start:
-1. **login** (once)
-2. Open / have first case visible in Sprinklr
-3. Type **RE** → push-start: extract + full 7-step RE + **Auto-LF**
-4. Non-transfer → user **PR** → agent arms Anwenden; Transfer → agent already armed Weiter/Extern after Auto-LF
-5. You click Anwenden / Weiter / Weiterleiten / Next → next extract → agent continues (7-step + Auto-LF again)
+**Operator types in normal flow:** **login**, **PR**, close-out clicks, **DONE** — not **RE**, not **LF**.
+
+## Recovery — when user sends **RE** / **re** / **RE SHOW** / **RE FILE**
+
+**Hard rule:** Typed **RE** = **manual re-extract** (`--once`) or visibility recovery — **not** the default path. It must **never** arm Anwenden.
 
 1. Run default RE entrypoint:
    ```powershell
@@ -83,8 +98,8 @@ Typical workday start:
 
 | Command | Behavior |
 |---------|----------|
-| `run.py` / typed **RE** | **Always `--once`** — extract open case now (first case of day, fresh agent, or re-read) |
-| `run.py --once` | Same as above (explicit) |
+| `run.py` / typed **RE** | **Recovery `--once`** — re-read visible case (not normal flow) |
+| `run.py --once` | Same (explicit recovery) |
 | `run.py --arm` | Arm Anwenden (**detached**; after **PR** on EMAIL non-transfer) |
 | `run.py --arm-weiter` | Arm Weiter (**detached**; after transfer Auto-LF / LF TR **queue**) |
 | `run.py --arm-extern` | Arm Extern (**detached**; after transfer Auto-LF / LF TR **email**) |
@@ -94,7 +109,7 @@ Typical workday start:
 
 ## After extract: 7-step + Auto-LF (mandatory)
 
-Every EMAIL extract (typed RE or `--await-arm`):
+Every EMAIL extract (auto after login, `--await-arm`, or recovery `--once`):
 
 1. Full **7-step RE as visible chat text** (sections 1–7 — user must see it without expanding “finished background tasks” / any dropdown)  
 2. **Only then** **`re_complete_sound.py --play-ready`**  
@@ -116,7 +131,7 @@ LF was already done at RE time. When user sends **PR** / **pr** and paste + veri
    ```
    Expect **`ANWENDEN_RE_ARMED`** + **`ARM_WATCH_DETACHED`** + **`READY_FOR_YOUR_CLICK: Anwenden`**.
 2. Chat: `Armed — click Anwenden now.` + `PR done for #FALL_ID` (or `PR LF done` if manual PR LF path).
-3. Then **`--await-arm`** → next case → 7-step + Auto-LF again.
+3. Then **`--await-arm`** → next case → agent **auto** 7-step + Auto-LF (operator does **not** type RE).
 
 **Do not** arm Anwenden at Auto-LF time for non-transfer EMAIL (wait for PR).
 

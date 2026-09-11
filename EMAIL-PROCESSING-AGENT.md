@@ -27,7 +27,8 @@ LANGUAGE: Address ME (the operator) exclusively in ENGLISH in all chat — RE se
 
 COMMANDS:
 - login -> Sprinklr login-only + Case Tracker tab; sets FIRST_RE_ONCE_PENDING. Do NOT arm call_listen (STT/teleprompter parked).
-- RE -> run.py = ALWAYS --once (extract currently open case). First case of the day / fresh agent = typed RE push-start. NEVER arm Anwenden on typed RE.
+- NO TYPED RE in normal flow. Agent AUTO-processes every new EMAIL case: extract -> three-turn 7-step -> Auto-LF. Operator types PR only (plus login, DONE, close-out clicks).
+- Typed RE / run.py --once = RECOVERY ONLY (re-read visible case, await-arm failed). NEVER arm Anwenden on recovery RE.
 - EMAIL RE = THREE TURNS: (1) run.py extract only + RE_TEXT_ONLY_GATE — stop; (2) full 7-step sections 1–7 as TEXT-ONLY message — ZERO tools (no Grep/Task/Read terminals/LF); (3) play-ready + Auto-LF + arms. NEVER explore terminal .txt files. NEVER hide 7-step under “finished background tasks”.
 - If I type RE SHOW / visible RE / RE FILE: recover per EMAIL-PROCESSING-AGENT.md troubleshooting. Backup file: .cursor/state/latest_re_visible.md
 - Section 6 in chat: UTF-8 code block soft-wrapped ~72 chars for vertical reading only. **PR / Sprinklr paste** must stay **mail format** (previous length, encoding, signature layout) — never let chat wraps change the pasted email.
@@ -40,11 +41,11 @@ COMMANDS:
 - CALL: On CHANNEL: CALL → SAME TURN Auto-LF --channel voice (do NOT wait for BRIEF or typed LF) → --arm-next (or weiter/extern if transfer) + await. Quote: LF done for #FALL_ID. Never Anwenden after a call. BRIEF optional for talk-track only.
 - DONE / Done for today -> done_for_today.py; stop watches (including detached); pause until next login
 
-POST-LOGIN / FIRST CASE (push-start):
-- login once → open first case, type RE. Do NOT arm call_listen (STT/teleprompter parked until better model).
-- RE must extract currently open case (--once). Expect MODE: --once + CUSTOMER EMAIL + full 7-step + AUTO-LF.
-- Do NOT arm Anwenden on typed RE. After non-transfer AUTO-LF, wait for PR; after transfer AUTO-LF, arm Weiter/Extern.
-- After PR (or transfer arm click), automation continues via --arm* + --await-arm → next case 7-step + AUTO-LF again.
+POST-LOGIN / FIRST CASE (auto — no RE):
+- login once → open first case. Agent IMMEDIATELY runs run.py --once (FIRST_RE_ONCE_PENDING). Operator does NOT type RE.
+- Expect MODE: --once + CUSTOMER EMAIL + full 7-step + AUTO-LF automatically.
+- Do NOT arm Anwenden on first extract. After non-transfer AUTO-LF, wait for PR; after transfer AUTO-LF, arm Weiter/Extern.
+- After PR (or transfer arm click), --arm* + --await-arm → agent AUTO 7-step + Auto-LF on next case (no RE).
 
 CLOSE-OUT ARMS (do not mix):
 | Trigger | Case type | Arm then await |
@@ -79,7 +80,7 @@ DETACHED ARM (mandatory — fixes false "watch died"):
 - If --await-arm is aborted, re-run --await-arm. Only use --once if ARM_WATCH_LOG has no CUSTOMER EMAIL.
 - NEVER start a second --arm* while one detached watch is still waiting.
 
-CHANNEL DETECT (after every case open — RE --once OR after await-arm extract):
+CHANNEL DETECT (after every case open — auto --once after login OR after await-arm extract):
 - Trust extract stdout: CHANNEL: CALL + CALL_LF_GATE → voice Auto-LF (no 7-step). CHANNEL: EMAIL + CUSTOMER EMAIL → three-turn RE. After arm: sidetray poll (CollapsedPreviewsList, ~0.25s) — EMAIL icons clicked; CALL icons skip click (overlay auto-opens: SIDETRAY_CALL_SKIP_CLICK → SIDETRAY_CALL_AUTO_OPEN); then post-open DOM poll.
 - CALL LISTEN / TELEPROMPTER: PARKED (capture_path.json enabled=false). Do NOT run call_listen --arm or --prime. Expect CALL_LISTEN_DISABLED if tried.
 - EMAIL → MUST write full 7-step RE as VISIBLE chat text (1–7; not behind “finished background tasks”) → play-ready → AUTO-LF → (transfer arm OR wait for PR). Skipping or hiding the 7-step is a hard failure.
@@ -145,7 +146,7 @@ Confirm you loaded this, then wait for my next command (usually login or RE).
 | Step | Command | What |
 |------|---------|------|
 | 1 | **login** | Once per session — sets **`FIRST_RE_ONCE_PENDING`** + Case Tracker tab |
-| 2 | **RE** (typed / first case) | **Always `--once`**: extract → CHANNEL → 7-step + **Auto-LF**. Never arm on typed RE. |
+| 2 | **First case / next case** | Agent **auto** extract → CHANNEL → 7-step + **Auto-LF**. Operator does **not** type **RE**. |
 | 3a | **PR** (EMAIL non-transfer) | Paste → **`--arm`** + **`--await-arm`**; you click **Anwenden** |
 | 3a′ | **CALL** Auto-LF | Voice LF → **`--arm-next`** + **`--await-arm`**; you click exact **Next** |
 | 3b | Transfer Auto-LF (queue) | Transfer Ja → **`--arm-weiter`** + **`--await-arm`**; Transfer → … → **Weiter** |
@@ -157,7 +158,9 @@ Confirm you loaded this, then wait for my next command (usually login or RE).
 
 **Forced modes:** `run.py --once` | `run.py --arm` | `run.py --arm-next` | `run.py --arm-weiter` | `run.py --arm-extern` | `run.py --await-arm`
 
-**Mandatory:** After arm → finishing quote → **`--await-arm`**. Do not wait for typed **RE**. Do not swap arms. Do not stack a second arm while one detached watch is waiting.
+**Mandatory:** After arm → finishing quote → **`--await-arm`**. Agent **auto** 7-step + Auto-LF on extract — operator never types **RE** in normal flow. Do not swap arms. Do not stack a second arm while one detached watch is waiting.
+
+**Operator normal commands:** **login**, **PR**, close-out clicks (Anwenden / Weiter / Next), **DONE** — not **RE**, not **LF**.
 
 ---
 
@@ -166,8 +169,8 @@ Confirm you loaded this, then wait for my next command (usually login or RE).
 | Command | Script |
 |---------|--------|
 | **login** | `uv run python .cursor/skills/sprinklr-email-automation/run_sprinklr_email_automation.py --login-only` |
-| **RE** | `…/run.py` — **always `--once`** (extract open case; push-start / re-read) |
-| **RE once** | `…/run.py --once` |
+| **RE** (recovery) | `…/run.py --once` — re-read visible case only; **not** normal operator command |
+| **RE SHOW / RE FILE** | Re-print 7-step from chat or backup file |
 | **RE arm** | `…/run.py --arm` then **`--await-arm`** (after **PR**) |
 | **RE arm-next** | `…/run.py --arm-next` then **`--await-arm`** (after CALL Auto-LF) |
 | **RE arm-weiter** | `…/run.py --arm-weiter` then **`--await-arm`** (after transfer Auto-LF queue) |
@@ -304,6 +307,31 @@ STILL IN FORCE (no change):
 - English to me / German customer reply; Grok banned; on-demand DISABLED
 
 Confirm: sidetray poll active, no 4s wait, trust SIDETRAY_CHANNEL + CHANNEL stdout. Continue current case — no login restart.
+```
+
+---
+
+## UPDATE — paste to **running** case agent (NO TYPED RE — auto 7-step + Auto-LF)
+
+```
+UPDATE — NO TYPED RE (apply immediately):
+
+Operator does NOT type RE in normal flow. Agent auto-processes every new EMAIL case.
+
+AUTO-TRIGGER (agent runs without RE command):
+- After --await-arm extract (CUSTOMER EMAIL + RE_TEXT_ONLY_GATE)
+- After login when first case is visible (agent runs run.py --once; FIRST_RE_ONCE_PENDING)
+
+AUTO PIPELINE (EMAIL):
+1) Extract (turn A — tools)
+2) Full 7-step visible chat text (turn B — zero tools; draft while reading email from extract)
+3) play-ready → Auto-LF → wait PR or transfer arm (turn C)
+
+OPERATOR NORMAL COMMANDS: login, PR, close-out clicks (Anwenden/Weiter/Next), DONE — NOT RE, NOT LF.
+
+TYPED RE = recovery only (re-read case, await-arm failed, RE SHOW / RE FILE).
+
+Confirm: auto RE on new case; no waiting for operator RE. Continue.
 ```
 
 ---

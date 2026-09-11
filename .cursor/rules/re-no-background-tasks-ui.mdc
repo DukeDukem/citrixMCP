@@ -19,16 +19,24 @@ Cursor collapses **Shell / Grep / Task (subagent)** work into compact rows. Comm
 
 If the 7-step lives only there → **hard failure** for operator UX.
 
+## Auto-start (operator does NOT type RE)
+
+The agent starts turns **A→B→C automatically** when:
+- **`--await-arm`** returns EMAIL extract, or
+- **First case after login** is visible (`FIRST_RE_ONCE_PENDING` → agent runs `--once`).
+
+Do **not** wait for the operator to type **RE** before extract, 7-step, or Auto-LF.
+
 ## Three-turn protocol (EMAIL) — mandatory
 
 | Turn | What | Tools |
 |------|------|-------|
-| **A** | `run.py` / `--await-arm` extract | Extract Shell only |
+| **A** | `run.py --once` (auto after login) or `--await-arm` extract | Extract Shell only |
 | **A end** | Optional one-line ack; **do not** start 1–7 here | Stop when stdout shows **`RE_TEXT_ONLY_GATE`** |
-| **B** | Full **7-step (sections 1–7)** plain chat text | **ZERO** |
+| **B** | Full **7-step (sections 1–7)** plain chat text — draft while processing the email content from extract | **ZERO** |
 | **C** | play-ready → Auto-LF → arm or wait PR | Tools only |
 
-**Hard bans:** No Task/explore; no Read terminals/*.txt or latest_extract before turn B; no tools in the 7-step message; no Auto-LF before turn B visible. Matrix/KB from loaded rules/context while writing turn B.
+**Hard bans:** No Task/explore; no Read terminals/*.txt or latest_extract before turn B; no tools in the 7-step message; no Auto-LF before turn B visible. Matrix/KB from loaded rules/context while writing turn B. **Typed RE is not a gate** — auto-trigger only.
 
 ## Operator recovery
 

@@ -16,13 +16,13 @@ CRITICAL: Fill **ONE** Roberta Case Tracker entry ONLY. Never combine cases.
 
 ## Default: **Auto-LF** (no typed `LF` required)
 
-The agent fills Case Tracker **while processing** each newly opened case. The user does **not** type `LF` / `LF TR` / `PR LF` in the normal flow.
+The agent fills Case Tracker **while processing** each newly opened case. The operator does **not** type **`RE`**, **`LF`**, **`LF TR`**, or **`PR LF`** in the normal flow — agent auto-runs extract + 7-step + Auto-LF on every new EMAIL case.
 
 ### When to Auto-LF
 
 | Channel | When (same agent turn as analysis) | Tracker |
 |---------|--------------------------------------|---------|
-| **EMAIL** | After TransferMatrix decision is known — **only after the full 7-step RE is visible as normal chat text** (not under “finished background tasks”; then play-ready) | E-Mail Care; Transfer **Nein** or **Ja** + target from §3/4a |
+| **EMAIL** | Auto-triggered on new case extract (login / `--await-arm`) — **only after the full 7-step RE is visible as normal chat text** (not under “finished background tasks”; then play-ready). Operator does **not** type **RE** first. | E-Mail Care; Transfer **Nein** or **Ja** + target from §3/4a |
 | **CALL** | As soon as **CHANNEL: CALL** is known (no BRIEF wait) | **`--channel voice`**; Transfer via `resolve_transfer()` / Ziel unless already decided |
 
 ### Order (EMAIL)

@@ -7,12 +7,12 @@
 
 ---
 
-## Email processing (other chat) — current state 2026-09-07
+## Email processing (other chat) — current state 2026-09-11
 
 | Step | Command / trigger | Behavior |
 |------|-------------------|----------|
-| Start | **login** | Sprinklr + Case Tracker; sets first-RE marker |
-| First / push-start | **RE** | Always **`--once`** → 7-step + **Auto-LF**. Never arm Anwenden on typed RE |
+| Start | **login** | Sprinklr + Case Tracker; agent **auto `--once`** on first visible case (no typed **RE**) |
+| New EMAIL case | **`--await-arm` extract** (or post-login auto) | Agent **auto** 7-step + **Auto-LF** — operator does **not** type **RE** |
 | Paste | **PR** | Write reply; then **`--arm`** Anwenden (LF already at RE) |
 | Send (user) | **Senden** → often **Ignorieren und senden** | Grammar gate normal; empty box after send = success, not paste fail |
 | Transfer | Auto-LF at RE | Queue → **`--arm-weiter`**; email `@` → **`--arm-extern`** |

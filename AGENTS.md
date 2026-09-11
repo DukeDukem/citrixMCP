@@ -22,8 +22,8 @@
 
 ## Case commands (email processing chat)
 
-- **login** — Sprinklr + Case Tracker; sets first-RE marker
-- **RE** (typed) — **always `--once`** extract → **three-turn** 7-step (EMAIL) + **Auto-LF**. Never Anwenden arm on typed RE. Recovery: **RE SHOW** / **RE FILE** (`re-no-background-tasks-ui.mdc`).
+- **login** — Sprinklr + Case Tracker; agent **auto `--once`** on first visible case (no typed **RE**)
+- **New EMAIL case** — agent **auto** extract → **three-turn** 7-step + **Auto-LF** after `--await-arm` or post-login. Operator types **PR** only (not **RE**). Recovery: typed **RE** / **RE SHOW** / **RE FILE** (`re-no-background-tasks-ui.mdc`).
 - **PR** (EMAIL non-transfer) — paste reply (LF already done at RE) → **`--arm`** → Anwenden → **`--await-arm`**
 - **Auto-LF transfer** — during RE when §3 says transfer → Transfer Ja fill → **`--arm-weiter`** / **`--arm-extern`** (no typed LF TR needed)
 - **CALL** — on CHANNEL detect → Auto-LF voice → **`--arm-next`** (BRIEF optional; not required for LF)
