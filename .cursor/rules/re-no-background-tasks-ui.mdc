@@ -1,73 +1,134 @@
 ---
-description: HARD — EMAIL 7-step RE never under Cursor background-task menus; extract → text-only 7-step → then tools.
+description: HARD — ALL agent output visible in chat at all times; no dropdowns, no collapsed tasks, no background-task panels. Extract + 7-step always as plain chat text for every Fall #.
 alwaysApply: true
 priority: CRITICAL
 ---
 
-# HARD FIX — RE visibility (no background-task menus)
+# HARD — Full chat visibility (no dropdowns, no collapsed output)
 
-**Scope:** Email processing chat (`EMAIL-PROCESSING-AGENT.md`). Overrides convenience parallel-tool habits for EMAIL RE.
+**Scope:** Email processing chat (`EMAIL-PROCESSING-AGENT.md`). Overrides all convenience parallel-tool habits.
 
-## Why “Finished N background tasks” / “Explored ….txt” appears
+## Global rule — everything visible, always (operator demand)
 
-Cursor collapses **Shell / Grep / Task (subagent)** work into compact rows. Common EMAIL RE triggers:
+**Every piece of agent output — extracts, processing steps, 7-step RE, status messages, all communication with the operator — must appear as plain visible text in the main chat thread.**
 
-1. **explore/Task** reading terminal capture files (`Explored 450519.txt`)
+### Banned forever (any case, any turn)
+
+- **Dropdown menus** / collapsed "Finished N background tasks" panels hiding any case content
+- **Task / explore subagent output** used as the delivery vehicle for RE, extract, or operator messages
+- **Tool-result-only output** — if the operator can only see content by expanding a tool dropdown, it failed
+- **"background tasks" panels** containing extract or 7-step text the operator must click to open
+- **Any agent turn** where all substantive content is inside collapsed UI and the visible chat shows only a one-liner or nothing
+
+**If it requires a click to expand → it does not exist for the operator. Rewrite as visible chat prose immediately.**
+
+### Past cases
+
+All prior Fall # extracts and 7-steps hidden in dropdowns are **lost from the operator's view** and cannot be recovered by scrolling collapsed panels. That is the failure mode this rule permanently prevents. Every Fall # from now on gets its own fully visible block in the main chat — no exceptions, no matter how many cases are processed in a session.
+
+---
+
+## Mandatory visible paste (EMAIL) — EVERY CASE, EVERY TIME
+
+**Applies to every Fall # forever:** case 1 after login, case 2+, case 100+, after Anwenden, after Weiter/Extern/Next, after `--await-arm`, after typed **RE**, after sidetray click — **EVERY EMAIL case**.
+
+There is **no** "sometimes", **no** "only when recovery", **no** "operator already knows", **no** "file on disk is enough".
+
+After **each** EMAIL extract for **each** new Fall #:
+
+The assistant message that follows extract tools in **this chat** MUST contain, as **plain visible markdown** (no tools):
+
+1. **`CHANNEL: EMAIL`** + **this** Fall #
+2. **Extract block** — paste the **CUSTOMER EMAIL** from script stdout (Fall #, Subject, From, Body). Include short thread context if the newest inbound alone is incomplete. **Do not** tell the operator to open `latest_extract.md` instead of pasting.
+3. **Full 7-step RE** — sections **1–7** in the **same** message
+
+**Every case. Every time. Zero exceptions. Zero delay. Zero waiting for the operator to ask where it is.**
+
+Prior cases' extracts/7-steps do **not** count. A new Fall # = paste extract + 7-step again for **that** Fall #.
+
+### Forbidden post-extract chat (hard ban)
+
+Do **NOT** send only lines like:
+
+- `CHANNEL: EMAIL — Fall #…. extracted. Full 7-step next.`
+- `Extract done — writing RE…`
+- `RE_TEXT_ONLY_GATE — next message = 7-step`
+- Any ack that **promises** the extract/7-step without **pasting** them
+
+If those words appear without the extract + sections 1–7 in the **same** visible message → **you failed**. Fix immediately: paste extract + full 7-step now.
+
+### Also forbidden
+
+1. **explore/Task** reading terminal capture files (`Explored ….txt`)
 2. **Read** of `.cursor/projects/.../terminals/*.txt` instead of `run.py` Shell stdout
-3. **Tools + 7-step in one message**
-4. **7-step only inside tool output**
+3. **Tools + 7-step in one message** (hides under background tasks)
+4. **7-step / extract only inside tool output**
+5. Stopping after extract and idling until the operator types again
 
-If the 7-step lives only there → **hard failure** for operator UX.
-
-## Auto-start (operator does NOT type RE)
+## Auto-start (operator does NOT type RE for case 2+)
 
 The agent starts turns **A→B→C automatically** when:
 - **`--await-arm`** returns EMAIL extract, or
-- **First case after login** is visible (`FIRST_RE_ONCE_PENDING` → agent runs `--once`).
+- **First case after login** is visible (`FIRST_RE_ONCE_PENDING` → agent runs `--once`), or
+- Operator types **RE** (first case / recovery)
 
-Do **not** wait for the operator to type **RE** before extract, 7-step, or Auto-LF.
+Do **not** wait for the operator to type **RE** before extract, extract-paste, 7-step, or Auto-LF (except first-case **RE** after login per operator-minimal-input).
 
 ## Immediate post–sidetray-click (EMAIL)
 
 When stdout shows **`CASE_ITEM_AUTO_CLICKED`** + **`SIDETRAY_EMAIL_PROCESSING_IMMEDIATE`**:
 
 1. Script already clicked the new EMAIL sidetray item and is extracting **in the same automation run**.
-2. Agent runs **`--await-arm`** (if not already in that turn) and on **`DETACHED_ARM_EXTRACT_READY`** / **`RE_TEXT_ONLY_GATE`** **immediately** continues turn B (7-step) — **no pause**, no “waiting for RE”, no extra operator message.
+2. On **`DETACHED_ARM_EXTRACT_READY`** / **`RE_TEXT_ONLY_GATE`**: **immediately** turn B = **paste extract + full 7-step** — **no pause**, no "waiting for RE", no extra operator message.
 3. Turn C (play-ready + Auto-LF) follows as soon as turn B is visible in chat.
 
-**Hard ban:** Stopping after sidetray click or extract without writing the 7-step + Auto-LF for that Fall #.
+**Hard ban:** Stopping after sidetray click or extract without pasting extract + 7-step + Auto-LF for that Fall #.
 
 ## Three-turn protocol (EMAIL) — mandatory
 
 | Turn | What | Tools |
 |------|------|-------|
-| **A** | `run.py --once` (auto after login) or `--await-arm` extract | Extract Shell only |
-| **A end** | Optional one-line ack; **do not** start 1–7 here | Stop when stdout shows **`RE_TEXT_ONLY_GATE`** |
-| **B** | Full **7-step (sections 1–7)** plain chat text — draft while processing the email content from extract | **ZERO** |
+| **A** | `run.py --once` or `--await-arm` extract | Extract Shell **only**. **No** operator-facing chat prose (no "extracted / next" one-liner). |
+| **B** | **Paste CUSTOMER EMAIL extract** + full **7-step (1–7)** as plain chat text | **ZERO** tools |
 | **C** | play-ready → Auto-LF → arm or wait PR | Tools only |
 
-**Hard bans:** No Task/explore; no Read terminals/*.txt or latest_extract before turn B; no tools in the 7-step message; no Auto-LF before turn B visible. Matrix/KB from loaded rules/context while writing turn B. **Typed RE is not a gate** — auto-trigger only.
+**Hard bans:** No Task/explore; no Read terminals/*.txt before turn B; no tools in the turn-B message; no Auto-LF before turn B visible; no one-liner instead of turn B. Matrix/KB from loaded rules/context while writing turn B. **Typed RE is not a gate for case 2+** — auto-trigger only.
+
+**Turn B micro-template (order):**
+
+```
+CHANNEL: EMAIL
+Fall #…
+
+### Extract (visible)
+[paste Subject / From / Body from CUSTOMER EMAIL stdout]
+
+### 1. Case summary
+…
+### 7. Summary of response
+…
+```
 
 ## Operator recovery
 
 | Operator types | Agent / system |
 |----------------|----------------|
-| **`RE SHOW`** / **`visible RE`** | Re-print full 7-step as **plain main-chat text** (no “it’s in the menu”) |
+| **`RE SHOW`** / **`visible RE`** | Re-print **extract + full 7-step** as **plain main-chat text** |
 | **`RE FILE`** | Run `uv run python .cursor/skills/sprinklr-read-answer-email/show_latest_re.py` |
-| **Open file** | `.cursor/state/latest_re_visible.md` or `latest_extract.md` |
+| **Open file** | `.cursor/state/latest_re_visible.md` or `latest_extract.md` (backup only — never a substitute for pasting) |
 
 **Auto picker** often spawns explore → switch to **Composer 2.5** or **Sonnet** (named) if trays persist.
 
 ## Agent self-recovery
 
-If tools/Auto-LF already ran with **no** visible 7-step for this Fall # in the main thread:
+If tools/Auto-LF already ran with **no** visible extract + 7-step for this Fall # in the main thread:
 
-1. **STOP** further close-out  
-2. Output the **full 7-step now** as plain chat text  
+1. **STOP** further close-out
+2. Output **extract + full 7-step now** as plain chat text
 3. Continue play-ready / Auto-LF / PR / arms (skip duplicate LF if already done)
 
 ## Related
 
-- `.cursor/rules/re-read-email.mdc` — RE entry + Auto-LF order  
-- `EMAIL-PROCESSING-AGENT.md` — troubleshooting + GO block  
-- `run.py` → `RE_TEXT_ONLY_GATE` after extract  
+- `.cursor/rules/re-read-email.mdc` — RE entry + Auto-LF order
+- `EMAIL-PROCESSING-AGENT.md` — troubleshooting + GO block
+- `run.py` → `RE_TEXT_ONLY_GATE` after extract
