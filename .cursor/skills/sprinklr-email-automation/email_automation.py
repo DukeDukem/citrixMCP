@@ -134,6 +134,10 @@ class EmailAutomation:
         self._leave_page_unchanged = False
         # Hard anti-repaste guard: allow only one editor write per process run.
         self._reply_write_invoked = False
+        # Pre-open hint from CollapsedPreviewsList sidetray icon (CALL vs EMAIL).
+        self._sidetray_channel_hint: Optional[str] = None
+        # True when last sidetray path skipped click (CALL auto-opens overlay).
+        self._sidetray_skip_click: bool = False
 
     def _load_processed_case_ids(self) -> set:
         """Load previously processed case IDs from file"""
@@ -4670,7 +4674,34 @@ Use cursor-agent's file reading capabilities to read these files before generati
         '[data-tracker-event-id="@macro/editableMacroBox/UNIVERSAL_CASE"]'
     )
     _COLLAPSED_CASE_ITEM_SELECTOR = 'button[data-testid="collapsed-case-item"]'
-    _ANWENDEN_RE_WAIT_SECONDS = 4
+    _SIDETRAY_LIST_SELECTOR = '[data-entityid="CollapsedPreviewsList"]'
+    _SIDETRAY_ITEM_SCOPED = (
+        '[data-entityid="CollapsedPreviewsList"] button[data-testid="collapsed-case-item"]'
+    )
+    _SIDETRAY_POLL_S = 0.25
+    _SIDETRAY_SETTLE_TIMEOUT_S = 30.0
+    # Legacy — fixed pre-click delay replaced by sidetray polling (kept for CLI compat).
+    _ANWENDEN_RE_WAIT_SECONDS = 0
+    _SIDETRAY_PROBE_JS = """() => {
+  const root = document.querySelector('[data-entityid="CollapsedPreviewsList"]');
+  const buttons = root
+    ? root.querySelectorAll('button[data-testid="collapsed-case-item"]')
+    : document.querySelectorAll('button[data-testid="collapsed-case-item"]');
+  const items = [];
+  buttons.forEach((el, index) => {
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const style = window.getComputedStyle(el);
+    if (style.visibility === 'hidden' || style.display === 'none') return;
+    const aria = el.getAttribute('aria-label') || '';
+    let iconName = '';
+    el.querySelectorAll('svg[data-icon-name]').forEach((ic) => {
+      if (!iconName) iconName = ic.getAttribute('data-icon-name') || '';
+    });
+    items.push({ index, aria, iconName });
+  });
+  return { trayFound: !!root, count: items.length, items };
+}"""
     _WAIT_ANWENDEN_CLICK_JS = """
 () => {
   if (window.__anwendenReArmed) return true;
@@ -5109,81 +5140,246 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 last_heartbeat = now
             time.sleep(poll_seconds)
 
+    @staticmethod
+    def _sidetray_icon_to_channel(icon_name: str) -> str:
+        """Map sidetray badge icon to CALL / EMAIL / unknown."""
+        name = (icon_name or "").strip()
+        if not name:
+            return "unknown"
+        if "Voice" in name or name == "BrandVoiceCircleClr":
+            return "call"
+        if any(token in name for token in ("Email", "Mail", "Message", "Envelope", "Chat")):
+            return "email"
+        return "unknown"
+
+    def _probe_sidetray(self) -> dict:
+        """Read CollapsedPreviewsList items (aria + badge icon) without clicking."""
+        try:
+            self._reattach_sprinklr_page_no_steal()
+            raw = self.page.evaluate(self._SIDETRAY_PROBE_JS)
+        except Exception as e:
+            logger.debug(f"Sidetray probe failed: {e}")
+            return {"trayFound": False, "count": 0, "items": [], "error": str(e)}
+
+        if not isinstance(raw, dict):
+            return {"trayFound": False, "count": 0, "items": []}
+
+        items = []
+        for entry in raw.get("items") or []:
+            if not isinstance(entry, dict):
+                continue
+            aria = str(entry.get("aria") or "")
+            icon_name = str(entry.get("iconName") or "")
+            channel = self._sidetray_icon_to_channel(icon_name)
+            fall_digits = self._fall_digits(self.extract_case_id(aria) or aria)
+            items.append(
+                {
+                    "index": int(entry.get("index") or 0),
+                    "aria": aria,
+                    "iconName": icon_name,
+                    "channel": channel,
+                    "fallDigits": fall_digits,
+                }
+            )
+        return {
+            "trayFound": bool(raw.get("trayFound")),
+            "count": len(items),
+            "items": items,
+        }
+
+    def _sidetray_locator_for_index(self, index: int):
+        """Prefer CollapsedPreviewsList-scoped item; fall back to global sidebar."""
+        scoped = self.page.locator(self._SIDETRAY_ITEM_SCOPED)
+        try:
+            if scoped.count() > index:
+                return scoped.nth(index)
+        except Exception:
+            pass
+        return self.page.locator(self._COLLAPSED_CASE_ITEM_SELECTOR).nth(index)
+
+    def _sidetray_case_open_ready(
+        self,
+        *,
+        exclude_fall_digits: Optional[str],
+        expected_fall_digits: Optional[str] = None,
+        channel_hint: str = "unknown",
+    ) -> bool:
+        """True when a new case is open (CALL overlay auto-open or EMAIL after click)."""
+        try:
+            opened = self._fall_digits(self._get_case_id_from_page_header())
+        except Exception:
+            opened = None
+
+        if opened and exclude_fall_digits and opened == exclude_fall_digits:
+            return False
+        if opened:
+            if expected_fall_digits and opened != expected_fall_digits:
+                return False
+            return True
+
+        if channel_hint == "call":
+            try:
+                if self._detect_case_channel_once() == "call":
+                    return True
+            except Exception:
+                pass
+        return False
+
+    def _wait_for_sidetray_case_open(
+        self,
+        *,
+        exclude_fall_digits: Optional[str],
+        expected_fall_digits: Optional[str] = None,
+        channel_hint: str = "call",
+        timeout_s: float = 10.0,
+    ) -> bool:
+        """Poll until CALL overlay (or header) shows the new case without sidetray click."""
+        deadline = time.time() + max(1.0, float(timeout_s))
+        while time.time() < deadline:
+            self._reattach_sprinklr_page_no_steal()
+            if self._sidetray_case_open_ready(
+                exclude_fall_digits=exclude_fall_digits,
+                expected_fall_digits=expected_fall_digits,
+                channel_hint=channel_hint,
+            ):
+                return True
+            time.sleep(self._SIDETRAY_POLL_S)
+        return False
+
     def _click_first_collapsed_case_item(
         self,
         exclude_fall_digits: Optional[str] = None,
-        settle_timeout_s: float = 25.0,
-        poll_s: float = 0.75,
+        settle_timeout_s: float | None = None,
+        poll_s: float | None = None,
     ) -> bool:
         """
-        Click the next sidebar collapsed-case-item after Anwenden/Weiter/Extern.
+        Poll CollapsedPreviewsList until a new collapsed-case-item appears.
 
-        Skips items whose aria-label still shows the just-closed/transferred Fall #
-        (common after Extern Weiterleiten — stale first item is the same case).
-        Polls until a different item appears or timeout.
+        EMAIL: click the sidetray icon to open the case.
+        CALL: do NOT click — call overlay opens automatically; wait until case is visible.
+        Monitoring always runs for both channel types.
         """
+        self._sidetray_skip_click = False
         exclude = self._fall_digits(exclude_fall_digits) if exclude_fall_digits else None
         if exclude is None and exclude_fall_digits:
             exclude = self._fall_digits(str(exclude_fall_digits))
-        deadline = time.time() + max(5.0, float(settle_timeout_s))
+        timeout_s = (
+            self._SIDETRAY_SETTLE_TIMEOUT_S
+            if settle_timeout_s is None
+            else max(5.0, float(settle_timeout_s))
+        )
+        poll_interval = self._SIDETRAY_POLL_S if poll_s is None else max(0.1, float(poll_s))
+        deadline = time.time() + timeout_s
         last_log = 0.0
+        saw_empty = False
+        watch_started = False
 
         while time.time() < deadline:
-            self._reattach_sprinklr_page_no_steal()
-            try:
-                locs = self.page.locator(self._COLLAPSED_CASE_ITEM_SELECTOR)
-                n = locs.count()
-            except Exception as e:
-                logger.debug(f"collapsed-case-item count: {e}")
-                n = 0
+            if not watch_started:
+                print("SIDETRAY_WATCH_ARMED", flush=True)
+                print(
+                    f"[INFO] Polling {self._SIDETRAY_LIST_SELECTOR} for next case "
+                    f"(interval {poll_interval:.2f}s, timeout {timeout_s:.0f}s)…",
+                    flush=True,
+                )
+                if exclude:
+                    print(f"Will skip closed/transferred Fall #{exclude} in sidebar.", flush=True)
+                print(
+                    "[INFO] EMAIL sidetray icons will be clicked; CALL icons skip click "
+                    "(overlay auto-opens).",
+                    flush=True,
+                )
+                watch_started = True
 
-            for i in range(n):
+            probe = self._probe_sidetray()
+            count = int(probe.get("count") or 0)
+
+            if count == 0 and not saw_empty:
+                print("SIDETRAY_EMPTY", flush=True)
+                saw_empty = True
+
+            for item in probe.get("items") or []:
+                aria = str(item.get("aria") or "")
+                item_digits = str(item.get("fallDigits") or "")
+                icon_name = str(item.get("iconName") or "")
+                channel = str(item.get("channel") or "unknown")
+                idx = int(item.get("index") or 0)
+
+                if exclude and item_digits and item_digits == exclude:
+                    now = time.time()
+                    if now - last_log >= 3.0:
+                        print(
+                            f"[INFO] Skipping closed Fall #{exclude} in sidetray "
+                            f"(aria-label={aria!r}) — waiting for a different case…",
+                            flush=True,
+                        )
+                        last_log = now
+                    continue
+
                 try:
-                    loc = locs.nth(i)
+                    loc = self._sidetray_locator_for_index(idx)
                     if not loc.is_visible(timeout=800):
                         continue
-                    aria = ""
-                    try:
-                        aria = loc.get_attribute("aria-label") or ""
-                    except Exception:
-                        pass
-                    item_digits = self._fall_digits(self.extract_case_id(aria) or aria)
-                    if exclude and item_digits and item_digits == exclude:
-                        now = time.time()
-                        if now - last_log >= 3.0:
-                            print(
-                                f"[INFO] Skipping closed Fall #{exclude} in sidebar "
-                                f"(aria-label={aria!r}) — waiting for a different case…",
-                                flush=True,
-                            )
-                            last_log = now
-                        continue
-                    loc.click(timeout=8000)
-                    print("CASE_ITEM_AUTO_CLICKED", flush=True)
-                    if aria:
-                        print(f"aria-label: {aria}", flush=True)
-                    if exclude:
-                        print(f"excluded_closed_fall: #{exclude}", flush=True)
-                    return True
                 except Exception as e:
-                    logger.debug(f"collapsed-case-item nth({i}) click try: {e}")
+                    logger.debug(f"sidetray item index {idx} visibility: {e}")
                     continue
+
+                self._sidetray_channel_hint = channel if channel in ("call", "email") else None
+                channel_label = channel.upper() if channel in ("call", "email") else "UNKNOWN"
+                print(f"SIDETRAY_CHANNEL: {channel_label}", flush=True)
+                if icon_name:
+                    print(f"sidetray_icon: {icon_name}", flush=True)
+                if aria:
+                    print(f"sidetray_aria: {aria}", flush=True)
+
+                if channel == "call":
+                    print("SIDETRAY_CALL_SKIP_CLICK", flush=True)
+                    print(
+                        "[INFO] CALL sidetray detected — waiting for auto-open overlay "
+                        "(no sidetray click).",
+                        flush=True,
+                    )
+                    remaining = max(1.0, deadline - time.time())
+                    if self._wait_for_sidetray_case_open(
+                        exclude_fall_digits=exclude,
+                        expected_fall_digits=item_digits or None,
+                        channel_hint="call",
+                        timeout_s=min(10.0, remaining),
+                    ):
+                        self._sidetray_skip_click = True
+                        print("SIDETRAY_CALL_AUTO_OPEN", flush=True)
+                        if exclude:
+                            print(f"excluded_closed_fall: #{exclude}", flush=True)
+                        return True
+                    continue
+
+                try:
+                    loc.click(timeout=8000)
+                except Exception as e:
+                    logger.debug(f"sidetray item click index {idx}: {e}")
+                    continue
+
+                self._sidetray_skip_click = False
+                print("CASE_ITEM_AUTO_CLICKED", flush=True)
+                if exclude:
+                    print(f"excluded_closed_fall: #{exclude}", flush=True)
+                return True
 
             now = time.time()
             if now - last_log >= 3.0:
                 print(
-                    f"[INFO] Waiting for next collapsed-case-item"
+                    "[INFO] Sidetray watch: waiting for new collapsed-case-item"
                     + (f" (not Fall #{exclude})" if exclude else "")
                     + "…",
                     flush=True,
                 )
                 last_log = now
-            time.sleep(poll_s)
+            time.sleep(poll_interval)
 
         print(
             "[ERROR] No next-case collapsed-case-item found"
             + (f" (still only Fall #{exclude}?)" if exclude else "")
-            + f" within {settle_timeout_s:.0f}s.",
+            + f" within {timeout_s:.0f}s.",
             flush=True,
         )
         print("ERROR: NEXT CASE NOT OPEN — run run.py --once", flush=True)
@@ -5193,25 +5389,23 @@ Use cursor-agent's file reading capabilities to read these files before generati
         self,
         *,
         closed_fall: Optional[str],
-        delay_s: float,
+        delay_s: float | None = None,
         mode_label: str,
         extract_done_marker: str,
     ) -> bool:
         """
-        Shared post-trigger path: wait → click next case (skip closed Fall) → extract.
-        Returns True on successful extract. On failure prints recovery and returns False
-        (caller should stop re-arming the same transfer click).
+        Shared post-trigger path: sidetray poll → EMAIL click / CALL auto-open → extract.
+
+        No fixed pre-click delay — polls CollapsedPreviewsList from arm trigger until a
+        new collapsed-case-item appears (see _click_first_collapsed_case_item).
+        delay_s is ignored (legacy CLI compat only).
         """
         closed_digits = self._fall_digits(closed_fall)
-        print(f"Waiting {delay_s}s before looking for next case...", flush=True)
-        if closed_digits:
-            print(f"Will skip closed/transferred Fall #{closed_digits} in sidebar.", flush=True)
-        time.sleep(delay_s)
+        if delay_s and float(delay_s) > 0:
+            logger.debug("Ignoring legacy delay_s=%s — sidetray watch is active", delay_s)
 
-        # Extra settle: poll for a different case item (not just first .first)
         if not self._click_first_collapsed_case_item(
             exclude_fall_digits=closed_digits,
-            settle_timeout_s=25.0,
         ):
             print(
                 f"[ERROR] {mode_label}: next-case click failed. "
@@ -5237,10 +5431,13 @@ Use cursor-agent's file reading capabilities to read these files before generati
             except Exception:
                 opened = None
 
+            skip_click = getattr(self, "_sidetray_skip_click", False)
             if state == "console" or not opened:
+                action = "sidetray watch" if skip_click else "next-case click"
                 print(
-                    f"[WARN] After click: state={state} opened_fall={opened or 'none'} "
-                    f"(attempt {attempt}/3) — retrying next-case click…",
+                    f"[WARN] After {'auto-open' if skip_click else 'click'}: "
+                    f"state={state} opened_fall={opened or 'none'} "
+                    f"(attempt {attempt}/3) — retrying {action}…",
                     flush=True,
                 )
             elif closed_digits and opened == closed_digits:
@@ -5307,20 +5504,21 @@ Use cursor-agent's file reading capabilities to read these files before generati
         """
         Click-gated auto-RE:
         1. Wait for user left-click on Anwenden (validateMacro / UNIVERSAL_CASE)
-        2. Wait wait_seconds (default 3)
-        3. Click first visible collapsed-case-item
-        4. Extract current case (extract-only) for 7-step RE
+        2. Poll CollapsedPreviewsList sidetray until new collapsed-case-item appears
+        3. Click that item (skip closed Fall #)
+        4. Extract current case (extract-only) for 7-step RE / CALL_LF_GATE
         """
-        delay = self._ANWENDEN_RE_WAIT_SECONDS if wait_seconds is None else max(0, int(wait_seconds))
-        logger.info("Starting Anwenden-gated auto-RE (wait=%ss after click)", delay)
+        if wait_seconds and int(wait_seconds) > 0:
+            logger.debug("Ignoring legacy wait_seconds=%s — sidetray watch active", wait_seconds)
+        logger.info("Starting Anwenden-gated auto-RE (sidetray poll after click)")
         print("\n" + "=" * 80, flush=True)
         print("ANWENDEN -> AUTO-RE ARMED", flush=True)
         print("1. Left-click Anwenden on Sprinklr:", flush=True)
         print('     button[data-action-id="validateMacro"]', flush=True)
         print('     data-tracker-event-id="@macro/editableMacroBox/UNIVERSAL_CASE"', flush=True)
-        print(f"2. Script waits {delay}s, then clicks:", flush=True)
-        print(f'     {self._COLLAPSED_CASE_ITEM_SELECTOR}', flush=True)
-        print("3. Extract email -> agent runs 7-step RE", flush=True)
+        print("2. Script polls sidetray (CollapsedPreviewsList) until next case icon:", flush=True)
+        print(f'     {self._SIDETRAY_ITEM_SCOPED}', flush=True)
+        print("3. Extract -> CHANNEL detect -> agent 7-step RE or CALL Auto-LF", flush=True)
         print("Ctrl+C to cancel. Manual extract: run.py --once", flush=True)
         print("=" * 80 + "\n", flush=True)
         print("ANWENDEN_RE_ARMED", flush=True)
@@ -5356,7 +5554,6 @@ Use cursor-agent's file reading capabilities to read these files before generati
 
                 if self._open_next_case_and_extract(
                     closed_fall=closed_fall_remembered,
-                    delay_s=delay,
                     mode_label="Anwenden",
                     extract_done_marker="ANWENDEN_RE_EXTRACT_DONE",
                 ):
@@ -5415,12 +5612,12 @@ Use cursor-agent's file reading capabilities to read these files before generati
         Transfer-gated auto-RE (LF TR):
         User completes transfer UI clicks 1–3 manually; script reacts only to final "Weiter" (4/4).
         1. Wait for user left-click on exact label Weiter (guidedWorkflow/runner/screenButton)
-        2. Wait wait_seconds (default 3)
-        3. Click first visible collapsed-case-item
-        4. Extract current case (extract-only) for 7-step RE
+        2. Poll sidetray until new collapsed-case-item (skip closed Fall)
+        3. Click item → extract
         """
-        delay = self._ANWENDEN_RE_WAIT_SECONDS if wait_seconds is None else max(0, int(wait_seconds))
-        logger.info("Starting Weiter-gated auto-RE (wait=%ss after final Weiter)", delay)
+        if wait_seconds and int(wait_seconds) > 0:
+            logger.debug("Ignoring legacy wait_seconds=%s — sidetray watch active", wait_seconds)
+        logger.info("Starting Weiter-gated auto-RE (sidetray poll after final Weiter)")
         print("\n" + "=" * 80, flush=True)
         print("WEITER -> AUTO-RE ARMED (transfer / LF TR)", flush=True)
         print("You click the transfer path yourself (script ignores steps 1-3):", flush=True)
@@ -5431,9 +5628,9 @@ Use cursor-agent's file reading capabilities to read these files before generati
         print("Trigger button:", flush=True)
         print('     button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]', flush=True)
         print('     exact label: Weiter  (NOT Weiterleiten / Weiteleiten)', flush=True)
-        print(f"After final Weiter: wait {delay}s, then click:", flush=True)
-        print(f'     {self._COLLAPSED_CASE_ITEM_SELECTOR}', flush=True)
-        print("Then extract email -> agent runs 7-step RE", flush=True)
+        print("After final Weiter: poll sidetray (EMAIL click / CALL auto-open):", flush=True)
+        print(f'     {self._SIDETRAY_ITEM_SCOPED}', flush=True)
+        print("Then extract -> CHANNEL detect -> agent 7-step RE or CALL Auto-LF", flush=True)
         print("Ctrl+C to cancel. Manual extract: run.py --once", flush=True)
         print("=" * 80 + "\n", flush=True)
         print("WEITER_RE_ARMED", flush=True)
@@ -5468,7 +5665,6 @@ Use cursor-agent's file reading capabilities to read these files before generati
 
                 if self._open_next_case_and_extract(
                     closed_fall=closed_fall_remembered,
-                    delay_s=delay,
                     mode_label="Weiter",
                     extract_done_marker="WEITER_RE_EXTRACT_DONE",
                 ):
@@ -5530,23 +5726,23 @@ Use cursor-agent's file reading capabilities to read these files before generati
         External-email transfer-gated auto-RE (LF TR with email target):
         User clicks Externer Transfer manually; script reacts only to final "Weiterleiten" (2/3).
         1. Wait for user left-click on exact label Weiterleiten (guidedWorkflow/runner/screenButton)
-        2. Wait wait_seconds (default 3)
-        3. Click first visible collapsed-case-item → extract
+        2. Poll sidetray until new collapsed-case-item → click → extract
         """
-        delay = self._ANWENDEN_RE_WAIT_SECONDS if wait_seconds is None else max(0, int(wait_seconds))
-        logger.info("Starting Extern-gated auto-RE (wait=%ss after Weiterleiten)", delay)
+        if wait_seconds and int(wait_seconds) > 0:
+            logger.debug("Ignoring legacy wait_seconds=%s — sidetray watch active", wait_seconds)
+        logger.info("Starting Extern-gated auto-RE (sidetray poll after Weiterleiten)")
         print("\n" + "=" * 80, flush=True)
         print("EXTERN -> AUTO-RE ARMED (email transfer / LF TR)", flush=True)
         print("You click the external transfer path yourself (script ignores step 1):", flush=True)
         print("  1/3 Externer Transfer   (GuidedAction) — IGNORE", flush=True)
         print("  2/3 Weiterleiten        <-- ONLY this click arms the next-case extract", flush=True)
-        print("  3/3 script: wait → collapsed-case-item → extract", flush=True)
+        print("  3/3 script: sidetray poll → collapsed-case-item → extract", flush=True)
         print("Trigger button:", flush=True)
         print('     button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]', flush=True)
         print('     exact label: Weiterleiten  (NOT Weiter / Weiteleiten)', flush=True)
-        print(f"After Weiterleiten: wait {delay}s, then click:", flush=True)
-        print(f'     {self._COLLAPSED_CASE_ITEM_SELECTOR}', flush=True)
-        print("Then extract email -> agent runs 7-step RE", flush=True)
+        print("After Weiterleiten: poll sidetray (EMAIL click / CALL auto-open):", flush=True)
+        print(f'     {self._SIDETRAY_ITEM_SCOPED}', flush=True)
+        print("Then extract -> CHANNEL detect -> agent 7-step RE or CALL Auto-LF", flush=True)
         print("Ctrl+C to cancel. Manual extract: run.py --once", flush=True)
         print("=" * 80 + "\n", flush=True)
         print("EXTERN_RE_ARMED", flush=True)
@@ -5582,7 +5778,6 @@ Use cursor-agent's file reading capabilities to read these files before generati
 
                 if self._open_next_case_and_extract(
                     closed_fall=closed_fall_remembered,
-                    delay_s=delay,
                     mode_label="Extern",
                     extract_done_marker="EXTERN_RE_EXTRACT_DONE",
                 ):
@@ -5707,16 +5902,17 @@ Use cursor-agent's file reading capabilities to read these files before generati
         User finishes disposition UI; script reacts only to exact label "Next"
         on button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"].
         """
-        delay = self._ANWENDEN_RE_WAIT_SECONDS if wait_seconds is None else max(0, int(wait_seconds))
-        logger.info("Starting Next-gated auto-RE (wait=%ss after Next)", delay)
+        if wait_seconds and int(wait_seconds) > 0:
+            logger.debug("Ignoring legacy wait_seconds=%s — sidetray watch active", wait_seconds)
+        logger.info("Starting Next-gated auto-RE (sidetray poll after Next)")
         print("\n" + "=" * 80, flush=True)
         print("NEXT -> AUTO-RE ARMED (call disposition / CALL LF)", flush=True)
         print("Trigger button (left-click):", flush=True)
         print('     button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]', flush=True)
         print('     data-testid="button"', flush=True)
         print('     exact label: Next  (NOT Back / Weiter / Weiterleiten)', flush=True)
-        print(f"After Next: wait {delay}s, then click next case (skip closed Fall):", flush=True)
-        print(f'     {self._COLLAPSED_CASE_ITEM_SELECTOR}', flush=True)
+        print("After Next: poll sidetray (EMAIL click / CALL auto-open; skip closed Fall):", flush=True)
+        print(f'     {self._SIDETRAY_ITEM_SCOPED}', flush=True)
         print("Then extract -> agent CHANNEL detect (CALL vs EMAIL)", flush=True)
         print("Ctrl+C to cancel. Manual extract: run.py --once", flush=True)
         print("=" * 80 + "\n", flush=True)
@@ -5752,7 +5948,6 @@ Use cursor-agent's file reading capabilities to read these files before generati
 
                 if self._open_next_case_and_extract(
                     closed_fall=closed_fall_remembered,
-                    delay_s=delay,
                     mode_label="Next",
                     extract_done_marker="NEXT_RE_EXTRACT_DONE",
                 ):
@@ -5776,7 +5971,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
         Process the current page once: if on email content page, extract and optionally reply; if on console, process first visible email. Then exit (no monitoring).
         When extract_only=True: only print the customer email to stdout and exit (no AI, no KB, no suggested reply in script). Cursor then queries KB and writes reply in chat.
         When chat_only=True: extract, query AI, print summary + suggested reply to stdout; do not write to editor.
-        When cue_on_extract_start=True (armed Anwenden/Weiter/Extern): play Prowler only after CUSTOMER EMAIL extract is fully printed (not after the 4s wait).
+        When cue_on_extract_start=True (armed Anwenden/Weiter/Extern): play Prowler only after CUSTOMER EMAIL extract is fully printed (not before sidetray click).
         Returns True if an email was processed, False otherwise.
         """
         logger.info("Process-current-only: detecting page state (no navigation)...")
@@ -5813,28 +6008,47 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 except Exception as e:
                     logger.debug(f"Wait for domcontentloaded: {e}")
 
-                try:
-                    self.page.locator("text=/Anruf/").first.wait_for(
-                        state="attached", timeout=8000
+                sidetray_hint = getattr(self, "_sidetray_channel_hint", None)
+                if sidetray_hint in ("call", "email"):
+                    print(
+                        f"[INFO] Sidetray pre-open hint: {sidetray_hint.upper()}",
+                        flush=True,
                     )
-                except Exception:
-                    pass
+
+                if sidetray_hint != "call":
+                    try:
+                        self.page.locator("text=/Anruf/").first.wait_for(
+                            state="attached", timeout=8000
+                        )
+                    except Exception:
+                        pass
 
                 channel = self._detect_case_channel(poll_s=0.4, max_wait_s=8.0)
+                if sidetray_hint == "call" and channel != "email":
+                    channel = "call"
+                elif sidetray_hint == "email" and channel == "unknown":
+                    channel = "email"
+
                 channel_label = channel.upper() if channel in ("call", "email") else "UNKNOWN"
                 snap = getattr(self, "_last_channel_snapshot", {})
                 print(f"CHANNEL: {channel_label}", flush=True)
                 print(
                     f"[INFO] Channel detection (post-open poll): {channel_label} "
-                    f"debug={snap}",
+                    f"sidetray_hint={sidetray_hint or 'none'} debug={snap}",
                     flush=True,
                 )
 
-                if extract_only and channel == "call":
+                if extract_only and (
+                    channel == "call"
+                    or (sidetray_hint == "call" and channel != "email")
+                ):
+                    self._sidetray_channel_hint = None
                     self._print_call_case_and_exit(
                         case_id, cue_on_extract_start=cue_on_extract_start
                     )
                     return True
+
+                self._sidetray_channel_hint = None
 
                 # EMAIL: wait for html-message-content when expected
                 if channel != "call":
@@ -6041,7 +6255,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
             logger.debug(f"RE pending sound flag failed: {e}")
 
         # Armed auto-RE: cue AFTER extract is fully printed + pending flag set
-        # (not after the 4s wait — that was too early when the next case was already visible).
+        # (not before sidetray click — Prowler fires only after extract stdout is complete).
         if cue_on_extract_start:
             self._cue_armed_re_start_sound()
             print("ARMED_EXTRACT_DONE_SOUND", flush=True)
@@ -6314,19 +6528,19 @@ def main():
     reply_file = _get_arg_value('--reply-file')
     if watch_anwenden_re:
         print("\n" + "=" * 80)
-        print("MODE: --watch-anwenden-re (Anwenden click → 4s → open case → extract)")
+        print("MODE: --watch-anwenden-re (Anwenden click → sidetray poll → open case → extract)")
         print("=" * 80 + "\n")
     if watch_weiter_re:
         print("\n" + "=" * 80)
-        print("MODE: --watch-weiter-re (Weiter click → 4s → open case → extract)")
+        print("MODE: --watch-weiter-re (Weiter click → sidetray poll → open case → extract)")
         print("=" * 80 + "\n")
     if watch_extern_re:
         print("\n" + "=" * 80)
-        print("MODE: --watch-extern-re (Extern Weiterleiten click → 4s → open case → extract)")
+        print("MODE: --watch-extern-re (Extern Weiterleiten click → sidetray poll → open case → extract)")
         print("=" * 80 + "\n")
     if watch_next_re:
         print("\n" + "=" * 80)
-        print("MODE: --watch-next-re (call disposition Next click → 4s → open case → extract)")
+        print("MODE: --watch-next-re (call disposition Next click → sidetray poll → open case → extract)")
         print("=" * 80 + "\n")
     # Load configuration
     config = load_config()
@@ -6506,11 +6720,11 @@ def main():
                 automation.cleanup()
             return
 
-        # Anwenden-gated auto-RE: wait for Anwenden click → wait 4s → click case item → extract
+        # Anwenden-gated auto-RE: wait for Anwenden click → sidetray poll → click case item → extract
         # Must run BEFORE any monitor_emails / get_new_emails path.
         if watch_anwenden_re:
             try:
-                automation.monitor_anwenden_then_open_case_for_re(wait_seconds=4)
+                automation.monitor_anwenden_then_open_case_for_re()
             except KeyboardInterrupt:
                 raise
             except Exception as e:
@@ -6524,7 +6738,7 @@ def main():
         # Weiter-gated auto-RE (LF TR internal queue transfer close-out)
         if watch_weiter_re:
             try:
-                automation.monitor_weiter_then_open_case_for_re(wait_seconds=4)
+                automation.monitor_weiter_then_open_case_for_re()
             except KeyboardInterrupt:
                 raise
             except Exception as e:
@@ -6538,7 +6752,7 @@ def main():
         # Extern-gated auto-RE (LF TR external email transfer close-out)
         if watch_extern_re:
             try:
-                automation.monitor_extern_then_open_case_for_re(wait_seconds=4)
+                automation.monitor_extern_then_open_case_for_re()
             except KeyboardInterrupt:
                 raise
             except Exception as e:
@@ -6555,7 +6769,7 @@ def main():
         # Next-gated auto-RE (CALL LF disposition close-out)
         if watch_next_re:
             try:
-                automation.monitor_next_then_open_case_for_re(wait_seconds=4)
+                automation.monitor_next_then_open_case_for_re()
             except KeyboardInterrupt:
                 raise
             except Exception as e:

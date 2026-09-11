@@ -70,7 +70,7 @@ Typical workday start:
    Expect **`MODE: --once`** and either `FIRST_RE_ONCE_CONSUMED` (after login) or `RE_ONCE_DEFAULT`. **Trust script stdout:** `CHANNEL: CALL` + `CALL_LF_GATE` → voice Auto-LF + Next (no 7-step). `CHANNEL: EMAIL` + `CUSTOMER EMAIL` + `RE_TEXT_ONLY_GATE` → three-turn 7-step RE (see `sprinklr-call-vs-email.mdc`).
 2. **Do not** run `--arm` / `--await-arm` on typed RE. Arms run after Auto-LF / PR close-out (below).
 3. **Audio:**
-   - **Armed auto-RE start:** After Anwenden / Weiter / Extern / Next → 4s wait → case open → extract begins → Prowler (`ARMED_RE_START_SOUND`).
+   - **Armed auto-RE start:** After Anwenden / Weiter / Extern / Next → sidetray poll (`SIDETRAY_WATCH_ARMED`) → **EMAIL:** click sidetray item; **CALL:** skip click, wait for overlay (`SIDETRAY_CALL_AUTO_OPEN`) → extract begins → Prowler (`ARMED_RE_START_SOUND`).
    - **RE ready (after section 7):** Hook plays book-opening cue (`RE_READY_SOUND`) when `RE_PENDING_SOUND` was set — case is ready to read.
    - **PR done / LF TR done:** Finishing quotes → Dexter (`PR_LF_DONE_SOUND`).
    - Manual: **`sound`** → `--play-ready`.

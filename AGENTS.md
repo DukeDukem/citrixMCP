@@ -28,7 +28,7 @@
 - **Auto-LF transfer** — during RE when §3 says transfer → Transfer Ja fill → **`--arm-weiter`** / **`--arm-extern`** (no typed LF TR needed)
 - **CALL** — on CHANNEL detect → Auto-LF voice → **`--arm-next`** (BRIEF optional; not required for LF)
 - Typed **LF** / **LF TR** / **PR LF** — recovery/override only
-- **CALL vs EMAIL:** After every case open, classify via overlay. **Teleprompter/STT parked** — do **not** `--arm`/`--prime` call_listen. Rule: `sprinklr-call-vs-email.mdc`
+- **CALL vs EMAIL:** After every case open, classify via overlay. Post-arm sidetray: **EMAIL click**, **CALL auto-open** (no sidetray click). **Teleprompter/STT parked** — do **not** `--arm`/`--prime` call_listen. Rule: `sprinklr-call-vs-email.mdc`
 - **Transfer path:** Always **TransferMatrix.md** first. Rule: `transfer-matrix-priority.mdc`
 - **Auto-LF:** Rule: `lf-log-form.mdc`
 

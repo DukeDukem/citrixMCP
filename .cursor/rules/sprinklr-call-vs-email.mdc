@@ -13,6 +13,7 @@ alwaysApply: true
 |--------|------|--------|
 | **#57114650** | 2026-09-05 | Uwe Kommer — disposition overlay |
 | **#57937085** | 2026-09-11 | Unbekannter Kunde — live timer, queue transfer, no-reply bar |
+| **#57938822** | 2026-09-11 | Sidetray CALL icon — `BrandVoiceCircleClr` on `collapsed-case-item` |
 
 Artifacts: `.cursor/reports/sprinklr-call-overlay-2026-09-05.png`, `CALL-VS-EMAIL-MARKERS-2026-09-11.md`
 
@@ -26,9 +27,11 @@ After **any** of these, **before** drafting an email 7-step RE / PR:
 2. Armed path: `--await-arm` returns extract / case is open after Anwenden / Weiter / Weiterleiten  
 3. User opens a case and asks you to handle it  
 
-### Script detection (authoritative — post-open poll ~4s)
+### Script detection (sidetray hint + post-open poll)
 
-Extract runs **`_detect_case_channel()`** after case open (post-arm). Stdout includes:
+After Anwenden / Weiter / Extern / Next, the script **polls `CollapsedPreviewsList`** (no fixed delay) until a new sidebar icon appears. **EMAIL** icons are **clicked**; **CALL** icons (`BrandVoiceCircleClr`) are **not clicked** — the call overlay opens automatically. Stdout: `SIDETRAY_CHANNEL` → `CASE_ITEM_AUTO_CLICKED` (email) or `SIDETRAY_CALL_SKIP_CLICK` → `SIDETRAY_CALL_AUTO_OPEN` (call).
+
+Extract then runs **`_detect_case_channel()`** after case open. Stdout includes:
 
 | Script output | Meaning | Agent path |
 |---------------|---------|------------|
@@ -124,7 +127,7 @@ User clicks exact **Next** on `button[data-tracker-event-id="@guidedWorkflow/run
 
 **Next detection:** DOM only (`screenButton` + exact `"Next"`); tray position irrelevant; close DevTools Inspect before click. Stale watch → kill arm + fresh `--arm-next`. Missed extract → `run.py --once`.
 
-After Next → 4s → next case → **CHANNEL: CALL|EMAIL** again.
+After Next → sidetray poll → next case → **CHANNEL: CALL|EMAIL** again.
 
 ### EMAIL (unchanged)
 
@@ -144,6 +147,17 @@ After Next → 4s → next case → **CHANNEL: CALL|EMAIL** again.
 ---
 
 ## CALL markers (any strong set → CALL)
+
+### A0) Sidetray pre-open (post-arm, before click) — Fall #57938822
+
+| Marker | Selector / meaning |
+|--------|-------------------|
+| Container | `[data-entityid="CollapsedPreviewsList"]` inside case stream sidebar |
+| Item | `button[data-testid="collapsed-case-item"]` |
+| **CALL badge** | `svg[data-icon-name="BrandVoiceCircleClr"]` (green voice circle on avatar) |
+| Script stdout | `SIDETRAY_WATCH_ARMED` → optional `SIDETRAY_EMPTY` → `SIDETRAY_CHANNEL: CALL` → **`SIDETRAY_CALL_SKIP_CLICK`** → **`SIDETRAY_CALL_AUTO_OPEN`** (no sidetray click) |
+
+Email sidetray icons are **clicked** to open the case. CALL icons are **not clicked** — the call overlay opens automatically; monitoring still polls for both.
 
 ### A) Live / voice overlays (strongest)
 
@@ -206,8 +220,9 @@ Care Webform / mail Quelle, readable **html-message-content** bodies, no Im Gesp
 
 ## Detection order
 
-1. **Script stdout** after extract: `CHANNEL: CALL` / `CHANNEL: EMAIL` (DOM poll post-open)  
-2. **Im Gespräch** or Disposition overlay → **CALL**  
-3. **Anruf angenommen** / **Anruf beendet** / **Anruf •** timeline / **Eingehender Anruf** → **CALL** (no email body)  
-4. Substantial **`html-message-content`** + Von/Betreff → **EMAIL**  
-5. Else → **UNKNOWN** — ask operator; do not PR
+1. **Sidetray stdout** (pre-click): `SIDETRAY_CHANNEL: CALL` when `BrandVoiceCircleClr` visible  
+2. **Script stdout** after extract: `CHANNEL: CALL` / `CHANNEL: EMAIL` (DOM poll post-open)  
+3. **Im Gespräch** or Disposition overlay → **CALL**  
+4. **Anruf angenommen** / **Anruf beendet** / **Anruf •** timeline / **Eingehender Anruf** → **CALL** (no email body)  
+5. Substantial **`html-message-content`** + Von/Betreff → **EMAIL**  
+6. Else → **UNKNOWN** — ask operator; do not PR

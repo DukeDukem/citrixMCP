@@ -1,8 +1,22 @@
 # CALL vs EMAIL — visual markers (2026-09-11)
 
-Reference cases: **Fall #57937085**, **Fall #57934518** — *Unbekannter Kunde* (call channel).
+Reference cases: **Fall #57937085**, **Fall #57934518**, **Fall #57938822** — *Unbekannter Kunde* (call channel).
 
 Screenshots saved in Cursor assets (2026-09-11 session).
+
+---
+
+## Sidetray pre-open (post-arm, before click)
+
+Container: `[data-entityid="CollapsedPreviewsList"]`  
+Item: `button[data-testid="collapsed-case-item"]`
+
+| Channel | Badge icon | Script stdout |
+|---------|------------|---------------|
+| **CALL** | `svg[data-icon-name="BrandVoiceCircleClr"]` (green voice circle) | `SIDETRAY_CHANNEL: CALL` → `SIDETRAY_CALL_SKIP_CLICK` → `SIDETRAY_CALL_AUTO_OPEN` (no click) |
+| **EMAIL** | Mail/Email/Message-family icon (varies) | `SIDETRAY_CHANNEL: EMAIL` → `CASE_ITEM_AUTO_CLICKED` |
+
+Poll interval ~0.25s from arm trigger (no fixed 4s delay). Optional `SIDETRAY_EMPTY` when tray clears between cases. Sidetray watch always runs; only EMAIL icons are clicked.
 
 ---
 

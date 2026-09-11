@@ -33,14 +33,14 @@ _STATE_DIR = _REPO_ROOT / ".cursor" / "state"
 _ARM_LOG = _STATE_DIR / "arm_watch.log"
 _ARM_META = _STATE_DIR / "arm_watch.json"
 
-_EXTRACT_MARKERS = (
+# Await-arm must only complete on explicit *EXTRACT_DONE* lines written after the
+# current arm session — never on RE_PENDING_SOUND / CHANNEL_CALL_DETECTED alone
+# (those caused stale-log false positives when --await-arm raced --arm-next).
+_EXTRACT_DONE_MARKERS = (
     "ANWENDEN_RE_EXTRACT_DONE",
     "WEITER_RE_EXTRACT_DONE",
     "EXTERN_RE_EXTRACT_DONE",
     "NEXT_RE_EXTRACT_DONE",
-    "CUSTOMER EMAIL (for Cursor to read",
-    "CHANNEL_CALL_DETECTED",
-    "RE_PENDING_SOUND",
 )
 _FAIL_MARKERS = (
     "ERROR: NEXT CASE NOT OPEN",
@@ -148,8 +148,14 @@ def _spawn_detached(runner: Path, watch_flag: str, env: dict) -> int:
     CREATE_NEW_PROCESS_GROUP keeps the watch alive when Cursor aborts the parent shell.
     """
     _STATE_DIR.mkdir(parents=True, exist_ok=True)
-    # Truncate previous log so await doesn't see stale EXTRACT_DONE
-    _ARM_LOG.write_text("", encoding="utf-8")
+    from datetime import datetime, timezone
+
+    reset_ts = datetime.now(timezone.utc).isoformat()
+    # Truncate + session marker so --await-arm ignores pre-arm log content
+    _ARM_LOG.write_text(
+        f"ARM_WATCH_RESET started_at={reset_ts} mode={watch_flag}\n",
+        encoding="utf-8",
+    )
 
     creationflags = 0
     if sys.platform == "win32":
@@ -212,6 +218,33 @@ def _spawn_detached(runner: Path, watch_flag: str, env: dict) -> int:
     return 0
 
 
+def _arm_log_segment_after_reset(text: str) -> str:
+    """Return log content only from the latest ARM_WATCH_RESET (current arm session)."""
+    reset_idx = text.rfind("ARM_WATCH_RESET")
+    if reset_idx >= 0:
+        return text[reset_idx:]
+    return text
+
+
+def _replay_arm_extract_segment(segment: str) -> None:
+    """Print extract payload from the current arm session for agent handling."""
+    print("\n" + "=" * 80)
+    print("DETACHED_ARM_EXTRACT_READY")
+    print("=" * 80)
+    idx = segment.rfind("CUSTOMER EMAIL")
+    if idx >= 0:
+        print(segment[idx:], flush=True)
+    elif "CHANNEL: CALL" in segment:
+        idx = segment.rfind("=" * 80 + "\nCHANNEL: CALL")
+        if idx < 0:
+            idx = segment.rfind("CHANNEL: CALL")
+        print(segment[idx:], flush=True)
+    else:
+        print(segment[-8000:], flush=True)
+    print("AWAIT_ARM_EXTRACT_DONE", flush=True)
+    _emit_post_extract_gate(segment[idx:] if idx >= 0 else segment)
+
+
 def _await_arm(timeout_s: float = 1800.0, poll_s: float = 1.0) -> int:
     """Block until detached arm log shows extract done (or timeout)."""
     print(f"MODE: --await-arm (polling {_ARM_LOG})")
@@ -223,35 +256,36 @@ def _await_arm(timeout_s: float = 1800.0, poll_s: float = 1.0) -> int:
     )
     deadline = time.time() + max(30.0, timeout_s)
     last_size = -1
+    # Wait for current arm session reset line (avoids race if await starts before --arm*)
+    bootstrap_deadline = time.time() + 20.0
+    while time.time() < bootstrap_deadline:
+        if _ARM_LOG.exists():
+            try:
+                boot = _ARM_LOG.read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                boot = ""
+            if "ARM_WATCH_RESET" in boot:
+                break
+        time.sleep(0.15)
     while time.time() < deadline:
         if _ARM_LOG.exists():
             try:
                 text = _ARM_LOG.read_text(encoding="utf-8", errors="replace")
             except Exception:
                 text = ""
+            segment = _arm_log_segment_after_reset(text)
             size = len(text)
             if size != last_size and size:
                 # Tail heartbeat for agent visibility
-                tail = text.strip().splitlines()[-3:]
+                tail = segment.strip().splitlines()[-3:]
                 for line in tail:
                     if "Waiting for" in line or "CLICK_DETECTED" in line or "EXTRACT" in line:
                         print(line, flush=True)
                 last_size = size
-            if any(m in text for m in _EXTRACT_MARKERS):
-                # Replay extract portion for agent 7-step
-                print("\n" + "=" * 80)
-                print("DETACHED_ARM_EXTRACT_READY")
-                print("=" * 80)
-                # Print from last CUSTOMER EMAIL banner if present
-                idx = text.rfind("CUSTOMER EMAIL")
-                if idx >= 0:
-                    print(text[idx:], flush=True)
-                else:
-                    print(text[-8000:], flush=True)
-                print("AWAIT_ARM_EXTRACT_DONE", flush=True)
-                _emit_post_extract_gate(text[idx:] if idx >= 0 else text)
+            if any(m in segment for m in _EXTRACT_DONE_MARKERS):
+                _replay_arm_extract_segment(segment)
                 return 0
-            if any(m in text for m in _FAIL_MARKERS):
+            if any(m in segment for m in _FAIL_MARKERS):
                 print("\n" + "=" * 80, flush=True)
                 print("DETACHED_ARM_EXTRACT_FAILED", flush=True)
                 print("=" * 80, flush=True)

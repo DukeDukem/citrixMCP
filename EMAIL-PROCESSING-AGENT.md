@@ -80,7 +80,7 @@ DETACHED ARM (mandatory — fixes false "watch died"):
 - NEVER start a second --arm* while one detached watch is still waiting.
 
 CHANNEL DETECT (after every case open — RE --once OR after await-arm extract):
-- Trust extract stdout: CHANNEL: CALL + CALL_LF_GATE → voice Auto-LF (no 7-step). CHANNEL: EMAIL + CUSTOMER EMAIL → three-turn RE. Script polls DOM ~4s post-open (Anruf timeline vs html-message-content body).
+- Trust extract stdout: CHANNEL: CALL + CALL_LF_GATE → voice Auto-LF (no 7-step). CHANNEL: EMAIL + CUSTOMER EMAIL → three-turn RE. After arm: sidetray poll (CollapsedPreviewsList, ~0.25s) — EMAIL icons clicked; CALL icons skip click (overlay auto-opens: SIDETRAY_CALL_SKIP_CLICK → SIDETRAY_CALL_AUTO_OPEN); then post-open DOM poll.
 - CALL LISTEN / TELEPROMPTER: PARKED (capture_path.json enabled=false). Do NOT run call_listen --arm or --prime. Expect CALL_LISTEN_DISABLED if tried.
 - EMAIL → MUST write full 7-step RE as VISIBLE chat text (1–7; not behind “finished background tasks”) → play-ready → AUTO-LF → (transfer arm OR wait for PR). Skipping or hiding the 7-step is a hard failure.
 - If EMAIL has Anhänge: open/download so the agent can read them for full case understanding (not a separate process). Helper: open_case_attachments.py --view / --download → yoummday temporaries. Rule: sprinklr-attachments.mdc
@@ -101,17 +101,17 @@ LF TR QUEUE PATH (I click all four; script reacts ONLY to step 4):
 1/4 Transfer (GuidedAction)
 2/4 Weiterleiten - IGNORE
 3/4 Weiteleiten - IGNORE
-4/4 Weiter (exact label only) - THEN wait 4s -> click collapsed-case-item -> extract -> full 7-step RE
+4/4 Weiter (exact label only) - THEN sidetray poll -> EMAIL click / CALL auto-open -> extract -> full 7-step RE or CALL_LF_GATE
 
 LF TR EMAIL / EXTERN PATH (I click both; script reacts ONLY to step 2):
 1/3 Externer Transfer (GuidedAction) - IGNORE
-2/3 Weiterleiten (exact label) - THEN wait 4s -> click collapsed-case-item -> extract -> full 7-step RE
+2/3 Weiterleiten (exact label) - THEN sidetray poll -> EMAIL click / CALL auto-open -> extract -> full 7-step RE or CALL_LF_GATE
 3/3 = script next-case open
 
 CALL NEXT PATH (I click; script reacts ONLY to exact Next):
 - button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"] with exact label Next
 - IGNORE Back / Weiter / Weiterleiten
-- After Next: wait 4s -> next collapsed-case-item (skip closed Fall) -> extract -> CHANNEL detect
+- After Next: sidetray poll (EMAIL click / CALL auto-open; skip closed Fall) -> extract -> CHANNEL detect
 
 SOUNDS (volume 0.75; do not change unless I ask):
 - After --arm / --arm-next / --arm-weiter / --arm-extern succeeds → Dexter ~2.5s once (script plays; means click now; 15s debounce vs hook)
@@ -150,7 +150,7 @@ Confirm you loaded this, then wait for my next command (usually login or RE).
 | 3a′ | **CALL** Auto-LF | Voice LF → **`--arm-next`** + **`--await-arm`**; you click exact **Next** |
 | 3b | Transfer Auto-LF (queue) | Transfer Ja → **`--arm-weiter`** + **`--await-arm`**; Transfer → … → **Weiter** |
 | 3c | Transfer Auto-LF (email) | Transfer Ja → **`--arm-extern`** + **`--await-arm`**; Externer Transfer → **Weiterleiten** |
-| 4 | Final trigger click | 4s → next case → extract → CHANNEL / 7-step + **Auto-LF** |
+| 4 | Final trigger click | sidetray poll → EMAIL click or CALL auto-open → extract → CHANNEL / 7-step + **Auto-LF** |
 
 **LF TR queue:** Arm listens only for exact **Weiter** (4/4).  
 **LF TR email:** Arm listens only for exact **Weiterleiten** (2/3 after Externer Transfer).
@@ -259,6 +259,68 @@ Cursor **collapses tool/subagent work** into rows like `Finished 2 background ta
 3. **Open in editor:** `.cursor/state/latest_re_visible.md` (after section 7) or `latest_extract.md` (after extract)
 
 Rule: `.cursor/rules/re-no-background-tasks-ui.mdc`. **If trays keep happening:** switch email chat from **Auto** to **Composer 2.5** or **Sonnet** (named model).
+
+---
+
+## UPDATE — paste to **running** case agent (SIDETRAY POLL — replaces 4s wait)
+
+Use when the case chat is already open and the script was updated today (2026-09-11). Paste this **alone** — no login restart needed:
+
+```
+UPDATE — SIDETRAY POLL (apply immediately; replaces fixed 4s wait after Anwenden / Weiter / Extern / Next):
+
+WHAT CHANGED IN THE SCRIPT:
+- Removed blind 4s sleep before next-case click.
+- After your close-out click, script polls CollapsedPreviewsList every ~0.25s (timeout ~30s) until a NEW collapsed-case-item appears.
+- Skips the just-closed Fall # (same as before).
+- Clicks as soon as the sidetray icon is ready — no arbitrary delay.
+
+STDOUT TO TRUST (armed path, before extract):
+- SIDETRAY_WATCH_ARMED — poll started after Anwenden / Weiter / Extern / Next
+- SIDETRAY_EMPTY — tray briefly empty between cases (informational)
+- SIDETRAY_CHANNEL: CALL | EMAIL | UNKNOWN — from badge icon BEFORE click
+- sidetray_icon: BrandVoiceCircleClr = CALL (green voice circle; e.g. Fall #57938822)
+- SIDETRAY_CALL_SKIP_CLICK + SIDETRAY_CALL_AUTO_OPEN — CALL: no sidetray click (overlay opens itself)
+- CASE_ITEM_AUTO_CLICKED — EMAIL only: sidetray click to open case
+
+YOUR BEHAVIOUR (unchanged workflow, new timing):
+1) After PR / transfer arm / CALL Next arm: Dexter + READY_FOR_YOUR_CLICK — click immediately when ready (do NOT wait for await to finish).
+2) After your click: script sidetray-polls → EMAIL: clicks sidetray icon; CALL: waits for auto-open overlay (no click) → extract.
+3) Trust extract stdout:
+   - SIDETRAY_CHANNEL: CALL + CHANNEL: CALL + CALL_LF_GATE → voice Auto-LF same turn (no 7-step, no PR)
+   - CHANNEL: EMAIL + CUSTOMER EMAIL + RE_TEXT_ONLY_GATE → three-turn 7-step RE
+4) Do NOT override CALL to EMAIL because of empty sidetray hint alone — post-open CHANNEL line is authoritative.
+5) Do NOT re-arm or run --once because sidetray was “slow” unless log shows ERROR: NEXT CASE NOT OPEN.
+
+SELECTORS (for your awareness only — script handles clicks):
+- Container: [data-entityid="CollapsedPreviewsList"]
+- Item: button[data-testid="collapsed-case-item"]
+- CALL badge: svg[data-icon-name="BrandVoiceCircleClr"]
+
+STILL IN FORCE (no change):
+- Three-turn EMAIL RE (visible 7-step, zero tools in step 2)
+- Auto-LF at RE for EMAIL; Auto-LF on CHANNEL: CALL detect
+- PR → --arm Anwenden; CALL → --arm-next; transfer → --arm-weiter / --arm-extern
+- English to me / German customer reply; Grok banned; on-demand DISABLED
+
+Confirm: sidetray poll active, no 4s wait, trust SIDETRAY_CHANNEL + CHANNEL stdout. Continue current case — no login restart.
+```
+
+---
+
+## UPDATE — paste to **running** case agent (SIDETRAY CALL skip click)
+
+```
+UPDATE — SIDETRAY CALL vs EMAIL (apply now):
+
+Sidetray watch always runs after Anwenden / Weiter / Extern / Next.
+- EMAIL sidetray → script CLICKS item (CASE_ITEM_AUTO_CLICKED)
+- CALL sidetray (BrandVoiceCircleClr) → NO click; overlay auto-opens
+  (SIDETRAY_CALL_SKIP_CLICK → SIDETRAY_CALL_AUTO_OPEN)
+
+Trust SIDETRAY_CHANNEL + CASE_ITEM_AUTO_CLICKED or SIDETRAY_CALL_AUTO_OPEN, then CHANNEL stdout.
+Confirm and continue — no login restart.
+```
 
 ---
 
