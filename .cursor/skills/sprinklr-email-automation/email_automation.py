@@ -1174,7 +1174,9 @@ class EmailAutomation:
                     const bodyText = document.body ? (document.body.innerText || '') : '';
                     const callPhrases = [
                         'Anruf angenommen', 'Anruf beendet', 'Anruf wurde getrennt',
-                        'Eingehender Anruf', 'in Wartestellung', 'Im Gespräch',
+                        'Eingehender Anruf', 'in Wartestellung', 'Wartestellung',
+                        'Im Gespräch', 'In Warteschlange übertragen',
+                        'Blindübertragung abgeschlossen', 'Blindübertragung',
                         'Aufzeichnung', 'Disposition Plan', 'Disposition Codes',
                         'VOIP Nailed Up', 'Mikrofon angeschlossen'
                     ];
@@ -1182,8 +1184,14 @@ class EmailAutomation:
                     for (const p of callPhrases) {
                         if (bodyText.includes(p)) callHits++;
                     }
+                    const noReplyBar = bodyText.includes(
+                        'Sie können auf das Gespräch nicht antworten'
+                    ) || bodyText.includes('auf das Gespräch nicht antworten');
+                    if (noReplyBar) callHits += 5;
                     const anrufBullet = (bodyText.match(/Anruf\\s*[•·]/g) || []).length;
                     if (anrufBullet > 0) callHits += Math.min(anrufBullet, 3);
+                    const eingehenderAnruf = /Eingehender Anruf/i.test(bodyText);
+                    if (eingehenderAnruf) callHits += 2;
                     const audioNodes = document.querySelectorAll(
                         '[data-testid*="audio"], [data-testid*="call-button"], '
                         + '[data-testid*="omniMedia"], [data-testid="audio_pres"]'
@@ -1205,13 +1213,17 @@ class EmailAutomation:
                     return {
                         callHits, anrufBullet, audioNodes, maxEmailBody,
                         hasVonEmail, hasBetreff, emailContainers,
-                        htmlMsgCount: htmlMsgs.length
+                        htmlMsgCount: htmlMsgs.length,
+                        noReplyBar, eingehenderAnruf
                     };
                 }"""
             )
         except Exception as e:
             logger.debug(f"Channel detect evaluate failed: {e}")
             return "unknown"
+
+        if data.get("noReplyBar"):
+            return "call"
 
         call_hits = int(data.get("callHits") or 0)
         max_body = int(data.get("maxEmailBody") or 0)

@@ -7,8 +7,14 @@ alwaysApply: true
 
 **Chat scope:** Email processing agent (`EMAIL-PROCESSING-AGENT.md`).
 
-**Reference snapshot (call):** Fall **#57114650** (Uwe Kommer), 2026-09-05  
-Artifacts: `.cursor/reports/sprinklr-call-overlay-2026-09-05.png`, `sprinklr-call-overlay-dom-2026-09-05.json`, `sprinklr-call-vs-email-selectors-2026-09-05.json`, `CALL-VS-EMAIL-RECOGNITION-2026-09-05.md`
+**Reference snapshots (call):**
+
+| Fall # | Date | Notes |
+|--------|------|--------|
+| **#57114650** | 2026-09-05 | Uwe Kommer — disposition overlay |
+| **#57937085** | 2026-09-11 | Unbekannter Kunde — live timer, queue transfer, no-reply bar |
+
+Artifacts: `.cursor/reports/sprinklr-call-overlay-2026-09-05.png`, `CALL-VS-EMAIL-MARKERS-2026-09-11.md`
 
 ---
 
@@ -150,14 +156,30 @@ After Next → 4s → next case → **CHANNEL: CALL|EMAIL** again.
 | Floating **Case #…** + **o2 Disposition Plan** / **Disposition Codes** | Call disposition overlay |
 | Green **phone** icon next to MSISDN on disposition card | Voice contact |
 
-### B) Timeline (strong)
+### B) Timeline (strong) — Fall #57937085
 
 | Marker | Example |
 |--------|---------|
-| **Eingehender Anruf** | Incoming call |
-| **Anruf** / **Anruf beendet** / **Aufzeichnung** | Call events / recording |
+| **Anruf •** (lock + time under bubbles) | `Anruf • 3min`, `Anruf • 2min` |
+| **Eingehender Anruf** | Incoming call + MSISDN (e.g. `+491777295745`) |
+| **Anruf angenommen** | Call accepted (green phone bubble) |
+| **In Warteschlange übertragen** | Queue transfer (e.g. `WQ_IBV_O2_CARE_I@H`) |
+| **Anruf wurde getrennt** | Call disconnected (red phone bubble) |
+| **Wartestellung** / **in Wartestellung** | Customer on hold |
+| **Blindübertragung abgeschlossen** | Blind transfer complete |
+| **Anruf beendet** / **Aufzeichnung** | Call ended / recording |
 | Audio bubbles / waveforms | Not email body |
 | DOM testids | `audio_pres`, `call-button`, `omniMedia`, `mediaItems`, … |
+
+### B2) Call-only UI chrome (#57937085)
+
+| Marker | Meaning |
+|--------|---------|
+| **Live timer** next to Fall # | e.g. `Fall #57937085` + `00:02:40` |
+| **Phone handset** icon in case toolbar (top-right) | Voice case actions |
+| **Mic / pause / red hang-up** in left sidebar | Active voice session controls |
+| **Sie können auf das Gespräch nicht antworten.** | No email reply composer — **decisive CALL** |
+| **No** `html-message-content` email body | Timeline = call events only, not Von/Betreff mail |
 
 ### C) Supporting Case Informationen
 
