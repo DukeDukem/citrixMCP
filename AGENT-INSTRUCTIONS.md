@@ -54,7 +54,7 @@ At the start of a non-trivial task, infer pacing from **remaining days in the bi
 
 1. **login** (once) — login-only; Case Tracker tab; **no** Verfügbar day-start arm (reverted 2026-09-11)
 2. Open case → **RE** → **three-turn EMAIL RE** → **Auto-LF** (no typed LF)
-3. Non-transfer → **PR** → user **Senden** (often → **Ignorieren und senden**) → agent arms **Anwenden**
+3. Non-transfer → **PR** → agent immediately starts background `--closeout-anwenden` listen (arm reacts to **Anwenden** only — independent of Senden which is a separate process)
 4. Transfer → Auto-LF Ja → agent arms **Weiter/Extern** (no PR)
 5. CALL → CHANNEL detect → Auto-LF voice → **Next** (BRIEF optional)
 6. Next case → RE + Auto-LF again

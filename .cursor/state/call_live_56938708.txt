@@ -1,0 +1,2 @@
+[17:34:40] [STT] Der Kunde spricht oft mit Akzent, Dialekt oder gebrochenem Deutsch — schreibe trotzdem Deutsch.
+[17:34:40] [Kunde] Der Kunde spricht oft mit Akzent, Dialekt oder gebrochenem Deutsch — schreibe trotzdem Deutsch.

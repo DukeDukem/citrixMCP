@@ -1,0 +1,42 @@
+﻿# -*- coding: utf-8 -*-
+import json, time
+from pathlib import Path
+
+text = """Guten Tag Franz Will,
+
+vielen Dank, dass Sie uns Geburtsdatum und Rufnummer nachgereicht haben und erneut um Korrektur des Vertragsendes zum 14.07.2026 sowie der Abrechnung nach Widerruf der Vertragsverlängerung bitten.
+
+Es ist verständlich, dass Sie nach der schriftlich bestätigten Kündigung und dem fristgerechten Widerruf der Verlängerung keine Entgelte über den 14.07.2026 hinaus nachvollziehen können – insbesondere wenn zwischenzeitlich ein anderes Datum genannt wurde.
+
+Anfragen zum Widerruf einer Vertragsverlängerung und zur Wiederherstellung des ursprünglichen Kündigungsstatus werden von der zuständigen Fachabteilung bearbeitet; Ihre Anfrage wurde dorthin weitergeleitet.
+
+Parallel können Sie in Mein o2 unter o2.de bzw. in der Mein o2 App unter Tarif & Vertrag den aktuellen Vertrags- und Kündigungstermin sowie unter Rechnung mögliche Positionen nach dem 14.07.2026 prüfen. Für die Zuordnung nutzen wir die Mobilfunknummer mit 225 am Ende.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz"""
+
+assert "0169225" not in text and "1790169225" not in text
+assert "74300936" not in text
+assert text.count("Guten Tag") == 1
+assert "Fall #" not in text
+assert "14.07.2026" in text
+
+root = Path(r"c:\Users\PC ENTER\Desktop\Citrix")
+(root / ".cursor" / "skills" / "sprinklr-write-reply" / "temp_reply_52624936.txt").write_text(text.strip() + "\n", encoding="utf-8")
+rec = {"case_id": "#52624936", "response_text": text.strip(), "saved_at": time.time()}
+(root / ".cursor" / "skills" / "sprinklr-write-reply" / "latest_re_reply.json").write_text(
+    json.dumps(rec, ensure_ascii=False, indent=2), encoding="utf-8"
+)
+print("OK", len(text.strip()))

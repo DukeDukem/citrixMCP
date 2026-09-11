@@ -12,6 +12,13 @@ Explicit flags:
   --arm-extern / --watch-extern-re   arm Extern watch (after LF TR email)
   --arm-next / --watch-next-re   arm call disposition Next watch (after CALL LF)
   --await-arm            poll detached arm log until extract done (then exit 0)
+  --pickup               agent-internal: replay extract if already done (not operator command)
+  --closeout-anwenden    post-PR: arm Anwenden + block until next-case extract (background + notify)
+  --closeout-weiter      post-transfer: arm Weiter + block until extract
+  --closeout-extern      post-transfer: arm Extern + block until extract
+  --closeout-next        post-CALL LF: arm Next + block until extract
+  --background           with --await-arm: detached poll + write extract_ready (no console)
+  --no-auto-await        with --arm*: do not spawn background --await-arm
   --foreground           do NOT detach (legacy blocking watch in this shell)
 
 Detached by default on Windows for --arm / --arm-weiter / --arm-extern / --arm-next so Cursor
@@ -32,6 +39,27 @@ _AUTO_DIR = _REPO_ROOT / ".cursor" / "skills" / "sprinklr-email-automation"
 _STATE_DIR = _REPO_ROOT / ".cursor" / "state"
 _ARM_LOG = _STATE_DIR / "arm_watch.log"
 _ARM_META = _STATE_DIR / "arm_watch.json"
+_AWAIT_OUT = _STATE_DIR / "await_arm_out.txt"
+_RUN_PY = Path(__file__).resolve()
+
+
+def _configure_stdout_utf8() -> None:
+    """Avoid cp1252 UnicodeEncodeError when replaying German extract to agent shell."""
+    if sys.platform != "win32":
+        return
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+
+def _safe_print(text: str) -> None:
+    enc = getattr(sys.stdout, "encoding", None) or "utf-8"
+    try:
+        print(text, flush=True)
+    except UnicodeEncodeError:
+        print(text.encode(enc, errors="replace").decode(enc), flush=True)
 
 # Await-arm must only complete on explicit *EXTRACT_DONE* lines written after the
 # current arm session — never on RE_PENDING_SOUND / CHANNEL_CALL_DETECTED alone
@@ -141,7 +169,21 @@ def _write_meta(mode: str, pid: int) -> None:
     )
 
 
-def _spawn_detached(runner: Path, watch_flag: str, env: dict) -> int:
+def _closeout_listen(runner: Path, watch_flag: str, env: dict) -> int:
+    """Arm detached watch, then block until extract — for post-PR/transfer/CALL close-out."""
+    rc = _spawn_detached(runner, watch_flag, env, auto_await=False)
+    if rc != 0:
+        return rc
+    print("CLOSEOUT_LISTEN_ACTIVE", flush=True)
+    print(
+        "Close-out listen running — operator clicks Sprinklr button only; "
+        "agent continues on AWAIT_ARM_EXTRACT_DONE (no typed RE/NEXT).",
+        flush=True,
+    )
+    return _await_arm(timeout_s=1800.0)
+
+
+def _spawn_detached(runner: Path, watch_flag: str, env: dict, *, auto_await: bool = True) -> int:
     """Start watch in a new process group; parent returns immediately.
 
     Uses CREATE_NO_WINDOW (not DETACHED_PROCESS) so no black console pops up.
@@ -214,8 +256,38 @@ def _spawn_detached(runner: Path, watch_flag: str, env: dict) -> int:
             print("PR_LF_DONE_SOUND (armed — click when ready)", flush=True)
     except Exception as e:
         print(f"[WARN] close-out sound failed: {e}", flush=True)
+    if auto_await:
+        _spawn_detached_await_arm(env)
     # Do not wait on proc; leave log_f open for child on Windows
     return 0
+
+
+def _spawn_detached_await_arm(env: dict) -> None:
+    """Background poll so extract_ready.json exists even if agent forgets --await-arm."""
+    _STATE_DIR.mkdir(parents=True, exist_ok=True)
+    bg_log = _STATE_DIR / "await_arm_bg.log"
+    creationflags = 0
+    if sys.platform == "win32":
+        creationflags = 0x08000000 | 0x00000200
+    try:
+        log_f = open(bg_log, "a", encoding="utf-8", errors="replace")
+        subprocess.Popen(
+            [sys.executable, str(_RUN_PY), "--await-arm", "--background"],
+            cwd=str(_REPO_ROOT),
+            env=env,
+            stdout=log_f,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
+            creationflags=creationflags,
+            close_fds=False if sys.platform == "win32" else True,
+        )
+        print("AWAIT_ARM_BACKGROUND_SPAWNED", flush=True)
+        print(
+            "AGENT: after close-out click, run --await-arm OR type NEXT when Prowler plays.",
+            flush=True,
+        )
+    except Exception as e:
+        print(f"[WARN] background await-arm spawn failed: {e}", flush=True)
 
 
 def _arm_log_segment_after_reset(text: str) -> str:
@@ -226,28 +298,68 @@ def _arm_log_segment_after_reset(text: str) -> str:
     return text
 
 
-def _replay_arm_extract_segment(segment: str) -> None:
-    """Print extract payload from the current arm session for agent handling."""
-    print("\n" + "=" * 80)
-    print("DETACHED_ARM_EXTRACT_READY")
-    print("=" * 80)
+def _extract_payload_from_segment(segment: str) -> str:
     idx = segment.rfind("CUSTOMER EMAIL")
     if idx >= 0:
-        print(segment[idx:], flush=True)
-    elif "CHANNEL: CALL" in segment:
+        return segment[idx:]
+    if "CHANNEL: CALL" in segment:
         idx = segment.rfind("=" * 80 + "\nCHANNEL: CALL")
         if idx < 0:
             idx = segment.rfind("CHANNEL: CALL")
-        print(segment[idx:], flush=True)
-    else:
-        print(segment[-8000:], flush=True)
+        if idx >= 0:
+            return segment[idx:]
+    return segment[-8000:]
+
+
+def _marker_from_segment(segment: str) -> str:
+    for m in _EXTRACT_DONE_MARKERS:
+        if m in segment:
+            return m
+    return ""
+
+
+def _persist_extract_ready(segment: str) -> None:
+    try:
+        if str(_SKILL_DIR) not in sys.path:
+            sys.path.insert(0, str(_SKILL_DIR))
+        from extract_ready_state import write_extract_ready
+
+        write_extract_ready(segment, marker=_marker_from_segment(segment), source="await_arm")
+    except Exception as e:
+        print(f"[WARN] extract_ready persist failed: {e}", flush=True)
+
+
+def _replay_arm_extract_segment(segment: str, *, write_out_file: bool = True) -> None:
+    """Print extract payload from the current arm session for agent handling."""
+    payload = _extract_payload_from_segment(segment)
+    header = "\n" + "=" * 80 + "\nDETACHED_ARM_EXTRACT_READY\n" + "=" * 80 + "\n"
+    block = header + payload + "\nAWAIT_ARM_EXTRACT_DONE\n"
+    print("\n" + "=" * 80)
+    print("DETACHED_ARM_EXTRACT_READY")
+    print("=" * 80)
+    _safe_print(payload)
     print("AWAIT_ARM_EXTRACT_DONE", flush=True)
-    _emit_post_extract_gate(segment[idx:] if idx >= 0 else segment)
+    _emit_post_extract_gate(payload)
+    _persist_extract_ready(segment)
+    if write_out_file:
+        try:
+            _STATE_DIR.mkdir(parents=True, exist_ok=True)
+            _AWAIT_OUT.write_text(block, encoding="utf-8")
+        except Exception as e:
+            print(f"[WARN] await_arm_out write failed: {e}", flush=True)
 
 
-def _await_arm(timeout_s: float = 1800.0, poll_s: float = 1.0) -> int:
+def _await_arm(
+    timeout_s: float = 1800.0,
+    poll_s: float = 1.0,
+    *,
+    background: bool = False,
+) -> int:
     """Block until detached arm log shows extract done (or timeout)."""
-    print(f"MODE: --await-arm (polling {_ARM_LOG})")
+    if background:
+        print("MODE: --await-arm --background (detached poll)", flush=True)
+    else:
+        print(f"MODE: --await-arm (polling {_ARM_LOG})")
     print("AWAITING_ARM_EXTRACT", flush=True)
     print(
         "Watch already armed — you may click Anwenden / Weiter / Weiterleiten / Next anytime. "
@@ -304,6 +416,7 @@ def _await_arm(timeout_s: float = 1800.0, poll_s: float = 1.0) -> int:
 
 
 def main() -> int:
+    _configure_stdout_utf8()
     os.chdir(_REPO_ROOT)
     runner = _AUTO_DIR / "run_sprinklr_email_automation.py"
     if not runner.exists():
@@ -318,8 +431,43 @@ def main() -> int:
         print(__doc__)
         return 0
 
+    closeout_map = {
+        "--closeout-anwenden": "--watch-anwenden-re",
+        "--closeout-weiter": "--watch-weiter-re",
+        "--closeout-extern": "--watch-extern-re",
+        "--closeout-next": "--watch-next-re",
+    }
+    for closeout_flag, watch_flag in closeout_map.items():
+        if closeout_flag in argv:
+            return _closeout_listen(runner, watch_flag, env)
+
+    if "--pickup" in argv:
+        # Recovery when Prowler played but agent did not continue RE/LF
+        if _ARM_LOG.exists():
+            try:
+                text = _ARM_LOG.read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                text = ""
+            segment = _arm_log_segment_after_reset(text)
+            if any(m in segment for m in _EXTRACT_DONE_MARKERS):
+                print("EXTRACT_PICKUP_IMMEDIATE", flush=True)
+                _replay_arm_extract_segment(segment)
+                return 0
+        try:
+            if str(_SKILL_DIR) not in sys.path:
+                sys.path.insert(0, str(_SKILL_DIR))
+            from extract_ready_state import is_pending_pickup, read_extract_ready
+
+            if is_pending_pickup():
+                data = read_extract_ready() or {}
+                print(f"EXTRACT_READY_PENDING case={data.get('case_id')} gate={data.get('gate')}", flush=True)
+        except Exception:
+            pass
+        print("EXTRACT_PICKUP_POLLING", flush=True)
+        return _await_arm(timeout_s=120.0)
+
     if "--await-arm" in argv:
-        return _await_arm()
+        return _await_arm(background="--background" in argv)
 
     force_once = "--once" in argv
     force_arm = "--arm" in argv or "--watch-anwenden-re" in argv
@@ -392,7 +540,12 @@ def main() -> int:
     assert watch_flag is not None
 
     if not foreground and sys.platform == "win32":
-        return _spawn_detached(runner, watch_flag, env)
+        return _spawn_detached(
+            runner,
+            watch_flag,
+            env,
+            auto_await="--no-auto-await" not in argv,
+        )
 
     print(f"MODE: {watch_flag} ({label}, foreground)")
     return subprocess.call(

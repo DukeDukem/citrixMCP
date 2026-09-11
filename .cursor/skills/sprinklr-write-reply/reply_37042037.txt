@@ -1,0 +1,42 @@
+Guten Tag Roswitha Küpferling,
+
+vielen Dank für Ihre Rückmeldung und dass Sie uns mitteilen, dass der Zugriff über Webmail funktioniert – das bestätigt, dass Ihr o2 E-Mail-Konto grundsätzlich in Ordnung ist.
+
+Da die bisherigen Einstellungen in Outlook bei Ihnen nicht greifen, empfehlen wir, folgende alternative Serveradressen zu verwenden:
+
+Posteingangsserver (IMAP):
+Server: mail.o2online.de
+Port: 993
+Verschlüsselung: SSL/TLS
+
+Postausgangsserver (SMTP):
+Server: smtp.o2online.de
+Port: 587
+Verschlüsselung: STARTTLS
+(Alternativ Port 465 mit SSL/TLS)
+
+Benutzername: Ihre vollständige E-Mail-Adresse (klauskuepferling@o2mail.de)
+Passwort: Ihr E-Mail-Passwort
+
+Wichtig: Bitte aktivieren Sie die SMTP-Authentifizierung (Benutzername und Passwort für den Versand).
+
+Wir empfehlen, das E-Mail-Konto einmal vollständig aus Outlook zu entfernen und anschließend mit den oben genannten Daten neu einzurichten. Oft hilft ein kompletter Neuaufbau des Kontos.
+
+Sollte es danach weiterhin nicht funktionieren, können unsere Kolleginnen und Kollegen an der Care-Hotline unter 089 78 79 79 400 Sie bei der Einrichtung unterstützen. Zusätzlich finden Sie unter o2.de/hilfe weitere Anleitungen und Hinweise.
+
+Wir wünschen Ihnen viel Erfolg bei der Einrichtung und stehen bei Rückfragen gerne zur Verfügung.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski 
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

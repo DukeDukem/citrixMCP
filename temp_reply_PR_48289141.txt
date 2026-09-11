@@ -1,0 +1,32 @@
+Guten Tag Mateusz Zebrak,
+
+vielen Dank für Ihre Anfrage zur Express-Aktivierung Ihres Internetanschlusses und zur Angabe der Leitungs-ID.
+
+Die Kennzeichnung auf Ihrer TAE-Dose (M3489) ist leider nicht die Leitungs-ID und reicht für die Express-Aktivierung nicht aus. Für eine Freischaltung ohne Technikerbesuch benötigen wir die Leitungs-ID in folgendem Format: Vorwahl + 111 + fünf weitere Ziffern (Beispiel: 089 111 45678).
+
+So ermitteln Sie Ihre Leitungs-ID:
+
+1. Schließen Sie einen Router an Ihre TAE-Dose an und verbinden Sie ein Endgerät per WLAN oder LAN.
+2. Rufen Sie www.anschlussinfo.de auf und klicken Sie auf „Informationen anzeigen“.
+3. Dort werden Vorwahl und Leitungs-ID angezeigt.
+
+Anschließend tragen Sie die Leitungs-ID hier ein: o2.de/service/leitungs-id/
+
+Alternativ ist eine Express-Aktivierung auch möglich, wenn Sie eine FRITZ!Box von o2 nutzen: Router an die TAE-Dose anschließen und mindestens 60 Minuten angeschlossen lassen, bis die DSL-Leuchte dauerhaft leuchtet.
+
+Ohne Angabe der Leitungs-ID wird Ihr Anschluss durch einen Techniker aktiviert.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

@@ -1,0 +1,34 @@
+Guten Tag Hansjörg Sellin,
+
+vielen Dank, dass Sie uns die Roaming-Störung für beide Rufnummern so genau beschrieben haben.
+
+Ich kann gut nachvollziehen, wie wichtig der SMS-Empfang im Ausland für Sicherheitscodes ist.
+
+Bitte prüfen Sie für beide Geräte nacheinander folgende Schritte:
+
+1. Datenroaming aktivieren (Einstellungen Mobilfunk).
+2. Netzwahl von „Automatisch“ auf „Manuell“ umstellen und ein verfügbares Netz im Aufenthaltsland auswählen.
+3. Flugmodus 30 Sekunden aktivieren und danach wieder deaktivieren.
+4. Gerät neu starten.
+5. Falls möglich: SIM testweise in ein anderes Gerät einlegen, um ein gerätespezifisches Problem auszuschließen.
+
+Falls weiterhin kein Netz verfügbar ist, senden Sie uns bitte kurz:
+- Ihr aktuelles Land,
+- den angezeigten Netzbetreiber (falls sichtbar),
+- beide Gerätemodelle,
+- die genaue Meldung im Display (z. B. „Kein Netz“ oder „Nur Notrufe“).
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

@@ -1,0 +1,38 @@
+Guten Tag Fabian Walk,
+
+vielen Dank für Ihre Nachricht, dass Sie Ihre Rufnummer mit 574 am Ende auf Ihr neues iPhone übernommen und die SIM gewechselt haben, das Gerät aber dauerhaft „Kein Netz“ anzeigt – obwohl die SIM aktiv ist und die PIN eingegeben werden konnte.
+
+Es tut uns leid, dass Sie Ihr neues iPhone seit dem Wechsel nicht wie gewohnt nutzen können. Bitte probieren Sie diese Schritte der Reihe nach:
+
+1. iPhone neu starten.
+
+2. SIM-Karte entnehmen und wieder einsetzen (Nano-SIM korrekt eingelegt, Kontakte sauber).
+
+3. Einstellungen → „Mobilfunk“ → „Netzwerkauswahl“ → „Automatisch“ aktivieren (o2 sollte sich selbst anmelden). Kein festes Fremdnetz wählen.
+
+4. Einstellungen → „Mobilfunk“ → „Mobile Daten“ und „Datenroaming“ prüfen (in Deutschland in der Regel „Mobile Daten“ an).
+
+5. Kurz Flugmodus ein- und ausschalten.
+
+6. Netzstatus prüfen: o2.de → Hilfe → „Netzstörung prüfen“ (Live-Check für Ihren Standort).
+
+7. Wenn weiterhin „Kein Netz“: Einstellungen → Allgemein → Übertragen oder Zurücksetzen → „Netzwerkeinstellungen zurücksetzen“ (WLAN-Passwörter bleiben gespeichert, mobile Einstellungen werden neu geladen).
+
+In Mein o2 (App oder o2.de) können Sie unter „Tarif & SIM“ prüfen, ob die Rufnummer aktiv ist.
+
+Wenn das Problem danach besteht, schreiben Sie uns bitte erneut mit iPhone-Modell, ob die SIM neu zugesendet wurde oder die alte SIM ist, und ob eine Fehlermeldung erscheint – E-Mail-Verlauf beifügen, Antwort ganz oben.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

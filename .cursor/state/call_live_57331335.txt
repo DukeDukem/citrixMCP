@@ -1,0 +1,41 @@
+[17:58:42] [STT] Die Ziffernummer, Gutschrift, Ziffernummer, Gutschrift, Ziffernummer, Gutschrift, Ziffernummer, Gutschrift, Ziffernummer, Gutschrift.
+[17:58:42] [Kunde] Die Ziffernummer, Gutschrift, Ziffernummer, Gutschrift, Ziffernummer, Gutschrift, Ziffernummer, Gutschrift, Ziffernummer, Gutschrift.
+[17:59:22] [STT] Und zwar
+[17:59:22] [Kunde] Und zwar
+[17:59:32] [STT] Vielen Dank der Fritzbox.
+[17:59:32] [Kunde] Vielen Dank der Fritzbox.
+[17:59:42] [STT] Ja, zwei …
+[17:59:42] [filtered] Ja, zwei …
+[17:59:57] [STT] Ich habe ja einen Auftrag erteilt.
+[17:59:57] [Kunde] Ich habe ja einen Auftrag erteilt.
+[18:00:16] [STT] Zube geschickt bekommen und da wollte ich mal fragen, wie der
+[18:00:16] [Kunde] Zube geschickt bekommen und da wollte ich mal fragen, wie der
+[18:00:26] [STT] Ziffern, Ziffern, Ziffern, Ziffern, Ziffern, Ziffern
+[18:00:26] [Kunde] Ziffern, Ziffern, Ziffern, Ziffern, Ziffern, Ziffern
+[18:00:35] [STT] Ja, ich habe mich schon besprochen, da hatte man mir gesagt, dass sie mich mit dem
+[18:00:35] [Kunde] Ja, ich habe mich schon besprochen, da hatte man mir gesagt, dass sie mich mit dem
+[18:00:54] [STT] Ich habe keinen …
+[18:00:54] [Kunde] Ich habe keinen …
+[18:01:04] [STT] Kunde bei Ihnen und möchte
+[18:01:04] [Kunde] Kunde bei Ihnen und möchte
+[18:01:23] [STT] Da war ich auch
+[18:01:23] [Kunde] Da war ich auch
+[18:01:32] [STT] Weil ich erst am 22.09.
+[18:01:32] [Kunde] Weil ich erst am 22.09.
+[18:01:41] [STT] Das macht auch keinen guten O2-Eindruck.
+[18:01:41] [Kunde] Das macht auch keinen guten O2-Eindruck.
+[18:02:08] [STT] Ja!
+[18:02:17] [STT] Ich habe keine Post von O2 bekommen, also ich habe keine Fritz.
+[18:02:17] [Kunde] Ich habe keine Post von O2 bekommen, also ich habe keine Fritz.
+[18:02:26] [STT] Der Stand bei 22.9 Uhr.
+[18:02:26] [Kunde] Der Stand bei 22.9 Uhr.
+[18:02:34] [STT] Ich ja schon ein Glasfaseranschluss.
+[18:02:34] [Kunde] Ich ja schon ein Glasfaseranschluss.
+[18:02:43] [STT] Wurde ich jetzt selbstständig gel...
+[18:02:43] [Kunde] Wurde ich jetzt selbstständig gel...
+[18:03:07] [STT] Das wäre es nicht.
+[18:03:07] [Kunde] Das wäre es nicht.
+[18:07:44] [STT] Gebrochen, Gebrochen, Gebrochen, Gebrochen
+[18:07:44] [Kunde] Gebrochen, Gebrochen, Gebrochen, Gebrochen
+[18:08:15] [STT] Untertitelung des ZDF für funk, 2017
+[18:08:15] [Kunde] Untertitelung des ZDF für funk, 2017

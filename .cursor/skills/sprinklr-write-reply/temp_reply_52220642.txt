@@ -1,0 +1,36 @@
+Guten Tag Peter Mostowys,
+
+vielen Dank für die genaueren Angaben zu Ihrem Mobilfunkproblem. Es ist nachvollziehbar, dass Telefonie und SMS funktionieren, mobiles Internet jedoch weder auf Ihrem vorherigen Smartphone noch auf dem Pixel 9 aufgebaut werden kann – insbesondere bei 5G/LTE mit Ausrufezeichen.
+
+Bitte prüfen Sie zunächst diese Punkte:
+
+1. Mobile Daten am Pixel 9 aktiviert lassen und WLAN testweise ausschalten.
+2. Flugmodus 15 Sekunden ein-, dann wieder ausschalten.
+3. Einstellungen → Netzwerk & Internet → mobiles Netz → Zugangspunkte (APN): Eintrag mit APN internet (ohne Benutzername/Passwort) auswählen bzw. neu anlegen und speichern.
+4. Netzwerkeinstellungen zurücksetzen: Einstellungen → System → Reset-Optionen → Netzwerkeinstellungen zurücksetzen, danach neu starten.
+5. In Mein o2 unter https://www.o2online.de/mein-o2 → Verbrauch prüfen, ob Datenvolumen verfügbar ist bzw. eine Datensperre angezeigt wird.
+6. Netzstatus prüfen: https://www.o2online.de/goto/netzstoerung
+
+Bitte halten Sie Ihre Rufnummer mit 357 am Ende bereit.
+
+Falls nach diesen Schritten weiterhin kein mobiles Internet möglich ist, antworten Sie bitte kurz mit:
+- ob in Mein o2 Datenvolumen sichtbar ist,
+- ob eine Datensperre angezeigt wird,
+- und ob Sie eine physische SIM oder eine eSIM nutzen.
+
+Dann kann die Datenfreischaltung bzw. die SIM-Provisionierung für Ihre Rufnummer gezielt geprüft werden.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

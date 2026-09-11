@@ -1,0 +1,33 @@
+Guten Tag Franz-Willi Görtz,
+
+vielen Dank für Ihre Anfrage, ob Sie Ihren Festnetz-Anrufbeantworter auch heute noch vom Handy aus abhören können.
+
+Grundsätzlich gilt: o2 stellt keinen eigenen Anrufbeantworter direkt im Festnetz bereit. Wenn bei Ihnen zuhause Nachrichten auf einem Anrufbeantworter landen, stammen diese in der Regel von Ihrem Router (z. B. FRITZ!Box) oder von einem Telefon mit eingebautem Anrufbeantworter.
+
+Fernabfrage auf den Festnetz-Anrufbeantworter (z. B. im Urlaub):
+- Rufen Sie Ihre Festnetznummer an.
+- Sobald die Ansage startet, drücken Sie die Sterntaste (*).
+- Geben Sie die PIN ein, die Sie in den Telefonie-Einstellungen Ihres Routers bzw. Geräts für die Fernabfrage festgelegt haben.
+- Bei einer FRITZ!Box finden Sie die Einstellung unter: Telefonie → Anrufbeantworter → Einstellungen → „Fernabfrage aktiv“.
+
+Das ist unabhängig von der früheren E-Plus/BASE-Prepaid-Funktion und hängt von Ihrem Gerät zuhause ab.
+
+Falls Sie Ihre mobile o2-Mailbox meinen (Anrufbeantworter auf dem Handy):
+- Vom eigenen o2-Handy: Kurzwahl 333.
+- Von einem anderen Anschluss oder im Ausland: Ihre Mailbox-Rufnummer im internationalen Format wählen (bei 0178 … mit Mailbox-Infix 99), Ansage mit * unterbrechen, Mailbox-PIN eingeben und mit # bestätigen.
+- Übersicht und weitere Hinweise: https://www.o2online.de/service/mailbox-voicemail/
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

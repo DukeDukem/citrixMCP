@@ -1,0 +1,30 @@
+Guten Tag Mehdi Abadinejad,
+
+vielen Dank für Ihre Nachricht zum dauerhaften roten Voicemail-Badge auf Ihrem iPhone 14 Pro Max. Es ist verständlich, dass die Anzeige stört, wenn keine Nachricht vorliegt und nur „Anbieter-Voicemail“ erscheint.
+
+Bitte versuchen Sie zuerst diese Schritte:
+1. iPhone neu starten.
+2. Flugmodus 15 Sekunden ein-, dann wieder ausschalten.
+3. Telefon-App → Voicemail öffnen und prüfen, ob Nachrichten angezeigt werden.
+4. Mailbox über die Kurzwahl 333 anrufen und prüfen, ob Nachrichten vorliegen.
+5. Unter Einstellungen → Apps → Telefon prüfen, ob „Live-Voicemail“ aktiv ist; ggf. vorübergehend deaktivieren.
+6. Einstellungen → Allgemein → iPhone übertragen oder zurücksetzen → Netzwerkeinstellungen zurücksetzen (WLAN-Passwörter müssen danach neu eingegeben werden).
+
+Falls der Badge danach weiterhin bleibt, handelt es sich häufig um eine nicht korrekt synchronisierte Visual Voicemail. In dem Fall kann die Visual Voicemail für Ihre Rufnummer mit 072 am Ende netzseitig zurückgesetzt und neu eingerichtet werden. Bitte antworten Sie kurz, falls die Schritte oben ohne Erfolg waren – idealerweise mit der Angabe, ob Sie eine physische SIM oder eine eSIM nutzen.
+
+Bis zur korrekten Visual-Voicemail-Anzeige können Sie Nachrichten weiterhin über 333 abhören.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

@@ -1,0 +1,31 @@
+Guten Tag Serhii Kovalov,
+
+vielen Dank für Ihre Anfrage zur Internetgeschwindigkeit, die bei Ihnen vor allem nachts höher zu sein scheint.
+
+Unterschiedliche Geschwindigkeiten zu verschiedenen Tageszeiten können auftreten, wenn das Netz tagsüber stärker ausgelastet ist als in den Nachtstunden. Auch WLAN-Nutzung, viele parallel genutzte Geräte oder eine drahtlose statt kabelgebundene Messung am Router können das Ergebnis deutlich beeinflussen.
+
+So können Sie die Geschwindigkeit zuverlässig prüfen:
+
+- Router per LAN-Kabel (Netzwerkkabel) am PC verbinden — nicht über WLAN messen.
+- Andere Geräte im Haushalt während der Messung möglichst pausieren.
+- Zu unterschiedlichen Tageszeiten (z. B. vormittags und nachts) jeweils einen Speedtest durchführen, z. B. unter https://www.o2.de/goto/tw-dsl-speedtest
+- Für eine offizielle Messung nach Vorgaben der Bundesnetzagentur: https://www.breitbandmessung.de
+
+Weitere Hilfen zu DSL und Router finden Sie auch unter https://www.o2.de/hilfe/internet-festnetz.
+
+Wenn die gemessene Geschwindigkeit per LAN-Kabel dauerhaft deutlich unter Ihrem gebuchten Tarif liegt, antworten Sie bitte erneut auf diese E-Mail, nennen Sie die gemessenen Werte mit Uhrzeit und senden Sie den bisherigen Verlauf mit — Ihre Nachricht bitte ganz oben.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

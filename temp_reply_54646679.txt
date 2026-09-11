@@ -1,0 +1,29 @@
+Guten Tag Bettina Verrier,
+
+vielen Dank für Ihre ausführliche Schilderung der Störungen an Ihrem Glasfaseranschluss — insbesondere Echo und Abbrüche bei Telefongesprächen sowie die instabile Internetverbindung seit der Umstellung. Es tut uns leid, dass sich die Verbindungsqualität für Sie verschlechtert hat und der Router-Neustart nach Ihrem Telefonat bei unserem Kundendienst die Probleme nicht vollständig behoben hat.
+
+Für eine erste Prüfung am Anschluss können Sie folgende Schritte durchführen:
+
+- Router und Glasfaser-ONT (Netzabschluss) für etwa 30 Sekunden vom Strom trennen und anschließend wieder starten.
+- Prüfen, ob alle Kabel zwischen ONT und Router fest sitzen.
+- Telefon testweise direkt am Router (nicht nur über ein schnurloses Telefon) — so lassen sich Echo oder Nebengeräusche oft besser eingrenzen.
+- Störungen können Sie auch in der Mein o2 App bzw. über die o2 my Service App als Störmeldung dokumentieren.
+
+Weitere Hilfen finden Sie unter https://www.o2.de/hilfe/internet-festnetz.
+
+Damit wir Ihr Anliegen gezielt zuordnen können, antworten Sie uns bitte erneut und nennen Sie, wann die Störungen auftreten (Internet, Telefon oder beides) und ob sie dauerhaft oder nur zu bestimmten Zeiten bestehen. Senden Sie den bisherigen Verlauf mit und setzen Ihre Nachricht ganz oben.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

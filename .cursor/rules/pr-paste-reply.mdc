@@ -79,7 +79,19 @@ When the user prompts with PR/pr:
 - No data leaks
 - **User sends manually** via Sprinklr **Senden** (see below) — agent does **not** click Senden and does **not** treat post-send empty editor as a paste failure
 - Write-reply flow terminates immediately after one paste + verification step (no repaste loop)
-- **After PR succeeds (EMAIL non-transfer):** Auto-LF already ran at RE time. **Immediately** arm Anwenden with **`run.py --arm`** then **`run.py --await-arm`**. Finishing quote: `PR done for #FALL_ID`. See `.cursor/rules/re-read-email.mdc` and `.cursor/rules/lf-log-form.mdc`.
+- **After PR succeeds (EMAIL non-transfer):** Auto-LF already ran at RE time. **Immediately** start **background** closeout listen (last action before turn ends — operator types nothing else):
+
+```powershell
+uv run python .cursor/skills/sprinklr-read-answer-email/run.py --closeout-anwenden
+```
+
+Shell: `block_until_ms: 0` + notify on `AWAIT_ARM_EXTRACT_DONE|RE_TEXT_ONLY_GATE|CALL_LF_GATE|DETACHED_ARM_EXTRACT_READY`. On notify → auto 7-step + Auto-LF. Finishing quote: `PR done for #FALL_ID — Closeout listening. Click Anwenden when ready.`
+
+**Hard rule — Senden is NOT part of arming and has NO ordering requirement with Anwenden:**
+- Senden = sends the reply email to the customer. Completely independent.
+- Anwenden = closes the Sprinklr case. This is what the closeout arm watches.
+- Operator may click Senden before Anwenden, after, or not at all — closeout arm does not care.
+- Agent must **never** say "Senden, then Anwenden" or imply any ordering between them. See `.cursor/rules/operator-minimal-input.mdc`.
 - **PR LF** remains a valid **recovery** command (PR then LF then arm) if Auto-LF was skipped.
 - Transfer cases: no PR; Auto-LF Transfer Ja at RE already armed Weiter/Extern.
 

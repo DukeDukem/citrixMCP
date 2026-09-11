@@ -1,0 +1,33 @@
+Guten Tag Markus Friedrichs,
+
+vielen Dank für Ihre Nachricht zu den wiederkehrenden WLAN-Aussetzern und Ihrem Wunsch nach einem Router-Austausch. Es tut mir leid, dass Ihr WLAN regelmäßig ausfällt und erst nach einem Neustart wieder stabil läuft.
+
+Bitte prüfen Sie zunächst die folgenden Punkte am Router:
+- Router und ONT (falls vorhanden) 30 Sekunden vom Strom trennen, dann neu starten
+- DSL-/Glasfaser- und Stromkabel fest sitzen lassen
+- Router möglichst frei aufstellen (nicht in Schränken oder hinter großen Gegenständen)
+- Prüfen, ob die Störungen nur im WLAN oder auch per LAN-Kabel auftreten
+
+Störung online melden und Status prüfen:
+1. Live-Check: https://www.o2online.de/goto/netzstoerung
+2. o2 my Service App: Störung prüfen / neue Störung melden
+3. Hilfeseite: https://www.o2online.de/service/festnetz-stoerung/
+
+Bitte halten Sie bei der Störungsmeldung Ihre Kundennummer mit 365 am Ende bereit und beschreiben Sie kurz, dass das WLAN regelmäßig ausfällt und ein Router-Neustart hilft.
+
+Zeigt sich nach diesen Schritten weiterhin ein Hardwaredefekt, kann im Rahmen des Störungsprozesses geprüft werden, ob ein Router-Austausch infrage kommt. Die Voraussetzungen (z. B. Miet- oder Eigentumsstatus des Geräts) werden dabei berücksichtigt.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

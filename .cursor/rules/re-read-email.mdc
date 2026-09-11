@@ -1,13 +1,15 @@
 ---
-description: Auto-process every new EMAIL case (7-step + Auto-LF) on extract — no typed RE in normal flow. Typed RE = recovery only.
+description: Operator types login, RE (first case only), PR — agent auto-continues RE+LF via closeout listen + stop hook. No NEXT/extra commands.
 alwaysApply: true
 ---
 
-# Read Email — auto on new case (no typed RE in normal flow)
+# Read Email — auto pipeline (operator minimal input)
 
 **Chat scope:** Email processing chat only (`EMAIL-PROCESSING-AGENT.md`).
 
-**Operator does NOT type RE** to receive the 7-step RE or Auto-LF. The agent runs the full EMAIL pipeline **automatically** as soon as a new case is detected.
+**Operator types only:** **login**, **RE** (first case of session), **PR** (each case end). See `.cursor/rules/operator-minimal-input.mdc`.
+
+**Case 2+:** no typed RE — closeout listen + notify/stop hook auto-triggers 7-step + Auto-LF after operator clicks Sprinklr close-out.
 
 **Always stick to the processing form:** Full 7-step output from **sprinklr-read-answer-email** SKILL.md.
 
@@ -17,10 +19,10 @@ alwaysApply: true
 |---------|----------------------|
 | **EMAIL sidetray click** (`CASE_ITEM_AUTO_CLICKED` → `SIDETRAY_EMAIL_PROCESSING_IMMEDIATE`) | Script **immediately** opens case + extract — **zero operator input** |
 | **`--await-arm` extract** completes (`DETACHED_ARM_EXTRACT_READY` / `CUSTOMER EMAIL` + `RE_TEXT_ONLY_GATE`) | Agent **same workflow** immediately continues three-turn RE → Auto-LF → wait **PR** or transfer arm — **no new user message, no typed RE** |
-| **First case after login** — case visible in Sprinklr | Agent auto-runs `run.py --once` (consumes `FIRST_RE_ONCE_PENDING`) — **do not wait for typed RE** |
+| **First case after login** — operator types **RE** once | `run.py --once` → 7-step → Auto-LF → wait **PR** |
 | **CALL** (`CHANNEL: CALL` / `CALL_LF_GATE`) | Auto-LF voice + close-out arm — no 7-step, no PR unless asked |
 
-**Typed RE / `run.py --once`** = **recovery only** (re-read visible case, `--await-arm` failed, manual refresh). Not the operator’s normal command.
+**Typed RE** = **first case only** (+ agent-internal `--once` / `--pickup` on failure — never ask operator).
 
 ### HARD BAN — never skip the 7-step RE (EMAIL)
 
@@ -49,11 +51,11 @@ Cursor **aborts** long-running agent shells (~20s) when a turn ends. That used t
 
 | Step | Command | Expect |
 |------|---------|--------|
-| 1 | `run.py --arm` (or `--arm-weiter` / `--arm-extern`) | `ARM_WATCH_DETACHED` + `READY_FOR_YOUR_CLICK` + Dexter; parent exits; **no console window** |
-| 2 | Chat + finishing quote | `Armed — click … now.` + `PR done` / `LF done` / `LF TR done` |
-| 3 | `run.py --await-arm` | Poll until extract **or** fail-fast on `ERROR: NEXT CASE NOT OPEN` |
-| 3b | **EMAIL sidetray path** | On `CASE_ITEM_AUTO_CLICKED` script runs extract **immediately** in same automation chain — agent must **not** pause for operator input before 7-step |
-| 4 | Full **7-step RE** + `--play-ready` + **Auto-LF** | Start **immediately** when await-arm / extract stdout completes — book cue after section 7; then Case Tracker (see `lf-log-form.mdc`) |
+| 1 | **Background** `run.py --closeout-anwenden` (post-PR) / `--closeout-weiter` / `--closeout-extern` / `--closeout-next` | `CLOSEOUT_LISTEN_ACTIVE` + `ARM_WATCH_DETACHED` + Dexter; notify on extract gate |
+| 2 | Finishing quote only | `PR done` / `LF TR done` / `LF done` — operator clicks Sprinklr button only |
+| 3 | Notify or stop-hook `[AUTO_PIPELINE]` | `DETACHED_ARM_EXTRACT_READY` + gate → **immediate** 7-step + Auto-LF (zero operator typing) |
+| 3b | **EMAIL sidetray path** | On `CASE_ITEM_AUTO_CLICKED` → extract in same chain — immediate 7-step + Auto-LF |
+| 4 | Full **7-step RE** + `--play-ready` + **Auto-LF** | On extract stdout / notify — never wait for operator RE/NEXT/LF |
 
 - **Click-ready = Dexter + READY_FOR_YOUR_CLICK** — do not wait for await to finish before clicking.
 - If **`--await-arm`** is aborted by Cursor → **re-run `--await-arm`** (detached watch still running).
@@ -66,15 +68,19 @@ Cursor **aborts** long-running agent shells (~20s) when a turn ends. That used t
 
 Script remembers **closed Fall #**, skips that sidebar item, polls ~25s for a different case, retries if still console/same Fall. Hard fail → stop arm + `--once` tip (no second Weiterleiten wait).
 
-## Normal workday (operator never types RE)
+## Normal workday
 
-1. **login** (once) → Case Tracker tab; agent **auto-extracts** first visible case (`run.py --once`) — no RE prompt.
-2. Agent writes full **7-step RE** + **Auto-LF** automatically.
-3. Non-transfer → operator **PR** only → agent arms Anwenden + **`--await-arm`**.
-4. Operator clicks Anwenden / Weiter / Extern / Next → **`--await-arm`** extract → agent **auto** 7-step + Auto-LF again (no RE).
-5. Repeat until **DONE**.
+1. **login** → Case Tracker tab.
+2. Operator **RE** once (first case) → 7-step + Auto-LF → wait **PR**.
+3. Operator **PR** → agent starts **background `--closeout-anwenden`** + notify.
+4. Operator clicks **Anwenden** (Sprinklr only) → extract → notify/stop hook → agent **auto** 7-step + Auto-LF.
+5. Repeat **PR** only until **DONE**.
 
-**Operator types in normal flow:** **login**, **PR**, close-out clicks, **DONE** — not **RE**, not **LF**.
+**Operator types:** **login**, **RE** (first case only), **PR**, **DONE**. Never **NEXT**, **LF**, or case 2+ **RE**.
+
+### HARD — Prowler without RE/LF
+
+**Prowler = extract DONE.** Agent **must** continue via shell notify or stop-hook `[AUTO_PIPELINE]` — agent runs `--pickup` internally if needed. **Never** ask operator to type anything.
 
 ## Recovery — when user sends **RE** / **re** / **RE SHOW** / **RE FILE**
 
@@ -92,21 +98,22 @@ Script remembers **closed Fall #**, skips that sidebar item, polls ~25s for a di
    - **PR done / LF TR done:** Finishing quotes → Dexter (`PR_LF_DONE_SOUND`).
    - Manual: **`sound`** → `--play-ready`.
 4. After 7-step + `--play-ready`: **Auto-LF** (do not wait for typed `LF`). See `.cursor/rules/lf-log-form.mdc`.
-5. **EMAIL non-transfer:** wait for user **PR** → after paste succeeds → **`--arm`** + **`--await-arm`**. Finishing quote `PR done for #FALL_ID`.
-6. **EMAIL / CALL transfer:** after Auto-LF Transfer Ja → **`--arm-weiter`** or **`--arm-extern`** + await. Quote `LF TR done for #FALL_ID`.
-7. **CALL:** on CHANNEL detect → **immediately Auto-LF** voice → **`--arm-next`** (or transfer arm) + await. Quote `LF done for #FALL_ID`. Do **not** wait for BRIEF.
+5. **EMAIL non-transfer:** wait for user **PR** → after paste succeeds → background **`--closeout-anwenden`** + notify. Quote `PR done for #FALL_ID`.
+6. **EMAIL / CALL transfer:** after Auto-LF Transfer Ja → background **`--closeout-weiter`** / **`--closeout-extern`**. Quote `LF TR done for #FALL_ID`.
+7. **CALL:** on CHANNEL detect → **immediately Auto-LF** voice → background **`--closeout-next`**. Quote `LF done for #FALL_ID`. Do **not** wait for BRIEF.
 
 ### Explicit modes
 
 | Command | Behavior |
 |---------|----------|
-| `run.py` / typed **RE** | **Recovery `--once`** — re-read visible case (not normal flow) |
+| `run.py` / typed **RE** | First case / recovery **`--once`** — never arm Anwenden |
 | `run.py --once` | Same (explicit recovery) |
-| `run.py --arm` | Arm Anwenden (**detached**; after **PR** on EMAIL non-transfer) |
-| `run.py --arm-weiter` | Arm Weiter (**detached**; after transfer Auto-LF / LF TR **queue**) |
-| `run.py --arm-extern` | Arm Extern (**detached**; after transfer Auto-LF / LF TR **email**) |
-| `run.py --arm-next` | Arm call disposition **Next** (**detached**; after **CALL** Auto-LF) |
-| `run.py --await-arm` | Poll `arm_watch.log` until extract done |
+| `run.py --closeout-anwenden` | **Post-PR:** arm Anwenden + block until extract (background + notify) |
+| `run.py --closeout-weiter` | Post-transfer queue: arm Weiter + block until extract |
+| `run.py --closeout-extern` | Post-transfer email: arm Extern + block until extract |
+| `run.py --closeout-next` | Post-CALL LF: arm Next + block until extract |
+| `run.py --arm` / `--arm-*` | Legacy arm-only (prefer `--closeout-*`) |
+| `run.py --await-arm` / `--pickup` | Agent-internal listen/recovery — **never** ask operator |
 | `run.py --foreground` | Debug only: blocking in-shell watch |
 
 ## After extract: 7-step + Auto-LF (mandatory)
@@ -123,36 +130,40 @@ Every EMAIL extract (auto after login, `--await-arm`, or recovery `--once`):
 
 Every CALL on CHANNEL detect: Auto-LF `--channel voice` → arm Next (or Weiter/Extern if transfer). BRIEF is optional and never blocks Auto-LF.
 
-## Auto-arm after **PR** (EMAIL non-transfer / Anwenden)
+## OPERATOR INPUTS ONLY (hard)
+
+**Allowed chat commands:** **login**, **RE** (first case only), **PR**, **DONE**.
+
+**FORBIDDEN:** Asking the operator for **NEXT**, **RE** (case 2+), **LF**, or any continue/pickup command. Agent recovers internally (`--pickup` / re-await). Operator only clicks Sprinklr UI (Senden / Anwenden / Weiter / Next / Speichern).
+
+## Auto-closeout after **PR** (EMAIL non-transfer)
 
 LF was already done at RE time. When user sends **PR** / **pr** and paste + verify succeed:
 
-1. **Immediately** arm Anwenden (detached):
+1. **Mandatory last shell action** — background + notify (do **not** ask for NEXT):
    ```powershell
-   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm
+   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py --closeout-anwenden
    ```
-   Expect **`ANWENDEN_RE_ARMED`** + **`ARM_WATCH_DETACHED`** + **`READY_FOR_YOUR_CLICK: Anwenden`**.
-2. Chat: `Armed — click Anwenden now.` + `PR done for #FALL_ID` (or `PR LF done` if manual PR LF path).
-3. Then **`--await-arm`** → next case → agent **auto** 7-step + Auto-LF (operator does **not** type RE).
+   Use Shell `block_until_ms: 0` + `notify_on_output` pattern:
+   `AWAIT_ARM_EXTRACT_DONE|RE_TEXT_ONLY_GATE|CALL_LF_GATE|DETACHED_ARM_EXTRACT_READY`
+2. Chat: `PR done for #FALL_ID — Closeout listening. Click Anwenden when ready.`
+   **Senden is independent** — not an arm criterion, no ordering with Anwenden. Operator clicks either in any order.
+3. On notify **or** stop-hook `[AUTO_PIPELINE]`: **immediate** full 7-step + Auto-LF. Never idle after Prowler.
 
 **Do not** arm Anwenden at Auto-LF time for non-transfer EMAIL (wait for PR).
 
-### Auto-arm after **CALL** Auto-LF — disposition **Next**
+### Closeout after transfer / CALL
 
-After Auto-LF `--channel voice` succeeds:
+| Trigger | Closeout (background + notify) | Operator Sprinklr click |
+|---------|--------------------------------|-------------------------|
+| **PR** (EMAIL non-transfer) | **`--closeout-anwenden`** | Anwenden |
+| **Auto-LF TR** (queue) | **`--closeout-weiter`** | Transfer UI → exact Weiter |
+| **Auto-LF TR** (email `@`) | **`--closeout-extern`** | Externer Transfer → Weiterleiten |
+| **CALL** Auto-LF | **`--closeout-next`** | exact Next |
 
-1. **`--arm-next`** (not Anwenden) → Dexter → `LF done for #FALL_ID` → **`--await-arm`**  
-2. User clicks exact **Next**. After extract: CHANNEL again → process + Auto-LF.
+**Prowler = extract done** — never stop idle; agent fixes internally; never push recovery commands to the operator.
 
-| Trigger | Arm when | Arm script | Then |
-|---------|----------|------------|------|
-| **PR** (EMAIL non-transfer; Auto-LF already done) | After PR paste+verify | **`--arm`** | **`--await-arm`** |
-| **Auto-LF / LF TR** (transfer queue) | After transfer fill | **`--arm-weiter`** | **`--await-arm`** |
-| **Auto-LF / LF TR** (transfer email) | After transfer fill | **`--arm-extern`** | **`--await-arm`** |
-| **Auto-LF** (CALL voice) | After voice fill | **`--arm-next`** | **`--await-arm`** |
-| Manual **PR LF** (recovery) | After PR + LF | **`--arm`** | **`--await-arm`** |
-
-Do **not** arm twice for the same close-out. If a detached watch is already waiting, do not start a second overlapping arm.
+Do **not** arm twice for the same close-out.
 
 ## 7-step output
 

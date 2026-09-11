@@ -1,0 +1,35 @@
+Guten Tag Silvia Schneider,
+
+vielen Dank, dass Sie uns den vollständigen Ausfall Ihres Festnetz- und Internetanschlusses seit Mittwochnachmittag (22.07.2026) gemeldet haben.
+
+Es tut mir leid, dass Ihr Anschluss derzeit nicht nutzbar ist und Sie dadurch – besonders im Homeoffice – erheblich eingeschränkt sind.
+
+Bitte prüfen Sie zunächst am Router:
+- Steckt das Stromkabel und das DSL-/Glasfaser-Kabel fest?
+- Starten Sie Router und ONT (falls vorhanden) neu: Gerät 30 Sekunden vom Strom trennen, dann wieder einschalten.
+
+Störung online melden und Status prüfen:
+1. Live-Check: https://www.o2online.de/goto/netzstoerung  
+2. o2 my Service App: Störung prüfen / neue Störung melden  
+3. Hilfeseite Festnetz-Störung: https://www.o2online.de/service/festnetz-stoerung/
+
+Bitte halten Sie Ihre Festnetznummer mit 546 am Ende bereit.
+
+Zur Entschädigung nach § 58 TKG: Ein Antrag ist erst möglich, wenn die Störung beendet bzw. der Anschluss wiederhergestellt ist. Danach können Sie die Entschädigung über das Online-Formular beantragen: https://www.o2online.de/service/entschaedigung-formular/
+
+Eine pauschale Bereitstellung von kostenfreiem mobilem Datenvolumen für den gesamten Haushalt bis zur Entstörung kann per E-Mail nicht zugesagt werden. Falls Sie einen o2-Mobilfunkvertrag nutzen, prüfen Sie in Mein o2 unter „Verbrauch“, ob Ihr Datenvolumen ausreicht.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

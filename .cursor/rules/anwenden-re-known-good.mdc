@@ -7,14 +7,22 @@ alwaysApply: true
 
 **Status:** Current as of **2026-09-04**. Detached arm + typed-RE `--once` + next-case Fall skip + sounds.
 
-## Close-out arms (do not mix)
+## Operator inputs only
 
-| Trigger | Meaning | Arm | Then |
-|---------|---------|-----|------|
-| **PR** (EMAIL; Auto-LF already at RE) | Non-transfer answered | **Anwenden** (`--arm`) | **`--await-arm`** |
-| **Auto-LF** / **LF** (**CALL**) | Voice logged | **Next** (`--arm-next`) | **`--await-arm`** |
-| **Auto-LF TR** / **LF TR** (queue) | Transfer | **Weiter** (`--arm-weiter`) | **`--await-arm`** |
-| **Auto-LF TR** / **LF TR** (email) | External transfer | **Extern** (`--arm-extern`) | **`--await-arm`** |
+**Chat:** **login**, **RE** (first case only), **PR**, **DONE**. Never ask for **NEXT** / case-2+ **RE** / **LF**.
+
+## Close-out (do not mix) — prefer `--closeout-*` (background + notify)
+
+| Trigger | Meaning | Closeout | Operator click |
+|---------|---------|----------|----------------|
+| **PR** (EMAIL non-transfer) | **`--closeout-anwenden`** | Anwenden |
+| **Auto-LF** (**CALL**) | **`--closeout-next`** | exact Next |
+| **Auto-LF TR** (queue) | **`--closeout-weiter`** | Transfer UI → Weiter |
+| **Auto-LF TR** (email) | **`--closeout-extern`** | Externer Transfer → Weiterleiten |
+
+On notify / stop-hook `[AUTO_PIPELINE]`: immediate 7-step + Auto-LF. Prowler ≠ stop.
+
+**Senden is NOT an arming criterion** — independent of Anwenden. Operator clicks either in any order. Agent never says "Senden, then Anwenden".
 
 **CALL Next arm:** exact label **Next** on `button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]` only (not Back / Weiter / Weiterleiten). Detection is **DOM/event-based** (not pixel coordinates) — disposition tray position does not matter. Close DevTools **Inspect** before clicking (Inspect steals the click). If a live `--arm-next` watch was started before a detection fix, **kill/re-arm** so the new listener code loads.
 
@@ -50,7 +58,7 @@ If `--await-arm` aborted → **re-run `--await-arm`**. If log has `ERROR: NEXT C
 
 **Weiter:** exact **Weiter** only (ignore Weiterleiten / Weiteleiten).  
 **Extern:** exact **Weiterleiten** only (ignore Externer Transfer).  
-**Prowler:** after CUSTOMER EMAIL extract fully printed.
+**Prowler:** extract DONE — agent continues via closeout notify or stop-hook `[AUTO_PIPELINE]`. **Forbidden:** idle after sound; asking operator for NEXT/RE/LF.
 
 ## Workday flow
 

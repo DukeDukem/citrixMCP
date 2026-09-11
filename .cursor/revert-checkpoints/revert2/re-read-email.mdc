@@ -1,0 +1,62 @@
+---
+description: Email processing chat — click-gated Fall # watch on go; extract once per case-item click. Process FALL_CHANGE_DETECTED with 7-step RE.
+alwaysApply: true
+---
+
+# RE = Read Email (Fall # watch — click-gated auto-RE)
+
+**Chat scope:** **Email processing agent chat only** (startup: `EMAIL-PROCESSING-AGENT.md`). Instructions dashboard must **not** run this script — see `.cursor/rules/instructions-only-no-re-pr-lf.mdc`.
+
+**Always stick to the processing form:** Use the full 7-step output structure from **sprinklr-read-answer-email** SKILL.md.
+
+**AI model (ABSOLUTE):** Model picker stays **Auto**. **Grok is banned.**
+
+## Click-gated Fall # watch (default)
+
+On session **`go`**, start the watch script in background. It does **not** poll Fall # until the user **left-clicks** a sidebar case button:
+
+`button[data-testid="collapsed-case-item"]`  
+(e.g. `aria-label="Fall Nr. 55901259 von Andreas Doub"`)
+
+### Flow per case
+
+1. Script prints **`FALL_WATCH_ARMED`** — waiting for case-item click (no Fall # polling yet).
+2. User **left-clicks** a collapsed case item → **`CASE_ITEM_CLICK_DETECTED`**.
+3. Script polls h1 Fall # (`h1[data-spaceweb="typography-h2"] span[data-testid="box"]`) until it **changes** to the clicked case.
+4. **`FALL_CHANGE_DETECTED`** → extract email → **`FALL_DETECTION_STOPPED`** (polling ends for this click).
+5. **You** immediately output full **7-step RE**.
+6. Script waits for **next** case-item click (repeat from step 1).
+
+User does **not** type **RE** between cases — only **clicks** the next case in Sprinklr.
+
+### Session start (`go`)
+
+1. Login if needed (`login-command.mdc`).
+2. Start watch in **background**:
+   ```powershell
+   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
+   ```
+3. Tell user: **click a case** in the Sprinklr sidebar to trigger read — no RE typing needed.
+
+**Do not ask for confirmation** — start watch on **go** automatically.
+
+### **RE** / **re** (optional alias)
+
+Ensure watch script is running if not already.
+
+### Legacy single-shot
+
+**RE once**: `uv run python .cursor/skills/sprinklr-read-answer-email/run.py --once`
+
+## 7-step output (unchanged)
+
+On **`FALL_CHANGE_DETECTED` + CUSTOMER EMAIL** → sections 1–7 immediately.
+
+## Integrity
+
+- Discard prior Fall # context on each `FALL_CHANGE_DETECTED`.
+- PR pastes latest RE for the **same visible Fall #** only.
+
+## Stop watch
+
+Ctrl+C in watch terminal, or user says **stop watch**.

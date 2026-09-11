@@ -1,0 +1,21 @@
+[17:27:44] [STT] Der Punkt von Ihnen, er hat den Punkt von einem...
+[17:27:44] [Kunde] Der Punkt von Ihnen, er hat den Punkt von einem...
+[17:27:48] [STT] Das war der, um, um, um.
+[17:27:48] [Kunde] Das war der, um, um, um.
+[17:27:52] [STT] Es geht mit so einer Box zu Hause.
+[17:27:52] [Kunde] Es geht mit so einer Box zu Hause.
+[17:27:56] [STT] Das wurde aber auf dem Konto überwiesen.
+[17:27:56] [Kunde] Das wurde aber auf dem Konto überwiesen.
+[17:28:04] [STT] Das ist der Grund, dass der Kunde, der wir hier haben, das ist der Grund, den wir hier haben. Das ist der Grund, den wir hier haben, das ist der Grund, den wir hier haben. Das ist der Grund, den wir hier haben. Das ist der Grund, den wir hier haben. Das ist der Grund, den wir hier haben. Das ist der Grund, den wir hier haben. Das ist der Grund, den wir hier haben.
+[17:28:04] [Kunde] Das ist der Grund, dass der Kunde, der wir hier haben, das ist der Grund, den wir hier haben. Das ist der Grund, den wir hier haben, das ist der Grund, den wir hier haben. Das ist der Grund, den wir hier haben. Das ist der Grund, den wir hier haben. Das ist der Grund, den wir hier haben. Das ist der Grund, den wir hier haben. Das ist der Grund, den wir hier haben.
+[17:28:07] [STT] I know.
+[17:28:21] [STT] Ja, das ist die nächste.
+[17:28:21] [filtered] Ja, das ist die nächste.
+[17:28:25] [STT] 9, 1, 9
+[17:28:29] [STT] Sechs, zwei, zwei.
+[17:28:29] [Kunde] Sechs, zwei, zwei.
+[17:29:03] [STT] Ja.
+[17:29:06] [STT] Okay, alles klar.
+[17:29:06] [filtered] Okay, alles klar.
+[17:29:10] [STT] Ja, danke.
+[17:29:10] [filtered] Ja, danke.

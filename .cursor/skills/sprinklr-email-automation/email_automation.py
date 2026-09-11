@@ -5472,6 +5472,25 @@ Use cursor-agent's file reading capabilities to read these files before generati
                         )
                     else:
                         print(extract_done_marker, flush=True)
+                        try:
+                            _read_skill = (
+                                Path(__file__).resolve().parent.parent
+                                / "sprinklr-read-answer-email"
+                            )
+                            if str(_read_skill) not in sys.path:
+                                sys.path.insert(0, str(_read_skill))
+                            from extract_ready_state import write_extract_ready_simple
+
+                            opened_case = self._get_case_id_from_page_header() or ""
+                            ch = "CALL" if getattr(self, "_sidetray_skip_click", False) else "EMAIL"
+                            write_extract_ready_simple(
+                                case_id=opened_case,
+                                marker=extract_done_marker,
+                                channel=ch,
+                                source="arm_extract",
+                            )
+                        except Exception as _ere:
+                            logger.debug("extract_ready after marker: %s", _ere)
                         return True
                 print(
                     f"[WARN] Extract after {mode_label} failed (attempt {attempt}/3).",
@@ -6822,6 +6841,18 @@ def main():
                 set_first_re_once(source="login")
                 print("FIRST_RE_ONCE_PENDING")
                 print("[INFO] Next RE will extract the open case (--once), not arm Anwenden.")
+            try:
+                import json as _json
+                from datetime import datetime as _dt, timezone as _tz
+                _sess_path = _script_dir.parent.parent / "state" / "email_session_active.json"
+                _sess_path.parent.mkdir(parents=True, exist_ok=True)
+                _sess_path.write_text(
+                    _json.dumps({"active": True, "since": _dt.now(_tz.utc).isoformat()}, indent=2),
+                    encoding="utf-8",
+                )
+                print("EMAIL_SESSION_ACTIVE")
+            except Exception as _se:
+                logger.warning(f"Could not set email_session_active flag: {_se}")
             except Exception as e:
                 logger.warning(f"Could not set first-RE-once flag: {e}")
                 print(f"[WARN] Could not set first-RE-once flag: {e}")

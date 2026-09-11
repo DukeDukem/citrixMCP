@@ -1,0 +1,143 @@
+[17:11:15] [STT] Ich wünsche euch einen schönen Abend.
+[17:11:15] [Kunde] Ich wünsche euch einen schönen Abend.
+[17:11:22] [STT] Aha, genau, genau.
+[17:11:22] [filtered] Aha, genau, genau.
+[17:11:45] [STT] Okay.
+[17:11:49] [STT] Also...
+[17:11:58] [STT] Aha.
+[17:12:04] [STT] Ja, ganz klar.
+[17:12:04] [filtered] Ja, ganz klar.
+[17:12:11] [STT] Also...
+[17:12:15] [STT] wenn das, wenn das, wenn das
+[17:12:15] [Kunde] wenn das, wenn das, wenn das
+[17:12:18] [STT] heute gemerkt haben dann wiederruf
+[17:12:18] [Kunde] heute gemerkt haben dann wiederruf
+[17:12:24] [STT] Also,
+[17:12:32] [STT] Okay.
+[17:12:40] [STT] Okay.
+[17:12:45] [STT] Genau, Genau, Genau, Genau
+[17:12:45] [filtered] Genau, Genau, Genau, Genau
+[17:12:49] [STT] E-Mail-Adressor.
+[17:12:49] [Kunde] E-Mail-Adressor.
+[17:12:52] [STT] EM
+[17:12:56] [STT] Ja
+[17:12:59] [STT] Ja?
+[17:13:03] [STT] Ja?
+[17:13:10] [STT] p3.
+[17:13:14] [STT] Genau, ein Roppelsee, ja.
+[17:13:14] [filtered] Genau, ein Roppelsee, ja.
+[17:13:18] [STT] Ja?
+[17:13:23] [STT] Ja.
+[17:13:29] [STT] Okay.
+[17:13:32] [STT] Das habe ich. Okay, so.
+[17:13:32] [Kunde] Das habe ich. Okay, so.
+[17:13:42] [STT] Also Auto.
+[17:13:42] [Kunde] Also Auto.
+[17:13:45] [STT] Okay.
+[17:13:51] [STT] Ja?
+[17:13:56] [STT] Ja?
+[17:14:00] [STT] Ja
+[17:14:03] [STT] Boah, pjump, pjump!
+[17:14:03] [Kunde] Boah, pjump, pjump!
+[17:14:19] [STT] Vai, film, film!
+[17:14:19] [Kunde] Vai, film, film!
+[17:14:22] [STT] Okay.
+[17:14:29] [STT] und wenn es mich zu plätschern.
+[17:14:29] [Kunde] und wenn es mich zu plätschern.
+[17:14:32] [STT] den Vertrag stand jeden.
+[17:14:32] [Kunde] den Vertrag stand jeden.
+[17:14:42] [STT] die Kundennummer steht auf dieses
+[17:14:42] [Kunde] die Kundennummer steht auf dieses
+[17:15:02] [STT] Danke fürs Zusehen.
+[17:15:02] [Kunde] Danke fürs Zusehen.
+[17:15:12] [STT] Okay, super. Okay, good.
+[17:15:12] [filtered] Okay, super. Okay, good.
+[17:15:16] [STT] Also, das ist Impressum at ...
+[17:15:16] [Kunde] Also, das ist Impressum at ...
+[17:15:25] [STT] Okay.
+[17:15:29] [STT] Ich kann es, ich kann es, den E-Mail.
+[17:15:29] [Kunde] Ich kann es, ich kann es, den E-Mail.
+[17:15:33] [STT] Ja, ja
+[17:15:45] [STT] Okay super, dann ja.
+[17:15:45] [filtered] Okay super, dann ja.
+[17:15:48] [STT] Und ja, dann...
+[17:15:48] [filtered] Und ja, dann...
+[17:15:52] [STT] weiter, dann.
+[17:15:52] [Kunde] weiter, dann.
+[17:15:55] [STT] Danke und bis zum nächsten Mal!
+[17:15:55] [Kunde] Danke und bis zum nächsten Mal!
+[17:17:46] [STT] Willkommen bei...
+[17:17:53] [STT] Auf Wiedersehen!
+[17:17:53] [Kunde] Auf Wiedersehen!
+[17:18:05] [STT] Hey
+[17:18:12] [STT] Das ist so, wie man das von Hannover prägen kann.
+[17:18:12] [Kunde] Das ist so, wie man das von Hannover prägen kann.
+[17:18:25] [STT] Also, ich bin sicher, dass es nicht so wichtig ist, dass es nicht so wichtig ist, dass es nicht so wichtig ist.
+[17:18:25] [Kunde] Also, ich bin sicher, dass es nicht so wichtig ist, dass es nicht so wichtig ist, dass es nicht so wichtig ist.
+[17:18:28] [STT] im Internet Glasfasso.
+[17:18:28] [Kunde] im Internet Glasfasso.
+[17:18:32] [STT] 200
+[17:18:41] [STT] Ich bin jetzt telefonisch.
+[17:18:41] [Kunde] Ich bin jetzt telefonisch.
+[17:18:53] [STT] Sagen Sie, wenn er mit Telekunden ...
+[17:18:53] [Kunde] Sagen Sie, wenn er mit Telekunden ...
+[17:18:57] [STT] Der Kunde steht auf dem Partiet.
+[17:18:57] [Kunde] Der Kunde steht auf dem Partiet.
+[17:19:01] [STT] Vielen Dank für Ihren Namen, bitte.
+[17:19:01] [Kunde] Vielen Dank für Ihren Namen, bitte.
+[17:19:06] [STT] Verkürzte, Verkürzte, Verkürzte, Verkürzte, Verkürzte.
+[17:19:06] [Kunde] Verkürzte, Verkürzte, Verkürzte, Verkürzte, Verkürzte.
+[17:19:14] [STT] Ja, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah,
+[17:19:14] [Kunde] Ja, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah, ah,
+[17:19:18] [STT] Hier ist der Lieblingspräch auf Deutsch.
+[17:19:18] [Kunde] Hier ist der Lieblingspräch auf Deutsch.
+[17:19:28] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:28] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:32] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:32] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:36] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:36] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:41] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:41] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:45] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:45] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:49] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:49] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:54] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:54] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:58] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:19:58] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:02] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:02] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:06] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:06] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:10] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:10] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:14] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:14] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:19] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:19] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:23] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:23] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:27] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:27] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:31] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:31] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:35] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:35] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:40] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:40] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:44] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:44] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:49] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:49] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:53] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:53] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:58] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:20:58] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:21:03] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:21:03] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:21:08] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:21:08] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:21:12] [STT] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.
+[17:21:12] [Kunde] Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen, Verhandlungen.

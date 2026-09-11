@@ -1,0 +1,31 @@
+﻿Guten Tag Tatjana Reimchen,
+
+vielen Dank, dass Sie uns den ungewöhnlich schnellen Verbrauch Ihres Datenvolumens und die dadurch entstandene Nachbuchung gemeldet haben.
+
+Ich kann gut nachvollziehen, dass diese Entwicklung für Sie sehr ärgerlich ist, insbesondere weil Ihr übliches Nutzungsverhalten deutlich geringer war.
+
+Damit Sie die Ursache schnell eingrenzen können, prüfen Sie bitte nacheinander:
+1) den Datenverbrauch in Mein o2 bzw. in der Mein o2 App,
+2) die Datennutzung je App in den Geräteeinstellungen (insbesondere Hintergrunddaten),
+3) ob Cloud-Backups, App-Updates oder Synchronisation über Mobilfunk aktiv sind,
+4) ob ein Hotspot aktiv war oder von einem anderen Gerät mitgenutzt wurde,
+5) ob WLAN-Unterstützung/automatischer Wechsel auf mobile Daten aktiviert ist.
+
+Als Alternativen können Sie zusätzlich den Datensparmodus aktivieren, Hintergrunddaten für einzelne Apps einschränken und große Updates/Backups nur über WLAN durchführen.
+
+Wenn Sie danach weiterhin einen nicht nachvollziehbaren Verbrauch feststellen, melden Sie sich bitte erneut mit den auffälligen Zeiträumen aus der Verbrauchsanzeige in Mein o2. So kann Ihr Anliegen zur Kostenprüfung gezielt weiterbearbeitet werden.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

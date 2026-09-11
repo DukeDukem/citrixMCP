@@ -1,0 +1,27 @@
+Guten Tag,
+
+vielen Dank, dass Sie uns die anhaltende Netzwerkstörung nach der Datenvolumen-Buchung, Ihre DNS-Tests und den Wunsch nach einem SIM-Reset so ausführlich beschrieben haben.
+
+Es ist nachvollziehbar, dass Apps, Hotspot und die PlayStation weiterhin ausfallen, obwohl YouTube mit manuell gesetztem DNS im Browser kurzzeitig funktioniert hat.
+
+Bitte prüfen Sie zuerst diese Schritte am Gerät:
+1. Stellen Sie den APN und die privaten DNS-Einstellungen wieder auf Automatisch bzw. die o2-Standardwerte und starten Sie das Gerät neu.
+2. Prüfen Sie in Mein o2 unter Tarif & SIM, ob Sperren oder Hinweise zur Datennutzung aktiv sind.
+3. Wenn das Problem bleibt, können Sie dort unter SIM verwalten eine Ersatz-SIM mit Übernahme Ihrer Rufnummer bestellen bzw. den Tausch anstoßen.
+
+So können Sie den Status Ihrer SIM und Ihres Tarifs jederzeit selbst einsehen, ohne auf einen fest terminierten Reset warten zu müssen.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

@@ -38,7 +38,7 @@ After Sprinklr login is verified in **login-only** mode, the automation **opens 
 
 This is the only extra tab opened during login-only (no monitor, no Anwenden arm, no RE extract yet).
 
-After login succeeds, the script sets **`FIRST_RE_ONCE_PENDING`** (marker). The **agent** (not the operator) must auto-run **`run.py --once`** as soon as a case is visible — operator does **not** type **RE**. Never Anwenden arm on first extract. See `.cursor/rules/re-read-email.mdc`.
+After login succeeds, the script sets **`FIRST_RE_ONCE_PENDING`** (marker). The **operator** types **RE once** for the **first case of the session** only. Agent runs extract → 7-step → Auto-LF. Do **not** arm Anwenden on first extract. Case 2+ needs **no RE** — only **PR** + auto closeout pipeline. See `.cursor/rules/operator-minimal-input.mdc`.
 
 ## Post-login call listen (email-processing agent)
 

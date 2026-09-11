@@ -1,0 +1,30 @@
+Guten Tag Christiane Peters,
+
+vielen Dank für Ihre Rückmeldung zu Ihrer Internetgeschwindigkeit.
+
+Bitte probieren Sie zunächst folgende Schritte:
+
+1. Testen Sie die Geschwindigkeit per LAN-Kabel direkt am Router (nicht über WLAN) — WLAN kann die Geschwindigkeit je nach Empfang und Umgebung deutlich reduzieren.
+
+2. Starten Sie Ihren Router neu: Ziehen Sie das Netzteil für ca. 60 Sekunden aus der Steckdose und schließen es danach wieder an.
+
+3. Prüfen Sie, ob in Ihrer Region eine bekannte Störung vorliegt: o2.de → Hilfe & Service → Netzstörung prüfen, oder direkt in der Mein o2 App.
+
+Bitte beachten Sie außerdem, dass der Tarif Basic M eine Maximalgeschwindigkeit von 100 Mbit/s bietet — die tatsächlich erreichbare Geschwindigkeit hängt bei DSL-Anschlüssen von der Leitungsqualität und der Entfernung zum nächsten Verteilerknoten ab. In manchen Fällen ist am Anschluss technisch etwas weniger als der Maximalwert realisierbar.
+
+Sollte die Geschwindigkeit nach dem LAN-Test und Neustart weiterhin deutlich unter dem Erwarteten liegen, melden Sie sich gerne erneut — wir schauen dann gemeinsam mit Ihnen weiter.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz

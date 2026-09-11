@@ -1,0 +1,26 @@
+Guten Tag Tamara Hekrenz,
+
+vielen Dank für Ihre Rückmeldung und dafür, dass Sie den Router zurücksenden möchten. Es tut uns leid, dass das Zurücksetzen auf die Werkeinstellungen bisher nicht gelungen ist.
+
+Bitte versuchen Sie einen der folgenden Wege bei Ihrer AVM FRITZ!Box 6660:
+
+1. Über die Benutzeroberfläche: Verbinden Sie einen Computer per LAN oder WLAN mit dem Router und öffnen Sie im Browser http://fritz.box oder http://192.168.178.1. Melden Sie sich an und wählen Sie System > Sicherung > Werkseinstellungen > Werkseinstellungen laden. Bestätigen Sie den Vorgang ggf. kurz mit einer Taste am Gerät oder über ein angeschlossenes Telefon.
+
+2. Über ein angeschlossenes Telefon: Schließen Sie ein analoges Telefon an die FRITZ!Box an, heben Sie ab und wählen Sie #991*15901590*. Legen Sie nach etwa 3 Sekunden wieder auf. Der Reset ist abgeschlossen, wenn die WLAN-LED dauerhaft leuchtet.
+
+Falls das Zurücksetzen weiterhin nicht funktioniert, senden Sie den Router bitte trotzdem mit dem bereits angemeldeten Retoureschein zurück. Den Retourenprozess starten bzw. den Schein erneut anfordern können Sie unter https://router-retoure.o2online.de/start.
+
+Zur Verbesserung unseres Kundenservices erhalten Sie möglicherweise eine E-Mail oder SMS zu einer Zufriedenheitsbefragung. Wenn Sie mit meinem Service zufrieden waren, freue ich mich sehr über eine positive Bewertung, bei der die 10 der Höchstbewertung entspricht.
+
+Freundliche Grüße,
+
+Ihr o2 Kundenbetreuer
+Lukasz Kowalski
+
+Telefónica Germany GmbH & Co. OHG - Georg-Brauchle-Ring 50 - 80992 München - Deutschland - o2.de
+
+Ein Beitrag zum Umweltschutz. Nicht jede E-Mail muss ausgedruckt werden.
+
+Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflichtangaben
+
+* gemäß Tarif für Anrufe in das dt. Fest- bzw. Mobilfunknetz
