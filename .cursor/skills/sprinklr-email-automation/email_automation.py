@@ -6841,18 +6841,18 @@ def main():
                 set_first_re_once(source="login")
                 print("FIRST_RE_ONCE_PENDING")
                 print("[INFO] Next RE will extract the open case (--once), not arm Anwenden.")
-            try:
-                import json as _json
-                from datetime import datetime as _dt, timezone as _tz
-                _sess_path = _script_dir.parent.parent / "state" / "email_session_active.json"
-                _sess_path.parent.mkdir(parents=True, exist_ok=True)
-                _sess_path.write_text(
-                    _json.dumps({"active": True, "since": _dt.now(_tz.utc).isoformat()}, indent=2),
-                    encoding="utf-8",
-                )
-                print("EMAIL_SESSION_ACTIVE")
-            except Exception as _se:
-                logger.warning(f"Could not set email_session_active flag: {_se}")
+                try:
+                    import json as _json
+                    from datetime import datetime as _dt, timezone as _tz
+                    _sess_path = _script_dir.parent.parent / "state" / "email_session_active.json"
+                    _sess_path.parent.mkdir(parents=True, exist_ok=True)
+                    _sess_path.write_text(
+                        _json.dumps({"active": True, "since": _dt.now(_tz.utc).isoformat()}, indent=2),
+                        encoding="utf-8",
+                    )
+                    print("EMAIL_SESSION_ACTIVE")
+                except Exception as _se:
+                    logger.warning(f"Could not set email_session_active flag: {_se}")
             except Exception as e:
                 logger.warning(f"Could not set first-RE-once flag: {e}")
                 print(f"[WARN] Could not set first-RE-once flag: {e}")

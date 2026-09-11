@@ -39,8 +39,9 @@ After **each** EMAIL extract for **each** new Fall #:
 The assistant message that follows extract tools in **this chat** MUST contain, as **plain visible markdown** (no tools):
 
 1. **`CHANNEL: EMAIL`** + **this** Fall #
-2. **Extract block** — paste the **CUSTOMER EMAIL** from script stdout (Fall #, Subject, From, Body). Include short thread context if the newest inbound alone is incomplete. **Do not** tell the operator to open `latest_extract.md` instead of pasting.
-3. **Full 7-step RE** — sections **1–7** in the **same** message
+2. **Full 7-step RE** — sections **1–7** in the **same** message
+
+**Do NOT paste the customer email body / Subject / From into chat.** The operator can see the email directly in Sprinklr. Duplicating it in chat is noise. The 7-step is the deliverable.
 
 **Every case. Every time. Zero exceptions. Zero delay. Zero waiting for the operator to ask where it is.**
 
@@ -100,14 +101,13 @@ When stdout shows **`CASE_ITEM_AUTO_CLICKED`** + **`SIDETRAY_EMAIL_PROCESSING_IM
 CHANNEL: EMAIL
 Fall #…
 
-### Extract (visible)
-[paste Subject / From / Body from CUSTOMER EMAIL stdout]
-
 ### 1. Case summary
 …
 ### 7. Summary of response
 …
 ```
+
+No extract block. No Subject / From / Body paste. 7-step only.
 
 ## Operator recovery
 

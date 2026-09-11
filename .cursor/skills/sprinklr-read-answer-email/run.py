@@ -77,17 +77,24 @@ _FAIL_MARKERS = (
 
 
 def _print_re_text_only_gate() -> None:
-    """Tell the agent to stop tooling and post the 7-step as plain chat next."""
+    """Tell the agent to paste extract + 7-step as plain chat next (no one-liner)."""
     print("\n" + "=" * 80, flush=True)
     print("RE_TEXT_ONLY_GATE", flush=True)
     print("=" * 80, flush=True)
     print(
-        "AGENT — mandatory next step: send a NEW chat message with the full 7-step RE "
-        "(sections 1–7) as plain visible text ONLY.",
+        "AGENT — EVERY EMAIL CASE, EVERY TIME: next chat message MUST PASTE this Fall #'s "
+        "CUSTOMER EMAIL extract (Fall #, Subject, From, Body) AND the full 7-step RE "
+        "(sections 1–7) as plain visible text. Do IMMEDIATELY — do not wait for the operator. "
+        "New Fall # = paste again. Prior cases do not count.",
         flush=True,
     )
     print(
-        "That 7-step message must have ZERO tool calls (no Shell, Grep, Task, Read, Write, "
+        "BANNED: one-liners like 'extracted — 7-step next' / 'writing RE…' without pasting "
+        "extract + sections 1–7 in that same message.",
+        flush=True,
+    )
+    print(
+        "That turn-B message must have ZERO tool calls (no Shell, Grep, Task, Read, Write, "
         "play-ready, Auto-LF, arms).",
         flush=True,
     )
@@ -97,7 +104,11 @@ def _print_re_text_only_gate() -> None:
         flush=True,
     )
     print(
-        "After the 7-step is visible in chat, run play-ready + Auto-LF in a separate "
+        "Do NOT tell the operator to open latest_extract.md instead of pasting the extract.",
+        flush=True,
+    )
+    print(
+        "After extract + 7-step are visible in chat, run play-ready + Auto-LF in a separate "
         "tools-only message.",
         flush=True,
     )

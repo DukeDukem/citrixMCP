@@ -24,22 +24,22 @@ alwaysApply: true
 
 **Typed RE** = **first case only** (+ agent-internal `--once` / `--pickup` on failure — never ask operator).
 
-### HARD BAN — never skip the 7-step RE (EMAIL)
+### HARD BAN — EVERY EMAIL CASE: paste extract + 7-step (no exceptions)
 
-For every **CHANNEL: EMAIL** case (auto extract after login, `--await-arm`, or recovery `--once`):
+**Every** CHANNEL: EMAIL Fall # — first case, every later case, after every Anwenden/Weiter/Extern/Next extract, every recovery `--once`:
 
-1. You **MUST** write the full **7-step RE as visible chat text** (plain assistant message the user can read without opening any UI menu).  
-2. **Forbidden shortcuts:** Auto-LF only; “transfer done” one-liner; paste-ready reply without sections 1–5/7; tool-only turn with no 7-step text.  
-3. **Forbidden hiding:** Do **not** put the 7-step only inside tool results, background-task panels, collapsed **“finished N background tasks”** / task dropdowns, or anything the user must click to expand. The 7-step must appear as **normal chat prose** above the fold.  
-4. **Turn order (EMAIL):**  
-   - Extract (`run.py` / await-arm) may use tools first.  
-   - **Next:** sections **1–7 as plain chat text** — **text-only assistant message** strongly preferred (no Task/subagent, no parallel tool batch before prose). See `.cursor/rules/re-no-background-tasks-ui.mdc`.  
-   - **Only after** that visible text: `--play-ready`, **Auto-LF**, transfer arm **or** wait for **PR**.  
-   - Operator recovery: **`RE SHOW`** / **`visible RE`** → re-print full 7-step in main thread; **`RE FILE`** → `show_latest_re.py`.  
-5. Transfer-eligible EMAIL still gets all 7 sections visible in chat (section 6 may be short forward notice).  
+1. You **MUST** write the full **7-step RE** as **visible chat text** for **that** Fall # — plain markdown in this chat. **Every time. New case = new 7-step.** Prior Fall # output does not satisfy this. **Do NOT paste the customer email body / Subject / From into chat** — operator sees it directly in Sprinklr; it is noise here.  
+2. **Forbidden shortcuts:** Auto-LF only; “transfer done” one-liner; **“extracted — 7-step next”** / **“writing RE…”** without pasting; paste-ready reply without sections 1–5/7; tool-only turn with no extract/7-step text; pointing at `latest_extract.md` instead of pasting; skipping paste because “operator can scroll up” or “same session”.  
+3. **Forbidden hiding:** Do **not** put extract/7-step only inside tool results, background-task panels, collapsed **“finished N background tasks”** / task dropdowns, or anything the user must click to expand. Extract + 7-step must appear as **normal chat prose** above the fold **for each case**.  
+4. **Turn order (EMAIL) — repeat per Fall #:**  
+ - **A:** Extract (`run.py` / await-arm) — tools only; **no** operator-facing one-liner.  
+ - **B (immediate, no wait for operator):** paste **extract** + sections **1–7** as plain chat — **ZERO tools**. See `.cursor/rules/re-no-background-tasks-ui.mdc`.  
+ - **C:** only after B is visible: `--play-ready`, **Auto-LF**, transfer arm **or** wait for **PR**.  
+ - Operator recovery: **`RE SHOW`** / **`visible RE`** → re-print **extract + full 7-step** for the **current** Fall #; **`RE FILE`** → `show_latest_re.py`.  
+5. Transfer-eligible EMAIL still gets extract + all 7 sections visible in chat (section 6 may be short forward notice).  
 6. **CALL** does **not** use the email 7-step form (Auto-LF voice on CHANNEL detect).  
 
-If you already ran Auto-LF / tools without a visible 7-step in chat: **STOP**, output the full 7-step as normal chat text for the visible Fall # now, then continue.
+If you already ran Auto-LF / tools without a visible extract + 7-step for **this** Fall # in chat: **STOP**, paste extract + full 7-step now, then continue.
 
 **AI model:** Prefer **Claude 4.6 Sonnet** for EMAIL RE. **Grok banned.** See `.cursor/rules/ai-model-stay-auto.mdc`.
 
@@ -116,17 +116,17 @@ Script remembers **closed Fall #**, skips that sidebar item, polls ~25s for a di
 | `run.py --await-arm` / `--pickup` | Agent-internal listen/recovery — **never** ask operator |
 | `run.py --foreground` | Debug only: blocking in-shell watch |
 
-## After extract: 7-step + Auto-LF (mandatory)
+## After extract: paste extract + 7-step + Auto-LF (mandatory)
 
 Every EMAIL extract (auto after login, `--await-arm`, or recovery `--once`):
 
-1. Full **7-step RE as visible chat text** (sections 1–7 — user must see it without expanding “finished background tasks” / any dropdown)  
+1. **Immediately** write the full **7-step RE** as visible chat text (turn-B — operator must see it without expanding any dropdown / background-task panel / file). **Never** stop after extract with only an ack. **Do NOT paste the customer email body / Subject / From into chat** — operator sees it in Sprinklr; it is noise here.  
 2. **Only then** **`re_complete_sound.py --play-ready`**  
 3. **Only then** **Auto-LF** for this Fall # (Transfer Nein or Ja per §3) — user does **not** type `LF`  
 4. If Auto-LF prints **`PAUSE_AUTO_LF`** + **`LF_CONTINUE_AFTER_SPEICHERN_ARMED`** (exit `3`): warn user to click Speichern for the **previous** LF; Auto-LF for the **current** Fall # continues automatically — run **`fill_case_tracker.py --await-speichern-continue`**, then on **`CONTINUE_LF_DONE`** do transfer arm or wait for **PR**. Do **not** require a manual Auto-LF retry after Speichern.  
 5. If transfer → arm Weiter/Extern immediately; if non-transfer → stop and wait for **PR**
 
-**Auto-LF / tool runs must never replace, precede, or hide the 7-step behind Cursor task UI.**
+**Auto-LF / tool runs must never replace, precede, or hide the extract/7-step behind Cursor task UI.**
 
 Every CALL on CHANNEL detect: Auto-LF `--channel voice` → arm Next (or Weiter/Extern if transfer). BRIEF is optional and never blocks Auto-LF.
 
