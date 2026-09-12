@@ -67,3 +67,51 @@
 2026-09-11T18:11:56Z event='stop' status='completed' loop_count=0
 2026-09-11T18:17:20Z event='stop' status='completed' loop_count=0
 2026-09-11T18:20:14Z event='stop' status='completed' loop_count=0
+2026-09-11T18:36:32Z event='stop' status='completed' loop_count=0
+2026-09-11T18:36:53Z event='stop' status='completed' loop_count=0
+2026-09-11T18:37:23Z event='stop' status='completed' loop_count=0
+2026-09-11T19:04:36Z event='stop' status='completed' loop_count=0
+2026-09-11T19:08:27Z event='stop' status='completed' loop_count=0
+2026-09-11T19:12:09Z event='stop' status='completed' loop_count=0
+2026-09-11T19:14:32Z event='stop' status='completed' loop_count=0
+2026-09-11T19:17:47Z event='stop' status='completed' loop_count=0
+2026-09-11T19:24:13Z event='stop' status='completed' loop_count=0
+2026-09-11T19:28:19Z event='stop' status='completed' loop_count=0
+2026-09-11T19:33:39Z event='stop' status='completed' loop_count=0
+2026-09-11T19:33:39Z monitoring_not_armed — hook silent (outside arm window)
+2026-09-11T19:35:24Z event='stop' status='completed' loop_count=0
+2026-09-12T08:56:45Z event='stop' status='completed' loop_count=0
+2026-09-12T08:56:45Z monitoring_not_armed — hook silent (outside arm window)
+2026-09-12T08:59:06Z event='stop' status='completed' loop_count=0
+2026-09-12T09:06:25Z event='stop' status='completed' loop_count=0
+2026-09-12T09:06:25Z followup case=#57524588 channel=EMAIL
+2026-09-12T09:07:34Z event='stop' status='completed' loop_count=1
+2026-09-12T09:07:34Z monitoring_not_armed — hook silent (outside arm window)
+2026-09-12T09:20:22Z event='stop' status='completed' loop_count=0
+2026-09-12T09:20:22Z followup case=#57524506 channel=EMAIL
+2026-09-12T09:20:37Z event='stop' status='completed' loop_count=1
+2026-09-12T09:20:37Z monitoring_not_armed — hook silent (outside arm window)
+2026-09-12T09:59:24Z event='stop' status='completed' loop_count=0
+2026-09-12T09:59:24Z followup case=#57245578 channel=EMAIL
+2026-09-12T09:59:35Z event='stop' status='completed' loop_count=1
+2026-09-12T09:59:35Z monitoring_not_armed — hook silent (outside arm window)
+2026-09-12T10:41:33Z event='stop' status='completed' loop_count=0
+2026-09-12T10:41:33Z followup case=#57547268 channel=EMAIL
+2026-09-12T10:41:41Z event='stop' status='completed' loop_count=1
+2026-09-12T10:41:41Z monitoring_not_armed — hook silent (outside arm window)
+2026-09-12T10:59:38Z event='stop' status='completed' loop_count=0
+2026-09-12T10:59:38Z followup case=#57555256 channel=EMAIL
+2026-09-12T10:59:45Z event='stop' status='completed' loop_count=1
+2026-09-12T10:59:45Z monitoring_not_armed — hook silent (outside arm window)
+2026-09-12T11:07:22Z event='stop' status='completed' loop_count=0
+2026-09-12T11:07:22Z monitoring_not_armed — hook silent (outside arm window)
+2026-09-12T11:10:52Z event='stop' status='completed' loop_count=0
+2026-09-12T11:10:52Z monitoring_not_armed — hook silent (outside arm window)
+2026-09-12T11:18:49Z event='stop' status='completed' loop_count=0
+2026-09-12T11:18:49Z followup case=#57563475 channel=EMAIL
+2026-09-12T11:19:00Z event='stop' status='completed' loop_count=1
+2026-09-12T11:19:00Z monitoring_not_armed — hook silent (outside arm window)
+2026-09-12T11:23:11Z event='stop' status='completed' loop_count=0
+2026-09-12T11:23:11Z followup case=#57563858 channel=EMAIL
+2026-09-12T11:23:25Z event='stop' status='completed' loop_count=1
+2026-09-12T11:23:25Z monitoring_not_armed — hook silent (outside arm window)

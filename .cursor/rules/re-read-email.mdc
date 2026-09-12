@@ -86,12 +86,14 @@ Script remembers **closed Fall #**, skips that sidebar item, polls ~25s for a di
 EMAIL case:
   sidetray click → TURN A (tools only):
     extract (Fall #, Quelle, Ziel, Kundennummer, channel)
-    Auto-LF best-guess (parallel/immediately after extract)
-    --closeout-anwenden/weiter/extern (arm armed, monitoring disarmed)
   → TURN B (zero tools — visible chat only):
     CHANNEL: EMAIL + Fall #
-    7-step RE sections 1–7
-    play-ready note
+    7-step RE sections 1–7   ← operator reads, starts working in Citrix NOW
+    "Auto-LF filing now — best-guess: Transfer Nein/Ja to X."
+  → TURN C (tools only — agent handles admin):
+    fill_case_tracker.py best-guess
+    --closeout-anwenden/weiter/extern (arm armed, monitoring disarmed)
+    "LF done for #FALL_ID — armed, awaiting PR or Anwenden."
   → agent rests, awaiting:
       PR          → paste only → "PR done for #FALL_ID"
       reiterate LF → re-run fill_case_tracker with corrected values
@@ -154,25 +156,28 @@ Transfer (EMAIL or CALL):
 
 Every EMAIL extract (auto after login, `--await-arm`, or recovery `--once`):
 
-**Turn A (tools only — extract + Auto-LF + arm, no chat prose):**
+**Turn A (tools only — extract, no chat prose):**
 
 1. `run.py` extract — stdout provides Fall #, Quelle, Ziel, Kundennummer, channel
-2. **Immediately** `fill_case_tracker.py` best-guess from extract data (parallel / next tool call in same turn)
-3. If Auto-LF prints **`PAUSE_AUTO_LF`** + **`LF_CONTINUE_AFTER_SPEICHERN_ARMED`** (exit `3`): arm `--await-speichern-continue`; continue after Speichern click; do not block Turn B
-4. **Immediately** background close-out arm:
-   - Non-transfer best-guess: **`--closeout-anwenden`**
-   - Transfer best-guess: **`--closeout-weiter`** (queue) or **`--closeout-extern`** (email `@`)
 
-**Turn B (ZERO tools — visible chat prose only):**
+**Turn B (ZERO tools — visible chat prose — operator reads and starts working in Citrix immediately):**
 
 1. `CHANNEL: EMAIL` + Fall # header
 2. Full **7-step RE sections 1–7** as plain visible chat text — no dropdowns, no tools
-3. `play-ready` note (no script call needed — just note it)
-4. If 7-step reveals Auto-LF was wrong (different transfer target / Nein vs Ja): note it; agent awaits operator reiterate-LF instruction or proceeds with best-guess
+3. One-line note: `Auto-LF filing now — best-guess: Transfer Nein/Ja to X.`
 
-**Turn C:** None. Arm already running. Agent rests.
+**Turn C (tools only — Auto-LF + arm, agent handles admin while operator already in Citrix):**
+
+1. `fill_case_tracker.py` best-guess from extract data
+2. If Auto-LF prints **`PAUSE_AUTO_LF`** + **`LF_CONTINUE_AFTER_SPEICHERN_ARMED`** (exit `3`): arm `--await-speichern-continue`; continue after Speichern click
+3. Background close-out arm:
+   - Non-transfer: **`--closeout-anwenden`**
+   - Transfer: **`--closeout-weiter`** (queue) or **`--closeout-extern`** (email `@`)
+4. Finishing quote: `LF done for #FALL_ID — armed, awaiting PR or Anwenden.`
 
 **Do NOT paste the customer email body / Subject / From** — operator sees it in Sprinklr.
+
+**Rationale:** Operator sees 7-step immediately after extract and starts in Citrix. LF + arm run in Turn C while operator is already processing.
 
 **Auto-LF / tool runs must never replace, precede, or hide the 7-step behind Cursor task UI.**
 

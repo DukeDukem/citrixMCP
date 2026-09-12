@@ -1,6 +1,8 @@
 {
-  "case_id": "57816951",
-  "filled_at": "2026-09-11T18:21:25.901509+00:00",
-  "speichern_seen": false,
-  "watch_pid": 89124
+  "case_id": "57563858",
+  "filled_at": "2026-09-12T11:19:41.353475+00:00",
+  "speichern_seen": true,
+  "speichern_at": "2026-09-12T11:24:54.347961+00:00",
+  "source": "localStorage",
+  "watch_pid": 44620
 }

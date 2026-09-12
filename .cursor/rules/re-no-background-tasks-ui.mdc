@@ -36,15 +36,15 @@ There is **no** "sometimes", **no** "only when recovery", **no** "operator alrea
 
 After **each** EMAIL extract for **each** new Fall #:
 
-The Turn B message (after Turn A tools complete) MUST contain, as **plain visible markdown** (no tools):
+The Turn B message (after Turn A extract completes) MUST contain, as **plain visible markdown** (no tools):
 
 1. **`CHANNEL: EMAIL`** + **this** Fall #
 2. **Full 7-step RE** — sections **1–7**
-3. One-line note: `Auto-LF filed at extract — best-guess: Transfer [Nein/Ja to X]. Reiterate if 7-step shows different path.`
+3. One-line note at the end: `Auto-LF filing now — best-guess: Transfer [Nein/Ja to X]. Reiterate if needed.`
 
 **Do NOT paste the customer email body / Subject / From into chat.** Operator sees it in Sprinklr. The 7-step is the deliverable.
 
-**Auto-LF runs in Turn A (tools), not in Turn B.** Turn B is text only. The LF is already filed by the time the 7-step appears in chat.
+**Auto-LF runs in Turn C (after Turn B is visible).** Operator sees the 7-step first and can start working in Citrix while Turn C handles admin (LF + arm) in the background.
 
 **Every case. Every time. Zero exceptions. Zero delay. Zero waiting for the operator to ask where it is.**
 
@@ -92,11 +92,11 @@ When stdout shows **`CASE_ITEM_AUTO_CLICKED`** + **`SIDETRAY_EMAIL_PROCESSING_IM
 
 | Turn | What | Tools |
 |------|------|-------|
-| **A** | Extract + **Auto-LF best-guess** + close-out arm | `run.py`, `fill_case_tracker.py`, `run.py --closeout-*` — **no** operator-facing chat prose |
-| **B** | Full **7-step RE (sections 1–7)** as plain visible chat text | **ZERO** tools |
-| **C** | None — arm already running from Turn A | — |
+| **A** | Extract only | `run.py` — **no** operator-facing chat prose |
+| **B** | Full **7-step RE (sections 1–7)** as plain visible chat text | **ZERO** tools — operator reads and starts working in Citrix immediately |
+| **C** | Auto-LF best-guess + close-out arm | `fill_case_tracker.py`, `run.py --closeout-*` — agent handles admin while operator already in Citrix |
 
-**Hard bans:** No Task/explore; no Read terminals/*.txt before turn B; no tools in the turn-B message; no one-liner instead of turn B; Auto-LF runs in Turn A (not after Turn B). Typed RE is not a gate for case 2+.
+**Hard bans:** No Task/explore; no Read terminals/*.txt before turn B; no tools in the turn-B message; no one-liner instead of turn B; 7-step must appear before Auto-LF runs. Typed RE is not a gate for case 2+.
 
 **Turn B micro-template:**
 
@@ -108,10 +108,10 @@ Fall #…
 …
 **7. Summary of response**
 …
-[Auto-LF filed at extract time — best-guess: Transfer Nein/Ja to X. Reiterate if needed.]
+Auto-LF filing now — best-guess: Transfer Nein/Ja to [target]. Reiterate if needed.
 ```
 
-No customer email body / Subject / From paste. 7-step only. Auto-LF note at end of Turn B if best-guess may need correction.
+No customer email body / Subject / From paste. 7-step only. Auto-LF note at bottom of Turn B signals Turn C is next.
 
 ## Operator recovery
 

@@ -44,20 +44,21 @@ If the 7-step RE later reveals a different transfer target, operator sends **rei
 
 **Turn A (tools only, no operator-facing chat prose):**
 1. `run.py` extract (stdout: Fall #, Quelle, Ziel, channel, Kundennummer)
-2. `fill_case_tracker.py --case-id "#FALL_ID"` — best-guess from extract data (parallel / immediately after)
-3. `--closeout-anwenden` or `--closeout-weiter/extern` — arm starts immediately
 
-**Turn B (ZERO tools — visible chat only):**
+**Turn B (ZERO tools — visible chat only — operator reads and starts working in Citrix):**
 1. `CHANNEL: EMAIL` + Fall #
 2. Full **7-step RE sections 1–7** as plain chat text — mandatory, never hidden
-3. `re_complete_sound.py --play-ready` note
+3. One-line note: `Auto-LF filing now — best-guess: Transfer Nein/Ja to X.`
 
-**Turn C:** None. Arm already running. Agent rests, awaiting PR or reiteration.
+**Turn C (tools only — agent handles admin while operator already works in Citrix):**
+1. `fill_case_tracker.py --case-id "#FALL_ID"` — best-guess from extract data
+2. `--closeout-anwenden` (non-transfer) or `--closeout-weiter/extern` (transfer) — arm starts
+3. Finishing quote: `LF done for #FALL_ID — armed, awaiting PR or Anwenden.`
 
-**Transfer arm (if best-guess = Transfer Ja):** `--closeout-weiter` (queue) or `--closeout-extern` (email `@`). No PR. Finishing quote: `LF TR done for #FALL_ID`.  
-**Non-transfer arm:** `--closeout-anwenden`. Await PR (paste only). Finishing quote: `LF done for #FALL_ID — awaiting PR or Anwenden.`
+**Rationale:** Operator sees the 7-step immediately after extract and can start working in the background system. Auto-LF + arming happen in Turn C while operator is already processing the case.
 
-**PR does not start the arm.** Arm starts in Turn A. PR just pastes the reply.
+**Transfer arm:** `--closeout-weiter` (queue) or `--closeout-extern` (email `@`). No PR. Finishing quote: `LF TR done for #FALL_ID`.  
+**PR does not start the arm.** Arm starts in Turn C. PR just pastes the reply.
 
 ### Order (CALL) — Auto-LF on CHANNEL detect (no BRIEF gate)
 
