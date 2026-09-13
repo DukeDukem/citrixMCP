@@ -18,7 +18,7 @@ alwaysApply: true
 | Trigger | Agent action (EMAIL) |
 |---------|----------------------|
 | **EMAIL sidetray click** (`CASE_ITEM_AUTO_CLICKED` → `SIDETRAY_EMAIL_PROCESSING_IMMEDIATE`) | Script **immediately** opens case + extract — **zero operator input** |
-| **`--await-arm` extract** completes (`DETACHED_ARM_EXTRACT_READY` / `CUSTOMER EMAIL` + `RE_TEXT_ONLY_GATE`) | Agent **same workflow** immediately continues three-turn RE → Auto-LF → wait **PR** or transfer arm — **no new user message, no typed RE** |
+| **`--await-arm` extract** completes (`DETACHED_ARM_EXTRACT_READY` / `CUSTOMER EMAIL` + `RE_TEXT_ONLY_GATE`) | Agent **same workflow** immediately continues compound-response RE → Auto-LF → wait **PR** or transfer arm — **no new user message, no typed RE** |
 | **First case after login** — operator types **RE** once | `run.py --once` → 7-step → Auto-LF → wait **PR** |
 | **CALL** (`CHANNEL: CALL` / `CALL_LF_GATE`) | Auto-LF voice + close-out arm — no 7-step, no PR unless asked |
 
@@ -71,9 +71,9 @@ Script remembers **closed Fall #**, skips that sidebar item, polls ~25s for a di
 ## Normal workday
 
 1. **login** → Case Tracker tab.
-2. Operator **RE** once (first case) → Turn A (extract + Auto-LF + arm) → Turn B (7-step visible chat) → rest.
+2. Operator **RE** once (first case) → compound-response (7-step text + Auto-LF tools in one response) → rest.
 3. Operator **PR** → agent pastes reply only (arm already running from Turn A). Quote: `PR done for #FALL_ID`.
-4. Operator clicks **Anwenden** → arm fires → sidetray poll → new case → agent **auto** Turn A + Turn B — no operator input.
+4. Operator clicks **Anwenden** → arm fires → sidetray poll → new case → agent **auto** compound-response — no operator input.
 5. Repeat: operator types **PR** only. Agent handles everything else.
 
 **Operator types:** **login**, **RE** (first case only), **PR**, **DONE**. Never **NEXT**, **LF**, or case 2+ **RE**.
@@ -111,8 +111,8 @@ Transfer (EMAIL or CALL):
   → arm fires → [Monitoring active] → next case
 ```
 
-**Auto-LF timing: Turn A — at extract start, before 7-step.** Best-guess from Quelle/Ziel/channel. Reiterate if needed after 7-step reveals different path.  
-**PR is independent of arming.** Arm already running from Turn A. Agent pastes and finishes.
+**Auto-LF timing: Phase 4 — same compound response, after 7-step text is written.** Best-guess from Quelle/Ziel/channel. Reiterate if needed after 7-step reveals different path.  
+**PR is independent of arming.** Arm already running from Phase 5. Agent pastes and finishes.
 
 ### HARD — Prowler without RE/LF
 
@@ -126,7 +126,7 @@ Transfer (EMAIL or CALL):
    ```powershell
    Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
    ```
-   Expect **`MODE: --once`** and either `FIRST_RE_ONCE_CONSUMED` (after login) or `RE_ONCE_DEFAULT`. **Trust script stdout:** `CHANNEL: CALL` + `CALL_LF_GATE` → voice Auto-LF + Next (no 7-step). `CHANNEL: EMAIL` + `CUSTOMER EMAIL` + `RE_TEXT_ONLY_GATE` → three-turn 7-step RE (see `sprinklr-call-vs-email.mdc`).
+   Expect **`MODE: --once`** and either `FIRST_RE_ONCE_CONSUMED` (after login) or `RE_ONCE_DEFAULT`. **Trust script stdout:** `CHANNEL: CALL` + `CALL_LF_GATE` → voice Auto-LF + Next (no 7-step). `CHANNEL: EMAIL` + `CUSTOMER EMAIL` + `RE_TEXT_ONLY_GATE` → compound-response 7-step RE (see `sprinklr-call-vs-email.mdc`).
 2. **Do not** run `--arm` / `--await-arm` on typed RE. Arms run after Auto-LF / PR close-out (below).
 3. **Audio:**
    - **Armed auto-RE start:** After Anwenden / Weiter / Extern / Next → sidetray poll (`SIDETRAY_WATCH_ARMED`) → **EMAIL:** click sidetray item; **CALL:** skip click, wait for overlay (`SIDETRAY_CALL_AUTO_OPEN`) → extract begins → Prowler (`ARMED_RE_START_SOUND`).

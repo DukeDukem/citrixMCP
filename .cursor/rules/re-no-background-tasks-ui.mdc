@@ -36,7 +36,7 @@ There is **no** "sometimes", **no** "only when recovery", **no** "operator alrea
 
 After **each** EMAIL extract for **each** new Fall #:
 
-The Turn B message (after Turn A extract completes) MUST contain, as **plain visible markdown** (no tools):
+The compound response after extract MUST contain, as **plain visible markdown text before LF tools**:
 
 1. **`CHANNEL: EMAIL`** + **this** Fall #
 2. **Full 7-step RE** — sections **1–7**
@@ -44,7 +44,7 @@ The Turn B message (after Turn A extract completes) MUST contain, as **plain vis
 
 **Do NOT paste the customer email body / Subject / From into chat.** Operator sees it in Sprinklr. The 7-step is the deliverable.
 
-**Auto-LF runs in Turn C (after Turn B is visible).** Operator sees the 7-step first and can start working in Citrix while Turn C handles admin (LF + arm) in the background.
+**Auto-LF runs in Phase 4–5 of the compound response (after 7-step text).** Operator sees the 7-step first (text appears above collapsed tool dropdowns) and can start working in Citrix.
 
 **Every case. Every time. Zero exceptions. Zero delay. Zero waiting for the operator to ask where it is.**
 
@@ -61,15 +61,15 @@ Do **NOT** send only lines like:
 
 If those words appear without the extract + sections 1–7 in the **same** visible message → **you failed**. Fix immediately: paste extract + full 7-step now.
 
-### Forbidden — Auto-LF / tools before Turn B (2026-09-13 incident)
+### Forbidden — Auto-LF / tools before 7-step text (2026-09-13 incident)
 
 **Never** run `fill_case_tracker.py` / `--closeout-*` / LF tools for a new EMAIL Fall # until the **full 7-step is already visible** in the main chat for that Fall #.
 
 Especially banned on shell-completion / “briefly inform… follow-up” notifies:
 
-1. Read terminal → immediately Auto-LF **without** pasting RE  
-2. `--once` / Grep / attachments **instead of** pasting RE  
-3. Quoting `LF done` when sections 1–7 were never pasted for that Fall #
+1. Reading terminal → running Auto-LF **without** writing 7-step text first  
+2. `--once` / Grep / attachments **instead of** writing 7-step text  
+3. Quoting `LF done` when sections 1–7 were never written for that Fall #
 
 **Order lock:** see `.cursor/rules/re-before-auto-lf.mdc`. If only one message is possible → **paste 7-step**; defer LF. Never LF-without-RE.
 
@@ -80,7 +80,7 @@ Especially banned on shell-completion / “briefly inform… follow-up” notifi
 3. **Tools + 7-step in one message** (hides under background tasks)
 4. **7-step / extract only inside tool output**
 5. Stopping after extract and idling until the operator types again
-6. **Auto-LF before** visible Turn B for that Fall # (see above)
+6. **fill_case_tracker before** 7-step text for that Fall # (see above)
 
 ## Auto-start (operator does NOT type RE for case 2+)
 
@@ -97,7 +97,7 @@ When stdout shows **`CASE_ITEM_AUTO_CLICKED`** + **`SIDETRAY_EMAIL_PROCESSING_IM
 
 1. Script already clicked the new EMAIL sidetray item and is extracting **in the same automation run**.
 2. On **`DETACHED_ARM_EXTRACT_READY`** / **`RE_TEXT_ONLY_GATE`**: **immediately** turn B = **paste extract + full 7-step** — **no pause**, no "waiting for RE", no extra operator message.
-3. Turn C (play-ready + Auto-LF) follows as soon as turn B is visible in chat.
+3. Auto-LF (Phase 4–5) runs in the same compound response after 7-step text (Phase 2–3).
 
 **Hard ban:** Stopping after sidetray click or extract without pasting extract + 7-step + Auto-LF for that Fall #.
 

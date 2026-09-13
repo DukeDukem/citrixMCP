@@ -22,7 +22,7 @@ The agent fills Case Tracker **while processing** each newly opened case. The op
 
 | Channel | When | Tracker |
 |---------|------|---------|
-| **EMAIL** | **At extract start** — parallel to extract in Turn A, before 7-step RE. Best-guess from Fall #, Quelle, Ziel, channel available in extract stdout. | E-Mail Care; Transfer best-guess from Quelle/Ziel/TransferMatrix |
+| **EMAIL** | **Same compound response — Phase 4, after 7-step text (Phase 2).** Best-guess from Fall #, Quelle, Ziel, channel available in extract stdout. | E-Mail Care; Transfer best-guess from Quelle/Ziel/TransferMatrix |
 | **CALL** | As soon as **CHANNEL: CALL** is known (no BRIEF wait) | **`--channel voice`**; Transfer via `resolve_transfer()` / Ziel |
 
 ### Best-guess Auto-LF (EMAIL — at extract time)
@@ -40,25 +40,25 @@ Use these to make a best-guess:
 
 If the 7-step RE later reveals a different transfer target, operator sends **reiterate LF** → agent re-runs `fill_case_tracker.py` with corrected values. Auto-LF at extract is always the starting point.
 
-### Order (EMAIL) — three turns
+### Order (EMAIL) — compound response (replaces three-turn model)
 
-**Turn A (tools only, no operator-facing chat prose):**
-1. `run.py` extract (stdout: Fall #, Quelle, Ziel, channel, Kundennummer)
+**ONE agent response** after extract / `[AUTO_PIPELINE]`, in this exact order:
 
-**Turn B (ZERO tools — visible chat only — operator reads and starts working in Citrix):**
-1. `CHANNEL: EMAIL` + Fall #
-2. Full **7-step RE sections 1–7** as plain chat text — mandatory, never hidden
-3. One-line note: `Auto-LF filing now — best-guess: Transfer Nein/Ja to X.`
+1. **Phase 1 (tool):** Read `.cursor/state/latest_extract.md` (or `run.py --pickup`)
+2. **Phase 2+3 (TEXT — visible):** Write `CHANNEL: EMAIL / Fall #` then full **7-step RE sections 1–7** as plain chat markdown. End with: `Auto-LF filing now.` — **this text must appear before any LF tools**
+3. **Phase 4 (tool):** `fill_case_tracker.py --case-id "#FALL_ID"` — best-guess from extract data
+4. **Phase 5 (tool):** `--closeout-anwenden` (non-transfer) or `--closeout-weiter/extern` (transfer) — arm starts
+5. **Phase 6 (TEXT):** `LF done for #FALL_ID — Closeout armed. Click Anwenden when ready.`
 
-**Turn C (tools only — agent handles admin while operator already works in Citrix):**
-1. `fill_case_tracker.py --case-id "#FALL_ID"` — best-guess from extract data
-2. `--closeout-anwenden` (non-transfer) or `--closeout-weiter/extern` (transfer) — arm starts
-3. Finishing quote: `LF done for #FALL_ID — armed, awaiting PR or Anwenden.`
+**Safety net (2026-09-12):** `re_complete_sound_hook` detects section 7 and can spawn `auto_lf_after_re.py` if Phases 4–5 are missed. Safety net only — agent must complete all phases.
 
-**Rationale:** Operator sees the 7-step immediately after extract and can start working in the background system. Auto-LF + arming happen in Turn C while operator is already processing the case.
+**Order lock:** `fill_case_tracker.py` must come AFTER the 7-step text in the same response. Text before tools = visible in Cursor chat. Tools before text = hidden fail. Rule: `.cursor/rules/re-before-auto-lf.mdc`.
+
+**Rationale:** Operator sees 7-step immediately (text renders above collapsed tool dropdowns). LF + arm run after the text in the same response.
 
 **Transfer arm:** `--closeout-weiter` (queue) or `--closeout-extern` (email `@`). No PR. Finishing quote: `LF TR done for #FALL_ID`.  
-**PR does not start the arm.** Arm starts in Turn C. PR just pastes the reply.
+**PR does not start the arm.** Arm starts at Phase 5 (same compound response). PR just pastes the reply.
+
 
 ### Order (CALL) — Auto-LF on CHANNEL detect (no BRIEF gate)
 

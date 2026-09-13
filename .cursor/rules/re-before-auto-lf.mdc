@@ -1,0 +1,65 @@
+---
+description: HARD — Visible 7-step RE must appear in chat BEFORE any fill_case_tracker / closeout for that Fall #. Now enforced via compound-response order (text before tools), not separate turns.
+alwaysApply: true
+priority: CRITICAL
+---
+
+# HARD — 7-step RE before Auto-LF (order lock)
+
+**Scope:** Email processing chat (`EMAIL-PROCESSING-AGENT.md`).
+
+**Incident (2026-09-13, Fall #57703762):** Agent ran fill_case_tracker + closeout without pasting the 7-step in chat. Operator saw LF in Case Tracker but no RE.
+
+**Incident (2026-09-13 — fix):** The three-turn protocol was found to be architecturally broken — Turn B (text-only) had no trigger after Turn A. Replaced with **compound-response model**: one response, text phases written before tool phases in the same message.
+
+## Absolute order (EMAIL) — compound-response
+
+```
+Same agent response — in this exact order:
+Phase 1 (tool):  Read latest_extract.md
+Phase 2 (TEXT):  CHANNEL: EMAIL / Fall # / full 7-step sections 1–7   ← MUST precede LF tools
+Phase 3 (TEXT):  "Auto-LF filing now."
+Phase 4 (tool):  fill_case_tracker.py
+Phase 5 (tool):  --closeout-*
+Phase 6 (TEXT):  "LF done for #X — Closeout armed."
+```
+
+**Rule:** Phases 2–3 (7-step text) **must** be written before Phases 4–5 (tools).  
+Text placed before tool calls renders **visibly** in Cursor chat above collapsed tool dropdowns.  
+Tool calls placed before text produce collapsed output — the 7-step is hidden. **That is a failure.**
+
+**Never reverse. Never run fill_case_tracker before the 7-step text is in the response.**
+
+## Applies to these triggers (all of them)
+
+| Trigger | First agent action for EMAIL |
+|---------|------------------------------|
+| `[AUTO_PIPELINE]` / `RE_TEXT_ONLY_GATE` / `DETACHED_ARM_EXTRACT_READY` | **Write 7-step text first** in the compound response |
+| Shell-completion notify / "briefly inform about the task result" | If new `CHANNEL: EMAIL` + Fall # → **7-step text before LF tools** |
+| `--await-arm` / Anwenden / Weiter / Extern / Next extract done | **Same compound-response order** |
+| Typed **RE** / `--once` | **7-step text before LF tools** |
+| Sidetray EMAIL extract | **7-step text before LF tools** |
+
+## Hard bans
+
+1. `fill_case_tracker.py` called **before** the 7-step text appears in the same response
+2. `--closeout-*` / `--arm*` called **before** the 7-step text appears
+3. Shell notify used as an excuse to run only Auto-LF (no visible 7-step)
+4. "LF done" quote without 7-step already visible for that Fall #
+5. Tools-only response with no 7-step prose for an EMAIL case
+
+## Self-check before any LF tool call (same response)
+
+Has the 7-step text for Fall `#N` already been written in this response?  
+- **No** → write 7-step text NOW, then call `fill_case_tracker.py`  
+- **Yes** → call `fill_case_tracker.py` (normal compound-response Phase 4)
+
+## CALL exception
+
+`CHANNEL: CALL` → Auto-LF voice immediately; **no** email 7-step. Order lock does not apply to calls.
+
+## Related
+
+- `.cursor/rules/re-no-background-tasks-ui.mdc` — compound-response protocol detail  
+- `.cursor/rules/re-read-email.mdc`  
+- `.cursor/rules/lf-log-form.mdc`

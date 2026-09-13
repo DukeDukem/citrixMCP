@@ -37,7 +37,7 @@ Extract then runs **`_detect_case_channel()`** after case open. Stdout includes:
 | Script output | Meaning | Agent path |
 |---------------|---------|------------|
 | **`CHANNEL: CALL`** + **`CHANNEL_CALL_DETECTED`** + **`CALL_LF_GATE`** | Anruf timeline / call UI; **no** email body | Voice Auto-LF + Next/weiter/extern — **no** 7-step RE/PR |
-| **`CHANNEL: EMAIL`** + **`CUSTOMER EMAIL`** + **`RE_TEXT_ONLY_GATE`** | `html-message-content` email body present | Three-turn 7-step RE |
+| **`CHANNEL: EMAIL`** + **`CUSTOMER EMAIL`** + **`RE_TEXT_ONLY_GATE`** | `html-message-content` email body present | Compound-response 7-step RE |
 
 **First line of agent analysis must echo the script line:** `CHANNEL: CALL` or `CHANNEL: EMAIL`.
 
