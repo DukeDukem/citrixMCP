@@ -28,10 +28,33 @@ When in doubt in a mixed thread: if the user sends **only** `RE`, `PR`, `LF`, `l
 | **LF** / **lf** / **LF TR** | fill_case_tracker.py, log form / transfer close-out |
 | **login** | Sprinklr login-only / startup automation |
 | **DONE** / **Done for today** | `done_for_today.py` stop script (run in case chat) |
+| **`[AUTO_PIPELINE]`** (hook followup) | **DO NOT process.** The stop hook fired in this chat instead of the email processing chat. Read, arm, and LF must run there. See warning below. |
 
 **Allowed here (not case processing):** **`revert last`** — restore file checkpoint (see `.cursor/rules/revert-last.mdc`).
 
 Also do **not** partially run case steps (no CDP Sprinklr reads "just to check" unless explicitly for **rules/testing documentation** the user asked for in this chat).
+
+## [AUTO_PIPELINE] in instructions chat — hard block
+
+**Root cause:** The Cursor stop hook fires in whichever chat is active when an agent turn ends. If you are in this chat when a case extract completes, `[AUTO_PIPELINE]` lands here instead of the email processing chat.
+
+**When `[AUTO_PIPELINE]` arrives here:**
+
+1. **Do NOT** read `latest_extract.md`, run `--pickup`, write a 7-step RE, or call `fill_case_tracker.py`.
+2. Output **exactly**:
+
+```
+⚠️ Wrong chat — [AUTO_PIPELINE] fired in the instructions chat.
+The stop hook should only fire in the email processing chat.
+
+Auto-LF is being filed automatically in the background.
+Go to the email processing chat and type RE to get the 7-step and arm Anwenden.
+```
+
+3. The `auto_lf_after_re.py` safety net already spawned at hook fire time — LF will file even though this chat refused the followup.
+4. **Do not** arm `--closeout-anwenden`, `--closeout-weiter`, or any arm command here.
+
+**Prevention:** Keep the **email processing chat** in focus during a shift. Switch to this instructions chat only between cases or after DONE.
 
 ## Mandatory warning (use every time)
 

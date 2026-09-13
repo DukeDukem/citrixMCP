@@ -224,6 +224,29 @@ def main() -> int:
         _mark_dispatched(case_id)
         _log(f"followup case={case_id} channel={channel}")
 
+        # Also spawn auto_lf_after_re.py unconditionally so LF files even if
+        # this followup lands in the wrong chat (instructions chat) and is refused.
+        try:
+            auto_lf = Path(__file__).resolve().parent / "auto_lf_after_re.py"
+            latest = _STATE / "latest_extract.md"
+            if auto_lf.exists() and latest.exists():
+                import subprocess
+                creationflags = 0
+                if sys.platform == "win32":
+                    creationflags = 0x08000000 | 0x00000200
+                subprocess.Popen(
+                    [sys.executable, str(auto_lf), "--spawn", "--text-file", str(latest)],
+                    cwd=str(_REPO),
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=creationflags,
+                    close_fds=False if sys.platform == "win32" else True,
+                )
+                _log(f"path_a auto_lf spawn case={case_id}")
+        except Exception as e:
+            _log(f"path_a spawn failed={e!r}")
+
         sys.stdout.write(json.dumps({"followup_message": msg}, ensure_ascii=False) + "\n")
         sys.stdout.flush()
         return 0
