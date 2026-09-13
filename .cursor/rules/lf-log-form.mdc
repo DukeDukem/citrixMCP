@@ -22,7 +22,7 @@ The agent fills Case Tracker **while processing** each newly opened case. The op
 
 | Channel | When | Tracker |
 |---------|------|---------|
-| **EMAIL** | **Same compound response — Phase 4, after 7-step text (Phase 2).** Best-guess from Fall #, Quelle, Ziel, channel available in extract stdout. | E-Mail Care; Transfer best-guess from Quelle/Ziel/TransferMatrix |
+| **EMAIL** | **At extract start** — parallel to extract in Turn A, before 7-step RE. Best-guess from Fall #, Quelle, Ziel, channel available in extract stdout. | E-Mail Care; Transfer best-guess from Quelle/Ziel/TransferMatrix |
 | **CALL** | As soon as **CHANNEL: CALL** is known (no BRIEF wait) | **`--channel voice`**; Transfer via `resolve_transfer()` / Ziel |
 
 ### Best-guess Auto-LF (EMAIL — at extract time)
@@ -40,17 +40,27 @@ Use these to make a best-guess:
 
 If the 7-step RE later reveals a different transfer target, operator sends **reiterate LF** → agent re-runs `fill_case_tracker.py` with corrected values. Auto-LF at extract is always the starting point.
 
-### Order (EMAIL) — agent writes 7-step text only; background chain files LF
+### Order (EMAIL) — three turns
 
-**Current model (2026-09-13):** Agent response is text-only. Background chain handles LF + arm.
+**Turn A (tools only, no operator-facing chat prose):**
+1. `run.py` extract (stdout: Fall #, Quelle, Ziel, channel, Kundennummer)
+2. `fill_case_tracker.py --case-id "#FALL_ID"` — best-guess from extract data (parallel / immediately after)
+3. `--closeout-anwenden` or `--closeout-weiter/extern` — arm starts immediately
 
-1. **Agent response:** Read `latest_extract.md` → write `CHANNEL` + Fall # + **sections 1–7** as plain chat text. End: `Auto-LF filing now.` **STOP — no LF/closeout tools here.** Running tools here collapses the 7-step into a dropdown.
-2. **Background (automatic):** `re_complete_sound_hook` detects section 7 in agent output → spawns `auto_lf_after_re.py` → `fill_case_tracker.py` + `--closeout-*` + Dexter. No agent involvement.
-3. **Path B safety net (hook, silent):** If sound hook missed → `extract_auto_continue_hook` Path B detects `latest_re_visible.md` section 7 + missing `auto_lf_done.json` → spawns `auto_lf_after_re.py` silently. No chat message.
+**Turn B (ZERO tools — visible chat only):**
+1. `CHANNEL: EMAIL` + Fall #
+2. Full **7-step RE sections 1–7** as plain chat text — mandatory, never hidden
+3. End note: `Auto-LF filed at extract — best-guess: Transfer [Nein/Ja to X]. Reiterate if needed.`
+   **Banned:** `Auto-LF filing now` (implies LF not done yet).
 
-**Transfer:** `auto_lf_after_re.py` parses §3 from `latest_re_visible.md` for transfer target.
-**PR does not start the arm.** Arm starts from `auto_lf_after_re.py` closeout. PR pastes only.
-**[AUTO_PIPELINE_TURN_C] is obsolete and blocked.** Do not process it.
+**Turn C:** None. Arm already running. Agent rests, awaiting PR or reiteration.
+
+**Hard failure:** 7-step visible for Fall #N with **no** prior `fill_case_tracker` / no `auto_lf_done.json` / no Speichern-pending for #N = **workflow failure**. Fix with Turn A LF immediately; do not wait for operator.
+
+**Transfer arm (if best-guess = Transfer Ja):** `--closeout-weiter` (queue) or `--closeout-extern` (email `@`). No PR. Finishing quote: `LF TR done for #FALL_ID`.  
+**Non-transfer arm:** `--closeout-anwenden`. Await PR (paste only). Finishing quote: `LF done for #FALL_ID — awaiting PR or Anwenden.`
+
+**PR does not start the arm.** Arm starts in Turn A. PR just pastes the reply.
 
 ### Order (CALL) — Auto-LF on CHANNEL detect (no BRIEF gate)
 

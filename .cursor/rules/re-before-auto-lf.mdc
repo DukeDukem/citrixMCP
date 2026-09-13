@@ -1,67 +1,63 @@
 ---
-description: HARD — 7-step visible first; LF handled by background chain (sound hook + auto_lf_after_re). Agent writes text-only; no LF tools in agent response.
+description: HARD — Auto-LF at extract Turn A before 7-step. Never skip LF. Never fake "Auto-LF filing now".
 alwaysApply: true
 priority: CRITICAL
 ---
 
-# HARD — 7-step RE visible first; LF handled by background chain
+# HARD — Auto-LF at extract (Turn A) before 7-step (Turn B)
 
 **Scope:** Email processing chat (`EMAIL-PROCESSING-AGENT.md`).
 
-## How it works (EMAIL)
+## Absolute order (EMAIL)
 
 ```
-AGENT RESPONSE (text-only):
-  Phase 1 — Read latest_extract.md (fast tool OK)
-  Phase 2 — CHANNEL: EMAIL / Fall # / sections 1-7 as PLAIN chat text
-           End with: "Auto-LF filing now."
-           STOP. NO fill_case_tracker. NO --closeout-* here.
+TURN A (tools — same turn as extract / [AUTO_PIPELINE] / DETACHED_ARM_EXTRACT_READY):
+  1. Extract already done (run.py / await-arm / pickup)
+  2. fill_case_tracker.py --case-id "#FALL"   (best-guess; resolve_transfer from Sprinklr)
+  3. --closeout-anwenden | --closeout-weiter | --closeout-extern
+  Script may also print AUTO_LF_REQUIRED / AUTO_LF_AT_EXTRACT_SPAWNED — that is a safety net.
+  Agent still verifies LF for this Fall # (auto_lf_done.json / Speichern pending) before resting.
 
-BACKGROUND (automatic — no agent involvement):
-  re_complete_sound_hook detects section 7 -> spawns auto_lf_after_re.py
-  auto_lf_after_re.py -> fill_case_tracker.py + --closeout-* + Dexter sound
+TURN B (ZERO tools — plain visible chat):
+  CHANNEL: EMAIL / Fall # / sections 1–7
+  End: "Auto-LF filed at extract — best-guess: Transfer Nein/Ja to X."
+  Do NOT paste customer email body / Subject / From.
 
-PATH B SAFETY NET (hook, silent):
-  extract_auto_continue_hook Path B detects latest_re_visible.md has
-  section 7 but auto_lf_done.json missing -> silently spawns
-  auto_lf_after_re.py — NO chat message fires.
+TURN C: None — arm already live from Turn A. Await PR or reiteration.
 ```
 
-**Order lock:** 7-step text MUST be visible in chat before LF fires.
-**Agent rule:** After writing sections 1-7, STOP. Never call fill_case_tracker or --closeout-*.
-Running those tools in the agent response collapses the 7-step into a hidden dropdown — forbidden.
+## RE_TEXT_ONLY_GATE — correct reading
 
-## Why no LF tools in agent response
+`RE_TEXT_ONLY_GATE` means: **Turn B** must be text-only (no tools that collapse the 7-step).
 
-When a long-running tool (--closeout-anwenden) runs in the same agent turn as the 7-step text,
-Cursor groups the entire response into a "Finished background tasks" collapsible dropdown. The
-operator loses visibility of the RE. The background chain avoids this entirely.
+It does **NOT** mean: skip Turn A LF until after the 7-step.
 
 ## Hard bans
 
-1. fill_case_tracker / --closeout-* in the same agent response as the 7-step text
-2. Writing the 7-step then running LF tools in a "Response 2" — forbidden
-3. Writing "sound hook handles LF" as permission to idle after the 7-step
-4. Task/explore subagents for RE or LF
-5. [AUTO_PIPELINE_TURN_C] — obsolete, blocked, must not be processed
+1. Ending extract / `[AUTO_PIPELINE]` with 7-step only and **no** LF for that Fall #
+2. Writing **"Auto-LF filing now"** unless `fill_case_tracker.py` already succeeded for that Fall # (or `AUTO_LF_AT_EXTRACT_SPAWNED` / `auto_lf_done.json` confirms it)
+3. Treating typed **RE** (first case) as exempt from Turn A LF
+4. Deferring LF to "after 7-step" / sound hook / Response 2 as the primary path
+5. Task/explore for RE or LF
 
-## Self-check (before writing anything for Fall #N)
+## Notification path (mandatory)
 
-- About to call fill_case_tracker before the 7-step text? STOP — write 7-step first.
-- 7-step already visible for #N? Background LF may already be running — skip duplicate RE.
+On `DETACHED_ARM_EXTRACT_READY` / `RE_TEXT_ONLY_GATE` / `[AUTO_PIPELINE]`:
 
-## Sounds = operator audio cues only
+1. **Turn A tools first** (LF + closeout) — or confirm script spawn already filed this Fall #
+2. **Then** Turn B 7-step text
 
-Prowler / book / Dexter notify the operator when off-screen. They do not run Auto-LF and do
-not excuse skipping the 7-step. The background chain (sound hook -> auto_lf_after_re.py)
-handles LF silently after section 7 is written.
+## Failure mode (incident 2026-09-13)
+
+Cases #57677586, #57728816, #57732503, #57734062: agent pasted 7-step + "Auto-LF filing now" and **never** ran `fill_case_tracker.py`. Tracker empty until operator yelled.
 
 ## CALL exception
 
-CHANNEL: CALL -> Auto-LF voice immediately in same turn (no email 7-step, no dropdown risk).
+`CHANNEL: CALL` → voice Auto-LF + `--closeout-next` same turn; no email 7-step.
 
 ## Related
 
-- .cursor/rules/re-no-background-tasks-ui.mdc
-- .cursor/rules/re-read-email.mdc
-- .cursor/rules/lf-log-form.mdc
+- `.cursor/rules/lf-log-form.mdc`
+- `.cursor/rules/re-read-email.mdc`
+- `.cursor/rules/re-no-background-tasks-ui.mdc`
+- `.cursor/hooks/auto_lf_at_extract.py`

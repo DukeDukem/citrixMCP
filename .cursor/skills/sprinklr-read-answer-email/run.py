@@ -76,45 +76,74 @@ _FAIL_MARKERS = (
 )
 
 
-def _print_re_text_only_gate() -> None:
-    """Tell the agent to paste extract + 7-step as plain chat next (no one-liner)."""
+def _case_id_from_output(text: str) -> str:
+    import re
+
+    m = re.search(r"Fall\s*#\s*(\d{5,})", text or "", re.I)
+    return f"#{m.group(1)}" if m else ""
+
+
+def _spawn_auto_lf_at_extract(case_id: str, channel: str = "EMAIL") -> None:
+    """Script-side Turn A safety net — LF + closeout even if agent skips tools."""
+    if not case_id:
+        return
+    try:
+        import subprocess
+
+        worker = _REPO_ROOT / ".cursor" / "hooks" / "auto_lf_at_extract.py"
+        if not worker.exists():
+            print(f"[WARN] auto_lf_at_extract.py missing — agent must run Turn A LF", flush=True)
+            print(f"AUTO_LF_REQUIRED case={case_id}", flush=True)
+            return
+        creationflags = 0
+        if sys.platform == "win32":
+            creationflags = 0x08000000 | 0x00000200
+        subprocess.Popen(
+            [sys.executable, str(worker), "--spawn", "--case-id", case_id, "--channel", channel],
+            cwd=str(_REPO_ROOT),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=creationflags,
+            close_fds=False if sys.platform == "win32" else True,
+        )
+        print(f"AUTO_LF_REQUIRED case={case_id}", flush=True)
+        print(f"AUTO_LF_AT_EXTRACT_SPAWNED case={case_id} channel={channel}", flush=True)
+    except Exception as e:
+        print(f"[WARN] auto_lf_at_extract spawn failed: {e}", flush=True)
+        print(f"AUTO_LF_REQUIRED case={case_id}", flush=True)
+
+
+def _print_re_text_only_gate(case_id: str = "") -> None:
+    """Turn A = LF+arm (script may already spawn). Turn B = 7-step text only."""
     print("\n" + "=" * 80, flush=True)
     print("RE_TEXT_ONLY_GATE", flush=True)
     print("=" * 80, flush=True)
+    if case_id:
+        print(f"AUTO_LF_REQUIRED case={case_id}", flush=True)
     print(
-        "AGENT — EVERY EMAIL CASE, EVERY TIME: next chat message MUST PASTE this Fall #'s "
-        "CUSTOMER EMAIL extract (Fall #, Subject, From, Body) AND the full 7-step RE "
-        "(sections 1–7) as plain visible text. Do IMMEDIATELY — do not wait for the operator. "
-        "New Fall # = paste again. Prior cases do not count.",
+        "TURN A (THIS EXTRACT TURN — tools): fill_case_tracker.py + --closeout-* NOW "
+        "(or confirm AUTO_LF_AT_EXTRACT_SPAWNED already running). Do NOT skip LF.",
         flush=True,
     )
     print(
-        "BANNED: one-liners like 'extracted — 7-step next' / 'writing RE…' without pasting "
-        "extract + sections 1–7 in that same message.",
+        "TURN B (NEXT chat message — ZERO tools): CHANNEL: EMAIL + Fall # + full 7-step "
+        "sections 1–7 as plain visible text. Do NOT paste customer email body/Subject/From. "
+        "End with: 'Auto-LF filed at extract — best-guess: Transfer Nein/Ja to X.'",
         flush=True,
     )
     print(
-        "That turn-B message must have ZERO tool calls (no Shell, Grep, Task, Read, Write, "
-        "play-ready, Auto-LF, arms).",
+        "BANNED: writing 'Auto-LF filing now' without LF already succeeding for this Fall #. "
+        "BANNED: 7-step without prior/parallel Turn A LF for the same Fall #.",
         flush=True,
     )
     print(
-        "Do NOT read terminals/*.txt or spawn explore/Task subagents — that creates "
-        "'Finished background tasks' menus and hides the RE.",
+        "BANNED: one-liners like 'extracted — 7-step next' without pasting sections 1–7. "
+        "BANNED: Task/explore / reading terminals/*.txt (collapses RE).",
         flush=True,
     )
     print(
-        "Do NOT tell the operator to open latest_extract.md instead of pasting the extract.",
-        flush=True,
-    )
-    print(
-        "After extract + 7-step are visible in chat, run play-ready + Auto-LF in a separate "
-        "tools-only message.",
-        flush=True,
-    )
-    print(
-        "Operator backup if UI collapses: .cursor/state/latest_re_visible.md "
-        "(written when section 7 is detected).",
+        "RE_TEXT_ONLY_GATE = Turn B text-only constraint ONLY. It does NOT mean skip Turn A LF.",
         flush=True,
     )
     print("=" * 80 + "\n", flush=True)
@@ -137,11 +166,17 @@ def _print_call_lf_gate() -> None:
 
 
 def _emit_post_extract_gate(combined_output: str) -> None:
+    case_id = _case_id_from_output(combined_output)
     if "CHANNEL: CALL" in combined_output or "CHANNEL_CALL_DETECTED" in combined_output:
         _print_call_lf_gate()
+        # CALL: agent runs voice LF — do not auto-spawn here (empty-body misdetect risk)
+        if case_id:
+            print(f"AUTO_LF_REQUIRED case={case_id} channel=CALL", flush=True)
         return
     if "Blocked empty CUSTOMER EMAIL" in combined_output:
         _print_call_lf_gate()
+        if case_id:
+            print(f"AUTO_LF_REQUIRED case={case_id} channel=CALL", flush=True)
         return
     if "CUSTOMER EMAIL (for Cursor to read" in combined_output:
         body_marker = "Body:"
@@ -156,10 +191,17 @@ def _emit_post_extract_gate(combined_output: str) -> None:
                         "WARNING: Empty CUSTOMER EMAIL body — use CALL_LF_GATE not RE.",
                         flush=True,
                     )
+                    if case_id:
+                        print(f"AUTO_LF_REQUIRED case={case_id} channel=CALL", flush=True)
                     return
     if "CHANNEL: EMAIL" in combined_output or "CUSTOMER EMAIL (for Cursor to read" in combined_output:
-        _print_re_text_only_gate()
-
+        _print_re_text_only_gate(case_id)
+        if case_id:
+            _spawn_auto_lf_at_extract(case_id, "EMAIL")
+        return
+    if case_id:
+        _print_re_text_only_gate(case_id)
+        _spawn_auto_lf_at_extract(case_id, "EMAIL")
 
 def _write_meta(mode: str, pid: int) -> None:
     import json
