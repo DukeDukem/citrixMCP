@@ -84,24 +84,27 @@ def _followup(case_id: str, channel: str, gate: str) -> str:
             f"DO NOT run email 7-step. DO NOT PR."
         )
 
-    # EMAIL: agent writes text ONLY — no LF/closeout tools.
-    # The re_complete_sound_hook detects section 7, saves latest_re_visible.md, and
-    # spawns auto_lf_after_re.py which handles fill_case_tracker + closeout arm.
-    # Agent running LF tools causes Cursor to collapse the 7-step into a background
-    # tasks dropdown once the long-running --closeout-anwenden tool completes.
+    # EMAIL: visible 7-step FIRST (no LF tools in that message), then agent MUST
+    # Auto-LF in the immediate next step. Hook auto_lf_after_re = SAFETY NET only.
+    # Incident 2026-09-13 #57725986: "hook-only LF" left cases without Case Tracker fill.
     return (
         f"[AUTO_PIPELINE]\n"
-        f"CHANNEL: EMAIL — {cid}. TWO PHASES ONLY. NO SHELL TOOLS AFTER PHASE 2.\n\n"
-        f"PHASE 1 — TOOL (fast file read only):\n"
-        f"  Read file: {extract_file}\n"
-        f"  (if missing: uv run python .cursor/skills/sprinklr-read-answer-email/run.py --pickup)\n\n"
-        f"PHASE 2 — PLAIN VISIBLE TEXT (write this after Phase 1, then STOP — no more tools):\n"
-        f"  Write: CHANNEL: EMAIL / Fall {cid} / full 7-step RE sections 1-7 as plain markdown.\n"
-        f"  End with: 'Auto-LF filing now. (Background: sound hook handles LF + arm.)'\n\n"
-        f"*** STOP AFTER PHASE 2. DO NOT call fill_case_tracker. DO NOT run --closeout-*. ***\n"
-        f"*** DO NOT use Task/explore subagents. DO NOT ask operator anything. ***\n"
-        f"The re_complete_sound_hook fires on section 7 and auto-files LF + arms Anwenden.\n"
-        f"Running LF tools here collapses the 7-step into a hidden dropdown — FORBIDDEN."
+        f"CHANNEL: EMAIL — {cid}. ORDER LOCK + MANDATORY AGENT AUTO-LF.\n\n"
+        f"RESPONSE 1 (this message — keep 7-step visible):\n"
+        f"1) TOOL: Read file {extract_file}\n"
+        f"   (if missing: uv run python .cursor/skills/sprinklr-read-answer-email/run.py --pickup)\n"
+        f"2) PLAIN TEXT: CHANNEL: EMAIL / Fall {cid} / full 7-step RE sections 1-7.\n"
+        f"   End with: 'Auto-LF filing now.'\n"
+        f"   *** Do NOT call fill_case_tracker or --closeout-* IN THIS MESSAGE "
+        f"(long closeout collapses the 7-step). ***\n"
+        f"   *** DO NOT use Task/explore. DO NOT ask operator anything. ***\n\n"
+        f"RESPONSE 2 (IMMEDIATE next agent step — do NOT wait for operator or hook):\n"
+        f"1) uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py "
+        f"--case-id \"{cid}\"  (add --transfer 1 --target if §3 says Yes)\n"
+        f"2) run.py --closeout-anwenden OR --closeout-weiter OR --closeout-extern\n"
+        f"3) Quote: LF done / LF TR done for {cid}\n\n"
+        f"HARD: Ending after 'Auto-LF filing now.' without agent Turn C = FAILURE.\n"
+        f"Hook auto_lf_after_re = SAFETY NET only — NEVER the sole LF path."
     )
 
 
@@ -229,23 +232,24 @@ def main() -> int:
         sys.stdout.flush()
         return 0
 
-    # Path B: Turn B done, Turn C missing (outside monitoring — after RE paste)
+    # Path B: 7-step visible (latest_re_visible.md has section 7) but LF not filed.
+    # Since agent now writes text-only (no LF tools), the sound hook should have
+    # spawned auto_lf_after_re.py already. Path B is a secondary safety net:
+    # spawn auto_lf_after_re.py directly — NO chat followup_message (that would
+    # land in whichever chat is active and is now always wrong / harmful).
     need_c, case_id = _needs_turn_c_followup()
     if need_c:
         dispatched = _load_dispatched()
-        turn_c_key = f"turn_c:{case_id}"
         if dispatched.get("turn_c_case") == case_id:
             _log(f"turn_c already_dispatched case={case_id}")
             sys.stdout.write("{}\n")
             sys.stdout.flush()
             return 0
-        # Also try spawn Auto-LF immediately so LF files even if agent is slow
         try:
             auto_lf = Path(__file__).resolve().parent / "auto_lf_after_re.py"
             latest = _STATE / "latest_re_visible.md"
             if auto_lf.exists() and latest.exists():
                 import subprocess
-
                 creationflags = 0
                 if sys.platform == "win32":
                     creationflags = 0x08000000 | 0x00000200
@@ -258,28 +262,19 @@ def main() -> int:
                     creationflags=creationflags,
                     close_fds=False if sys.platform == "win32" else True,
                 )
-                _log(f"turn_c auto_lf spawn case={case_id}")
+                _log(f"path_b auto_lf spawn case={case_id} (no chat followup)")
         except Exception as e:
-            _log(f"turn_c spawn failed={e!r}")
-
+            _log(f"path_b spawn failed={e!r}")
         try:
             _STATE.mkdir(parents=True, exist_ok=True)
             _DISPATCHED.write_text(
-                json.dumps(
-                    {
-                        "turn_c_case": case_id,
-                        "at": datetime.now(timezone.utc).isoformat(),
-                    },
-                    indent=2,
-                ),
+                json.dumps({"turn_c_case": case_id, "at": datetime.now(timezone.utc).isoformat()}, indent=2),
                 encoding="utf-8",
             )
         except Exception:
             pass
-
-        msg = _followup_turn_c(case_id)
-        _log(f"followup_turn_c case={case_id}")
-        sys.stdout.write(json.dumps({"followup_message": msg}, ensure_ascii=False) + "\n")
+        # Return empty — no followup_message. LF handled silently by background process.
+        sys.stdout.write("{}\n")
         sys.stdout.flush()
         return 0
 
