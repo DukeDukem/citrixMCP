@@ -32,7 +32,8 @@ COMMANDS (operator types ONLY these in chat):
 - DONE -> end session. Rule: .cursor/rules/operator-minimal-input.mdc
 - EMAIL sidetray click -> CASE_ITEM_AUTO_CLICKED -> SIDETRAY_EMAIL_PROCESSING_IMMEDIATE -> extract runs immediately in script; agent immediately continues 7-step + Auto-LF when await-arm/extract stdout completes (no pause, no new operator message).
 - Typed RE / run.py --once = RECOVERY ONLY (re-read visible case, await-arm failed). NEVER arm Anwenden on recovery RE.
-- EMAIL RE = EVERY CASE, EVERY TIME (Fall #1, Fall #2, … forever): THREE TURNS — (1) TURN A (tools only, no chat prose): run.py extract only; (2) TURN B TEXT-ONLY 7-step RE (sections 1–7) — ZERO tools — operator reads and starts in Citrix immediately; note “Auto-LF filing now” at end; (3) play-ready + Auto-LF + arms. NEVER explore terminal .txt files. NEVER hide 7-step under “finished background tasks”.
+- EMAIL RE = EVERY CASE, EVERY TIME (Fall #1, Fall #2, … forever): COMPOUND RESPONSE — ONE agent response with: Phase 1 (tool: Read latest_extract.md or --pickup); Phase 2+3 (PLAIN TEXT: full 7-step RE sections 1-7 + "Auto-LF filing now." written BEFORE LF tools, appears ABOVE collapsed dropdowns); Phase 4+5 (tools: fill_case_tracker.py + --closeout-arm); Phase 6 (PLAIN TEXT: "LF done"). NEVER explore terminal .txt. NEVER hide 7-step. NEVER fill_case_tracker before 7-step text.
+- ORDER LOCK: fill_case_tracker/closeout MUST come AFTER the 7-step text in the same response. Text before tools = visible. Tools before text = hidden fail. Rule: `.cursor/rules/re-no-background-tasks-ui.mdc`.
 - If I type RE SHOW / visible RE / RE FILE: recover per EMAIL-PROCESSING-AGENT.md troubleshooting — re-print extract + 7-step. Backup file: .cursor/state/latest_re_visible.md
 - Section 6 in chat: UTF-8 code block soft-wrapped ~72 chars for vertical reading only. **PR / Sprinklr paste** must stay **mail format** (previous length, encoding, signature layout) — never let chat wraps change the pasted email.
 - After every EMAIL 7-step RE (+ play-ready): AUTO-LF Case Tracker for this Fall # (do NOT wait for typed LF). Transfer Nein or Ja per §3. Auto-LF runs AFTER the 7-step is visible in chat — not instead of it, not buried with it in background tasks.
@@ -253,13 +254,20 @@ Cursor **collapses tool/subagent work** into rows like `Finished 2 background ta
 
 **Most common cause with Auto:** an **explore** subagent reads a **terminal capture `.txt`** instead of using `run.py` stdout — the RE ends up entirely under that menu.
 
-### Three-turn protocol (agent must follow)
+### Compound-response protocol (agent must follow — not three-turn)
 
-| Turn | Content |
-|------|---------|
-| **1** | `run.py` extract only → **no** operator-facing one-liner (stdout shows `RE_TEXT_ONLY_GATE`) |
-| **2** | **Full 7-step RE (sections 1–7)** — text-only, zero tools. Do NOT paste email body. Note Auto-LF best-guess at end. Auto-LF already filed in Turn A. |
-| **3** | TURN C (tools only): fill_case_tracker.py best-guess + --closeout-arm — agent handles admin while operator already in Citrix |
+After `[AUTO_PIPELINE]` or first-case `run.py --once`, produce **ONE response** with this exact order:
+
+| Phase | Action | Renders as |
+|-------|--------|-----------|
+| **1** | Read `.cursor/state/latest_extract.md` (or `run.py --pickup`) | Collapsed dropdown |
+| **2** | **PLAIN TEXT: `CHANNEL: EMAIL / Fall #X / 7-step sections 1-7`** | **VISIBLE in chat** |
+| **3** | **PLAIN TEXT: `Auto-LF filing now.`** | **VISIBLE** |
+| **4** | `fill_case_tracker.py --case-id "#X"` | Collapsed dropdown |
+| **5** | `run.py --closeout-anwenden` (or weiter/extern) | Collapsed dropdown |
+| **6** | **PLAIN TEXT: `LF done for #X — Closeout armed.`** | **VISIBLE** |
+
+**Phase 2 text MUST come before Phase 4 tools** — otherwise 7-step is hidden. Never skip Phase 2. Never merge all into tools-only. Never text-only without LF.
 
 ### Your recovery (when chat shows only trays / no extract)
 
@@ -442,7 +450,7 @@ HARD FIX — EMAIL 7-STEP RE MUST BE VISIBLE CHAT TEXT (NOT BEHIND A MENU):
 - Every CHANNEL: EMAIL case: type the full 7-step RE (sections 1–7) as normal assistant chat text the user can read immediately.
 - NEVER put the 7-step only under Cursor “finished N background tasks”, collapsed task dropdowns, tool summaries, or anything that requires a click to open.
 - NEVER use Task/subagent/explore for the 7-step (causes “Finished N background tasks” / “Explored …” menus). Parent agent writes 1–7 as plain chat.
-- Three-turn pattern: (1) run.py only → RE_TEXT_ONLY_GATE → stop; (2) **text-only** full 7-step — ZERO tools; (3) TURN C: Auto-LF best-guess + --closeout-arm → rest, await PR or arm fires. NEVER Read terminals/*.txt or explore/Task.
+- Compound-response pattern: ONE response per [AUTO_PIPELINE] trigger — Phase 1: Read latest_extract.md (tool); Phase 2+3: full 7-step TEXT written before any LF tools (VISIBLE); Phase 4+5: fill_case_tracker.py + --closeout-arm tools (below the text); Phase 6: LF done quote. Text before tools = visible. NEVER call fill_case_tracker before writing 7-step. NEVER Read terminals/*.txt or explore/Task.
 - If I type RE SHOW / visible RE: re-print 7-step in main thread. RE FILE: run show_latest_re.py. Backup: .cursor/state/latest_re_visible.md
 - Rule file: .cursor/rules/re-no-background-tasks-ui.mdc
 - If the current EMAIL case has no visible 7-step in the main chat thread: output the full 7-step NOW as plain chat text.
@@ -456,7 +464,7 @@ AUTO-LF IS MANDATORY FOR BOTH EMAIL AND CALL (I do not type LF):
 
 EMAIL:
 1) After 7-step RE + play-ready → fill_case_tracker.py for this Fall #
-2) Transfer Nein best-guess → 7-step in Turn B → --closeout-anwenden in Turn C → rest → wait for PR (paste only)
+2) Transfer Nein best-guess → 7-step TEXT then --closeout-anwenden tools in same compound response → rest → wait for PR (paste only)
 3) Transfer Ja → --arm-weiter (queue) or --arm-extern (@) + --await-arm; quote LF TR done for #FALL_ID
 
 CALL (no BRIEF gate):

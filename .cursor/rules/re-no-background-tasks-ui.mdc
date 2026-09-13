@@ -61,6 +61,18 @@ Do **NOT** send only lines like:
 
 If those words appear without the extract + sections 1–7 in the **same** visible message → **you failed**. Fix immediately: paste extract + full 7-step now.
 
+### Forbidden — Auto-LF / tools before Turn B (2026-09-13 incident)
+
+**Never** run `fill_case_tracker.py` / `--closeout-*` / LF tools for a new EMAIL Fall # until the **full 7-step is already visible** in the main chat for that Fall #.
+
+Especially banned on shell-completion / “briefly inform… follow-up” notifies:
+
+1. Read terminal → immediately Auto-LF **without** pasting RE  
+2. `--once` / Grep / attachments **instead of** pasting RE  
+3. Quoting `LF done` when sections 1–7 were never pasted for that Fall #
+
+**Order lock:** see `.cursor/rules/re-before-auto-lf.mdc`. If only one message is possible → **paste 7-step**; defer LF. Never LF-without-RE.
+
 ### Also forbidden
 
 1. **explore/Task** reading terminal capture files (`Explored ….txt`)
@@ -68,6 +80,7 @@ If those words appear without the extract + sections 1–7 in the **same** visib
 3. **Tools + 7-step in one message** (hides under background tasks)
 4. **7-step / extract only inside tool output**
 5. Stopping after extract and idling until the operator types again
+6. **Auto-LF before** visible Turn B for that Fall # (see above)
 
 ## Auto-start (operator does NOT type RE for case 2+)
 
@@ -88,17 +101,28 @@ When stdout shows **`CASE_ITEM_AUTO_CLICKED`** + **`SIDETRAY_EMAIL_PROCESSING_IM
 
 **Hard ban:** Stopping after sidetray click or extract without pasting extract + 7-step + Auto-LF for that Fall #.
 
-## Three-turn protocol (EMAIL) — mandatory
+## Compound-response protocol (EMAIL) — mandatory (replaces broken three-turn model)
 
-| Turn | What | Tools |
-|------|------|-------|
-| **A** | Extract only | `run.py` — **no** operator-facing chat prose |
-| **B** | Full **7-step RE (sections 1–7)** as plain visible chat text | **ZERO** tools — operator reads and starts working in Citrix immediately |
-| **C** | Auto-LF best-guess + close-out arm | `fill_case_tracker.py`, `run.py --closeout-*` — agent handles admin while operator already in Citrix |
+**Why three-turn failed:** Turn B (7-step text) had no automatic trigger after Turn A. Hook fires once, agent responds, hook disarms. Nothing triggered a second pure-text turn.
 
-**Hard bans:** No Task/explore; no Read terminals/*.txt before turn B; no tools in the turn-B message; no one-liner instead of turn B; 7-step must appear before Auto-LF runs. Typed RE is not a gate for case 2+.
+**Correct model: ONE compound response per [AUTO_PIPELINE] trigger. Text before tools = visible.**
 
-**Turn B micro-template:**
+In Cursor, text written BEFORE tool calls renders in the **visible chat thread**. Tools that follow appear in collapsible dropdowns below. This is the reliable pattern.
+
+### After [AUTO_PIPELINE] — mandatory compound response order
+
+ALL of this in ONE agent response — in this exact order:
+
+1. **Phase 1 (tool):** Read `.cursor/state/latest_extract.md` (or run `run.py --pickup` if missing)
+2. **Phase 2 (PLAIN TEXT — visible):** Write `CHANNEL: EMAIL / Fall #X / 7-step sections 1-7` as plain markdown. This text appears ABOVE subsequent tool dropdowns and is what the operator reads.
+3. **Phase 3 (PLAIN TEXT — visible):** Write: `Auto-LF filing now.`
+4. **Phase 4 (tool):** `fill_case_tracker.py --case-id "#X"` (add --transfer/--target if §3 says Ja)
+5. **Phase 5 (tool):** `run.py --closeout-anwenden` (or `--closeout-weiter` / `--closeout-extern` for transfer)
+6. **Phase 6 (PLAIN TEXT — visible):** Write: `LF done for #X — Closeout armed. Click Anwenden when ready.`
+
+**Phase 2 text MUST be written before Phase 4 tools are called.** If `fill_case_tracker.py` runs before the 7-step appears = WRONG ORDER = FAIL.
+
+**Micro-template (what the visible text must look like):**
 
 ```
 CHANNEL: EMAIL
@@ -108,10 +132,18 @@ Fall #…
 …
 **7. Summary of response**
 …
-Auto-LF filing now — best-guess: Transfer Nein/Ja to [target]. Reiterate if needed.
+Auto-LF filing now.
 ```
 
-No customer email body / Subject / From paste. 7-step only. Auto-LF note at bottom of Turn B signals Turn C is next.
+Then LF + arm tools below as collapsed dropdowns. No email body / Subject / From. No Task/explore subagents.
+
+**Hard bans (all equally forbidden):**
+- Task/explore subagents — all output hidden, forbidden
+- `fill_case_tracker.py` called before 7-step text (wrong order)
+- Tools-only response with no visible 7-step prose
+- Text-only response with no LF/closeout tools (leaves Auto-LF undone forever)
+- Idling or ending response after only 7-step text without running Phases 4+5
+
 
 ## Operator recovery
 

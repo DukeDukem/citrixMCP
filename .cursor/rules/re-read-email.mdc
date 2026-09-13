@@ -152,36 +152,27 @@ Transfer (EMAIL or CALL):
 | `run.py --await-arm` / `--pickup` | Agent-internal listen/recovery — **never** ask operator |
 | `run.py --foreground` | Debug only: blocking in-shell watch |
 
-## After extract: paste extract + 7-step + Auto-LF (mandatory)
+## After extract: 7-step + Auto-LF (mandatory — compound response)
 
-Every EMAIL extract (auto after login, `--await-arm`, or recovery `--once`):
+**Compound response model (not three-turn):** See `.cursor/rules/re-no-background-tasks-ui.mdc`.
 
-**Turn A (tools only — extract, no chat prose):**
+Every EMAIL extract (auto after login, `--await-arm`, `[AUTO_PIPELINE]`, or recovery `--once`):
 
-1. `run.py` extract — stdout provides Fall #, Quelle, Ziel, Kundennummer, channel
+**ONE compound agent response — in this exact order:**
 
-**Turn B (ZERO tools — visible chat prose — operator reads and starts working in Citrix immediately):**
-
-1. `CHANNEL: EMAIL` + Fall # header
-2. Full **7-step RE sections 1–7** as plain visible chat text — no dropdowns, no tools
-3. One-line note: `Auto-LF filing now — best-guess: Transfer Nein/Ja to X.`
-
-**Turn C (tools only — Auto-LF + arm, agent handles admin while operator already in Citrix):**
-
-1. `fill_case_tracker.py` best-guess from extract data
-2. If Auto-LF prints **`PAUSE_AUTO_LF`** + **`LF_CONTINUE_AFTER_SPEICHERN_ARMED`** (exit `3`): arm `--await-speichern-continue`; continue after Speichern click
-3. Background close-out arm:
-   - Non-transfer: **`--closeout-anwenden`**
-   - Transfer: **`--closeout-weiter`** (queue) or **`--closeout-extern`** (email `@`)
-4. Finishing quote: `LF done for #FALL_ID — armed, awaiting PR or Anwenden.`
+1. **Tool (Phase 1):** Read `.cursor/state/latest_extract.md` to get case data (or `--pickup` if missing)
+2. **Plain text (Phase 2) — VISIBLE:** Write `CHANNEL: EMAIL / Fall #X` then full **7-step RE sections 1–7** as plain markdown. **This text goes BEFORE any LF tools so it's above the collapsed dropdown.**
+3. **Plain text (Phase 3):** `Auto-LF filing now.`
+4. **Tool (Phase 4):** `fill_case_tracker.py --case-id "#X"` — best-guess from extract data. If `PAUSE_AUTO_LF` / `LF_CONTINUE_AFTER_SPEICHERN_ARMED` → arm `--await-speichern-continue`.
+5. **Tool (Phase 5):** `--closeout-anwenden` (non-transfer) / `--closeout-weiter` (queue) / `--closeout-extern` (email @)
+6. **Plain text (Phase 6):** `LF done for #X — Closeout armed. Click Anwenden when ready.`
 
 **Do NOT paste the customer email body / Subject / From** — operator sees it in Sprinklr.
 
-**Rationale:** Operator sees 7-step immediately after extract and starts in Citrix. LF + arm run in Turn C while operator is already processing.
+**Hard rule:** Phase 2 text before Phase 4 tools. If LF runs before 7-step is written → wrong order → fail.
 
 **Auto-LF / tool runs must never replace, precede, or hide the 7-step behind Cursor task UI.**
 
-Every CALL on CHANNEL detect: Auto-LF `--channel voice` → arm Next (or Weiter/Extern if transfer). BRIEF is optional and never blocks Auto-LF.
 
 ## OPERATOR INPUTS ONLY (hard)
 
