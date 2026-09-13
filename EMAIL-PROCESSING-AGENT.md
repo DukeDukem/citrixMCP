@@ -260,14 +260,12 @@ After `[AUTO_PIPELINE]` or first-case `run.py --once`, produce **ONE response** 
 
 | Phase | Action | Renders as |
 |-------|--------|-----------|
-| **1** | Read `.cursor/state/latest_extract.md` (or `run.py --pickup`) | Collapsed dropdown |
-| **2** | **PLAIN TEXT: `CHANNEL: EMAIL / Fall #X / 7-step sections 1-7`** | **VISIBLE in chat** |
-| **3** | **PLAIN TEXT: `Auto-LF filing now.`** | **VISIBLE** |
-| **4** | `fill_case_tracker.py --case-id "#X"` | Collapsed dropdown |
-| **5** | `run.py --closeout-anwenden` (or weiter/extern) | Collapsed dropdown |
-| **6** | **PLAIN TEXT: `LF done for #X — Closeout armed.`** | **VISIBLE** |
+| **1** | Read `.cursor/state/latest_extract.md` (or `run.py --pickup`) | Collapsed dropdown (fast) |
+| **2** | **PLAIN TEXT: `CHANNEL: EMAIL / Fall #X / 7-step sections 1-7` + `Auto-LF filing now.`** | **VISIBLE permanently** |
+| **STOP** | Do NOT call `fill_case_tracker.py` or `--closeout-*` — **sound hook handles LF + arm** | — |
 
-**Phase 2 text MUST come before Phase 4 tools** — otherwise 7-step is hidden. Never skip Phase 2. Never merge all into tools-only. Never text-only without LF.
+**Why:** `--closeout-anwenden` is long-running; when it finishes Cursor collapses the whole response including the 7-step text. Text-only = never collapses.  
+**Background chain:** `re_complete_sound_hook` → section 7 detected → `auto_lf_after_re.py` → `fill_case_tracker.py` + closeout arm.
 
 ### Your recovery (when chat shows only trays / no extract)
 

@@ -73,6 +73,7 @@ def _followup(case_id: str, channel: str, gate: str) -> str:
     extract_file = str(_STATE / "latest_extract.md")
 
     if ch == "CALL":
+        # CALL: agent must run LF + arm (sound hook does not handle CALL)
         return (
             f"[AUTO_PIPELINE]\n"
             f"CHANNEL: CALL — {cid}. Do all of this in ONE response, no operator input:\n"
@@ -83,24 +84,24 @@ def _followup(case_id: str, channel: str, gate: str) -> str:
             f"DO NOT run email 7-step. DO NOT PR."
         )
 
+    # EMAIL: agent writes text ONLY — no LF/closeout tools.
+    # The re_complete_sound_hook detects section 7, saves latest_re_visible.md, and
+    # spawns auto_lf_after_re.py which handles fill_case_tracker + closeout arm.
+    # Agent running LF tools causes Cursor to collapse the 7-step into a background
+    # tasks dropdown once the long-running --closeout-anwenden tool completes.
     return (
         f"[AUTO_PIPELINE]\n"
-        f"CHANNEL: EMAIL — {cid}. ONE RESPONSE. EXACT ORDER. NO DEVIATIONS.\n\n"
-        f"FIRST — TOOL (get extract): Read file {extract_file}\n"
-        f"  (if file missing, run: uv run python .cursor/skills/sprinklr-read-answer-email/run.py --pickup)\n\n"
-        f"SECOND — PLAIN VISIBLE TEXT (operator reads this — write it BEFORE any more tools):\n"
-        f"  Write exactly: CHANNEL: EMAIL / Fall {cid} / then full 7-step RE sections 1-7\n"
-        f"  as plain markdown visible in this chat. End the text block with: 'Auto-LF filing now.'\n"
-        f"  *** FORBIDDEN: calling fill_case_tracker BEFORE this text is written ***\n"
-        f"  *** FORBIDDEN: using Task/explore subagents — output must be visible here ***\n\n"
-        f"THIRD — TOOLS (LF + arm — after the text above is written):\n"
-        f"  a) uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id \"{cid}\"\n"
-        f"     (add --transfer 1 --target if §3 says transfer eligible)\n"
-        f"  b) uv run python .cursor/skills/sprinklr-read-answer-email/run.py --closeout-anwenden\n"
-        f"     (or --closeout-weiter for queue transfer / --closeout-extern for email transfer)\n\n"
-        f"FOURTH — PLAIN TEXT (end of response):\n"
-        f"  Write: 'LF done for {cid} — Closeout armed. Click Anwenden when ready.'\n\n"
-        f"DO NOT skip the 7-step text. DO NOT merge into tools-only. DO NOT ask operator anything."
+        f"CHANNEL: EMAIL — {cid}. TWO PHASES ONLY. NO SHELL TOOLS AFTER PHASE 2.\n\n"
+        f"PHASE 1 — TOOL (fast file read only):\n"
+        f"  Read file: {extract_file}\n"
+        f"  (if missing: uv run python .cursor/skills/sprinklr-read-answer-email/run.py --pickup)\n\n"
+        f"PHASE 2 — PLAIN VISIBLE TEXT (write this after Phase 1, then STOP — no more tools):\n"
+        f"  Write: CHANNEL: EMAIL / Fall {cid} / full 7-step RE sections 1-7 as plain markdown.\n"
+        f"  End with: 'Auto-LF filing now. (Background: sound hook handles LF + arm.)'\n\n"
+        f"*** STOP AFTER PHASE 2. DO NOT call fill_case_tracker. DO NOT run --closeout-*. ***\n"
+        f"*** DO NOT use Task/explore subagents. DO NOT ask operator anything. ***\n"
+        f"The re_complete_sound_hook fires on section 7 and auto-files LF + arms Anwenden.\n"
+        f"Running LF tools here collapses the 7-step into a hidden dropdown — FORBIDDEN."
     )
 
 
@@ -223,29 +224,6 @@ def main() -> int:
         mark_consumed()
         _mark_dispatched(case_id)
         _log(f"followup case={case_id} channel={channel}")
-
-        # Also spawn auto_lf_after_re.py unconditionally so LF files even if
-        # this followup lands in the wrong chat (instructions chat) and is refused.
-        try:
-            auto_lf = Path(__file__).resolve().parent / "auto_lf_after_re.py"
-            latest = _STATE / "latest_extract.md"
-            if auto_lf.exists() and latest.exists():
-                import subprocess
-                creationflags = 0
-                if sys.platform == "win32":
-                    creationflags = 0x08000000 | 0x00000200
-                subprocess.Popen(
-                    [sys.executable, str(auto_lf), "--spawn", "--text-file", str(latest)],
-                    cwd=str(_REPO),
-                    stdin=subprocess.DEVNULL,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    creationflags=creationflags,
-                    close_fds=False if sys.platform == "win32" else True,
-                )
-                _log(f"path_a auto_lf spawn case={case_id}")
-        except Exception as e:
-            _log(f"path_a spawn failed={e!r}")
 
         sys.stdout.write(json.dumps({"followup_message": msg}, ensure_ascii=False) + "\n")
         sys.stdout.flush()

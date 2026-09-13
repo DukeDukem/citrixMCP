@@ -12,23 +12,20 @@ priority: CRITICAL
 
 **Incident (2026-09-13 — fix):** The three-turn protocol was found to be architecturally broken — Turn B (text-only) had no trigger after Turn A. Replaced with **compound-response model**: one response, text phases written before tool phases in the same message.
 
-## Absolute order (EMAIL) — compound-response
+## Absolute order (EMAIL) — text only
 
 ```
-Same agent response — in this exact order:
-Phase 1 (tool):  Read latest_extract.md
-Phase 2 (TEXT):  CHANNEL: EMAIL / Fall # / full 7-step sections 1–7   ← MUST precede LF tools
-Phase 3 (TEXT):  "Auto-LF filing now."
-Phase 4 (tool):  fill_case_tracker.py
-Phase 5 (tool):  --closeout-*
-Phase 6 (TEXT):  "LF done for #X — Closeout armed."
+Phase 1 (tool):  Read latest_extract.md  (fast file read — small dropdown, OK)
+Phase 2 (TEXT):  CHANNEL: EMAIL / Fall # / full 7-step sections 1–7  ← VISIBLE PERMANENTLY
+STOP — do NOT add fill_case_tracker or --closeout-* tools
 ```
 
-**Rule:** Phases 2–3 (7-step text) **must** be written before Phases 4–5 (tools).  
-Text placed before tool calls renders **visibly** in Cursor chat above collapsed tool dropdowns.  
-Tool calls placed before text produce collapsed output — the 7-step is hidden. **That is a failure.**
+**Rule:** After Phase 2, the agent's response ends. No more tools.  
+`re_complete_sound_hook` detects section 7 → spawns `auto_lf_after_re.py` → LF + arm in background.
 
-**Never reverse. Never run fill_case_tracker before the 7-step text is in the response.**
+**Why:** Long-running shell tools (`--closeout-anwenden`) cause Cursor to collapse the **entire response** (including preceding 7-step text) into a hidden dropdown once they complete. Text-only = never collapses.
+
+**Never run `fill_case_tracker.py` or `--closeout-*` in the same response as the 7-step.**
 
 ## Applies to these triggers (all of them)
 

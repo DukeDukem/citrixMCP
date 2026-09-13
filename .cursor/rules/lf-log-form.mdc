@@ -42,22 +42,18 @@ If the 7-step RE later reveals a different transfer target, operator sends **rei
 
 ### Order (EMAIL) — compound response (replaces three-turn model)
 
-**ONE agent response** after extract / `[AUTO_PIPELINE]`, in this exact order:
+**TWO PHASES ONLY — agent writes text, background chain handles LF + arm:**
 
-1. **Phase 1 (tool):** Read `.cursor/state/latest_extract.md` (or `run.py --pickup`)
-2. **Phase 2+3 (TEXT — visible):** Write `CHANNEL: EMAIL / Fall #` then full **7-step RE sections 1–7** as plain chat markdown. End with: `Auto-LF filing now.` — **this text must appear before any LF tools**
-3. **Phase 4 (tool):** `fill_case_tracker.py --case-id "#FALL_ID"` — best-guess from extract data
-4. **Phase 5 (tool):** `--closeout-anwenden` (non-transfer) or `--closeout-weiter/extern` (transfer) — arm starts
-5. **Phase 6 (TEXT):** `LF done for #FALL_ID — Closeout armed. Click Anwenden when ready.`
+1. **Phase 1 (tool):** Read `.cursor/state/latest_extract.md` (or `run.py --pickup`) — fast file read
+2. **Phase 2 (TEXT — visible permanently):** Write `CHANNEL: EMAIL / Fall #` then full **7-step RE sections 1–7** as plain chat markdown. End with: `Auto-LF filing now. (Background: sound hook handles LF + arm.)`
+3. **STOP.** Agent ends response here — no `fill_case_tracker.py`, no `--closeout-*`.
 
-**Safety net (2026-09-12):** `re_complete_sound_hook` detects section 7 and can spawn `auto_lf_after_re.py` if Phases 4–5 are missed. Safety net only — agent must complete all phases.
+**Background chain (automatic):** `re_complete_sound_hook` detects section 7 → saves `latest_re_visible.md` → spawns `auto_lf_after_re.py` → `fill_case_tracker.py` (best-guess transfer from 7-step text) + closeout arm.
 
-**Order lock:** `fill_case_tracker.py` must come AFTER the 7-step text in the same response. Text before tools = visible in Cursor chat. Tools before text = hidden fail. Rule: `.cursor/rules/re-before-auto-lf.mdc`.
+**Why no LF tools in agent response:** Long-running `--closeout-anwenden` tool causes Cursor to collapse the entire response (including the 7-step text) into a hidden “Finished background tasks” dropdown. Text-only response = 7-step stays visible permanently.
 
-**Rationale:** Operator sees 7-step immediately (text renders above collapsed tool dropdowns). LF + arm run after the text in the same response.
-
-**Transfer arm:** `--closeout-weiter` (queue) or `--closeout-extern` (email `@`). No PR. Finishing quote: `LF TR done for #FALL_ID`.  
-**PR does not start the arm.** Arm starts at Phase 5 (same compound response). PR just pastes the reply.
+**Transfer:** `auto_lf_after_re.py` parses "Transfer eligible: Yes/No" and target from the 7-step text. If transfer eligible, it runs `--closeout-weiter` (queue) or `--closeout-extern` (email `@`).  
+**PR does not start the arm.** Arm is started by `auto_lf_after_re.py` background process. PR just pastes the reply.
 
 
 ### Order (CALL) — Auto-LF on CHANNEL detect (no BRIEF gate)

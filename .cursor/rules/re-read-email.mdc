@@ -158,20 +158,17 @@ Transfer (EMAIL or CALL):
 
 Every EMAIL extract (auto after login, `--await-arm`, `[AUTO_PIPELINE]`, or recovery `--once`):
 
-**ONE compound agent response — in this exact order:**
+**TWO PHASES ONLY — no LF/closeout tools (sound hook handles them automatically):**
 
-1. **Tool (Phase 1):** Read `.cursor/state/latest_extract.md` to get case data (or `--pickup` if missing)
-2. **Plain text (Phase 2) — VISIBLE:** Write `CHANNEL: EMAIL / Fall #X` then full **7-step RE sections 1–7** as plain markdown. **This text goes BEFORE any LF tools so it's above the collapsed dropdown.**
-3. **Plain text (Phase 3):** `Auto-LF filing now.`
-4. **Tool (Phase 4):** `fill_case_tracker.py --case-id "#X"` — best-guess from extract data. If `PAUSE_AUTO_LF` / `LF_CONTINUE_AFTER_SPEICHERN_ARMED` → arm `--await-speichern-continue`.
-5. **Tool (Phase 5):** `--closeout-anwenden` (non-transfer) / `--closeout-weiter` (queue) / `--closeout-extern` (email @)
-6. **Plain text (Phase 6):** `LF done for #X — Closeout armed. Click Anwenden when ready.`
+1. **Tool (Phase 1):** Read `.cursor/state/latest_extract.md` (or `run.py --pickup` if missing) — fast file read, tiny collapsed dropdown
+2. **Plain text (Phase 2) — VISIBLE PERMANENTLY:** Write `CHANNEL: EMAIL / Fall #X` then full **7-step RE sections 1–7** as plain markdown. End with: `Auto-LF filing now. (Background: sound hook handles LF + arm.)`
+3. **STOP.** Do NOT call `fill_case_tracker.py` or `--closeout-*`. The `re_complete_sound_hook` fires on section 7 detection, saves the RE, and spawns `auto_lf_after_re.py` which handles LF + arm automatically.
 
 **Do NOT paste the customer email body / Subject / From** — operator sees it in Sprinklr.
 
-**Hard rule:** Phase 2 text before Phase 4 tools. If LF runs before 7-step is written → wrong order → fail.
+**Why no LF tools:** `--closeout-anwenden` is a long-running shell tool. When it completes, Cursor collapses the entire response (including the 7-step text before it) into a "Finished background tasks" dropdown. Text-only response = 7-step stays visible permanently.
 
-**Auto-LF / tool runs must never replace, precede, or hide the 7-step behind Cursor task UI.**
+**Background auto-LF chain:** `re_complete_sound_hook` → section 7 detected → `latest_re_visible.md` saved → `auto_lf_after_re.py` spawned → `fill_case_tracker.py` + closeout arm.
 
 
 ## OPERATOR INPUTS ONLY (hard)

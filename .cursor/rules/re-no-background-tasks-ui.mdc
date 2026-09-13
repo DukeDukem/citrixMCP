@@ -109,18 +109,20 @@ When stdout shows **`CASE_ITEM_AUTO_CLICKED`** + **`SIDETRAY_EMAIL_PROCESSING_IM
 
 In Cursor, text written BEFORE tool calls renders in the **visible chat thread**. Tools that follow appear in collapsible dropdowns below. This is the reliable pattern.
 
-### After [AUTO_PIPELINE] — mandatory compound response order
+### After [AUTO_PIPELINE] — mandatory response (TWO PHASES ONLY)
 
-ALL of this in ONE agent response — in this exact order:
+**Why no LF tools here:** When `--closeout-anwenden` (long-running shell tool) completes, Cursor collapses the **entire response** — including the 7-step text written before it — into a hidden "Finished background tasks" dropdown. The 7-step disappears. That is the exact failure being fixed.
 
-1. **Phase 1 (tool):** Read `.cursor/state/latest_extract.md` (or run `run.py --pickup` if missing)
-2. **Phase 2 (PLAIN TEXT — visible):** Write `CHANNEL: EMAIL / Fall #X / 7-step sections 1-7` as plain markdown. This text appears ABOVE subsequent tool dropdowns and is what the operator reads.
-3. **Phase 3 (PLAIN TEXT — visible):** Write: `Auto-LF filing now.`
-4. **Phase 4 (tool):** `fill_case_tracker.py --case-id "#X"` (add --transfer/--target if §3 says Ja)
-5. **Phase 5 (tool):** `run.py --closeout-anwenden` (or `--closeout-weiter` / `--closeout-extern` for transfer)
-6. **Phase 6 (PLAIN TEXT — visible):** Write: `LF done for #X — Closeout armed. Click Anwenden when ready.`
+**Correct model:** Agent writes text only (Phases 1–2). Sound hook detects section 7, saves `latest_re_visible.md`, spawns `auto_lf_after_re.py` which handles `fill_case_tracker.py` + closeout arm in the background. Text-only response = never collapses.
 
-**Phase 2 text MUST be written before Phase 4 tools are called.** If `fill_case_tracker.py` runs before the 7-step appears = WRONG ORDER = FAIL.
+**Background chain (automatic — no agent action needed):**
+`re_complete_sound_hook` → detects section 7 → saves `latest_re_visible.md` → spawns `auto_lf_after_re.py` → `fill_case_tracker.py` + `--closeout-anwenden/weiter/extern`
+
+| Phase | What to do | Renders as |
+|-------|-----------|------------|
+| **Phase 1** | Read `.cursor/state/latest_extract.md` using Read tool (or `run.py --pickup` if file missing) | Collapsed dropdown — OK (fast file read) |
+| **Phase 2** | Write `CHANNEL: EMAIL / Fall #… / 7-step sections 1–7` as **plain markdown text**. End with: `Auto-LF filing now. (Background: sound hook handles LF + arm.)` | **VISIBLE in chat — permanently** |
+| **STOP** | Do NOT call `fill_case_tracker.py`. Do NOT run `--closeout-*`. Sound hook handles it. | — |
 
 **Micro-template (what the visible text must look like):**
 
@@ -132,17 +134,16 @@ Fall #…
 …
 **7. Summary of response**
 …
-Auto-LF filing now.
+Auto-LF filing now. (Background: sound hook handles LF + arm.)
 ```
 
-Then LF + arm tools below as collapsed dropdowns. No email body / Subject / From. No Task/explore subagents.
+No email body / Subject / From. No Task/explore subagents. No shell tools after Phase 2.
 
-**Hard bans (all equally forbidden):**
+**Hard bans:**
 - Task/explore subagents — all output hidden, forbidden
-- `fill_case_tracker.py` called before 7-step text (wrong order)
+- `fill_case_tracker.py` or `--closeout-*` called after Phase 2 (collapses 7-step)
 - Tools-only response with no visible 7-step prose
-- Text-only response with no LF/closeout tools (leaves Auto-LF undone forever)
-- Idling or ending response after only 7-step text without running Phases 4+5
+- Idling without writing the 7-step text
 
 
 ## Operator recovery
