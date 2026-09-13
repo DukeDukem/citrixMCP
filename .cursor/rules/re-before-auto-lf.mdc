@@ -1,62 +1,67 @@
 ---
-description: HARD — Visible 7-step RE must appear in chat BEFORE any fill_case_tracker / closeout for that Fall #. Now enforced via compound-response order (text before tools), not separate turns.
+description: HARD — 7-step visible first; LF handled by background chain (sound hook + auto_lf_after_re). Agent writes text-only; no LF tools in agent response.
 alwaysApply: true
 priority: CRITICAL
 ---
 
-# HARD — 7-step RE before Auto-LF (order lock)
+# HARD — 7-step RE visible first; LF handled by background chain
 
 **Scope:** Email processing chat (`EMAIL-PROCESSING-AGENT.md`).
 
-**Incident (2026-09-13, Fall #57703762):** Agent ran fill_case_tracker + closeout without pasting the 7-step in chat. Operator saw LF in Case Tracker but no RE.
-
-**Incident (2026-09-13 — fix):** The three-turn protocol was found to be architecturally broken — Turn B (text-only) had no trigger after Turn A. Replaced with **compound-response model**: one response, text phases written before tool phases in the same message.
-
-## Absolute order (EMAIL) — text only
+## How it works (EMAIL)
 
 ```
-Phase 1 (tool):  Read latest_extract.md  (fast file read — small dropdown, OK)
-Phase 2 (TEXT):  CHANNEL: EMAIL / Fall # / full 7-step sections 1–7  ← VISIBLE PERMANENTLY
-STOP — do NOT add fill_case_tracker or --closeout-* tools
+AGENT RESPONSE (text-only):
+  Phase 1 — Read latest_extract.md (fast tool OK)
+  Phase 2 — CHANNEL: EMAIL / Fall # / sections 1-7 as PLAIN chat text
+           End with: "Auto-LF filing now."
+           STOP. NO fill_case_tracker. NO --closeout-* here.
+
+BACKGROUND (automatic — no agent involvement):
+  re_complete_sound_hook detects section 7 -> spawns auto_lf_after_re.py
+  auto_lf_after_re.py -> fill_case_tracker.py + --closeout-* + Dexter sound
+
+PATH B SAFETY NET (hook, silent):
+  extract_auto_continue_hook Path B detects latest_re_visible.md has
+  section 7 but auto_lf_done.json missing -> silently spawns
+  auto_lf_after_re.py — NO chat message fires.
 ```
 
-**Rule:** After Phase 2, the agent's response ends. No more tools.  
-`re_complete_sound_hook` detects section 7 → spawns `auto_lf_after_re.py` → LF + arm in background.
+**Order lock:** 7-step text MUST be visible in chat before LF fires.
+**Agent rule:** After writing sections 1-7, STOP. Never call fill_case_tracker or --closeout-*.
+Running those tools in the agent response collapses the 7-step into a hidden dropdown — forbidden.
 
-**Why:** Long-running shell tools (`--closeout-anwenden`) cause Cursor to collapse the **entire response** (including preceding 7-step text) into a hidden dropdown once they complete. Text-only = never collapses.
+## Why no LF tools in agent response
 
-**Never run `fill_case_tracker.py` or `--closeout-*` in the same response as the 7-step.**
-
-## Applies to these triggers (all of them)
-
-| Trigger | First agent action for EMAIL |
-|---------|------------------------------|
-| `[AUTO_PIPELINE]` / `RE_TEXT_ONLY_GATE` / `DETACHED_ARM_EXTRACT_READY` | **Write 7-step text first** in the compound response |
-| Shell-completion notify / "briefly inform about the task result" | If new `CHANNEL: EMAIL` + Fall # → **7-step text before LF tools** |
-| `--await-arm` / Anwenden / Weiter / Extern / Next extract done | **Same compound-response order** |
-| Typed **RE** / `--once` | **7-step text before LF tools** |
-| Sidetray EMAIL extract | **7-step text before LF tools** |
+When a long-running tool (--closeout-anwenden) runs in the same agent turn as the 7-step text,
+Cursor groups the entire response into a "Finished background tasks" collapsible dropdown. The
+operator loses visibility of the RE. The background chain avoids this entirely.
 
 ## Hard bans
 
-1. `fill_case_tracker.py` called **before** the 7-step text appears in the same response
-2. `--closeout-*` / `--arm*` called **before** the 7-step text appears
-3. Shell notify used as an excuse to run only Auto-LF (no visible 7-step)
-4. "LF done" quote without 7-step already visible for that Fall #
-5. Tools-only response with no 7-step prose for an EMAIL case
+1. fill_case_tracker / --closeout-* in the same agent response as the 7-step text
+2. Writing the 7-step then running LF tools in a "Response 2" — forbidden
+3. Writing "sound hook handles LF" as permission to idle after the 7-step
+4. Task/explore subagents for RE or LF
+5. [AUTO_PIPELINE_TURN_C] — obsolete, blocked, must not be processed
 
-## Self-check before any LF tool call (same response)
+## Self-check (before writing anything for Fall #N)
 
-Has the 7-step text for Fall `#N` already been written in this response?  
-- **No** → write 7-step text NOW, then call `fill_case_tracker.py`  
-- **Yes** → call `fill_case_tracker.py` (normal compound-response Phase 4)
+- About to call fill_case_tracker before the 7-step text? STOP — write 7-step first.
+- 7-step already visible for #N? Background LF may already be running — skip duplicate RE.
+
+## Sounds = operator audio cues only
+
+Prowler / book / Dexter notify the operator when off-screen. They do not run Auto-LF and do
+not excuse skipping the 7-step. The background chain (sound hook -> auto_lf_after_re.py)
+handles LF silently after section 7 is written.
 
 ## CALL exception
 
-`CHANNEL: CALL` → Auto-LF voice immediately; **no** email 7-step. Order lock does not apply to calls.
+CHANNEL: CALL -> Auto-LF voice immediately in same turn (no email 7-step, no dropdown risk).
 
 ## Related
 
-- `.cursor/rules/re-no-background-tasks-ui.mdc` — compound-response protocol detail  
-- `.cursor/rules/re-read-email.mdc`  
-- `.cursor/rules/lf-log-form.mdc`
+- .cursor/rules/re-no-background-tasks-ui.mdc
+- .cursor/rules/re-read-email.mdc
+- .cursor/rules/lf-log-form.mdc

@@ -111,8 +111,8 @@ Transfer (EMAIL or CALL):
   → arm fires → [Monitoring active] → next case
 ```
 
-**Auto-LF timing: Phase 4 — same compound response, after 7-step text is written.** Best-guess from Quelle/Ziel/channel. Reiterate if needed after 7-step reveals different path.  
-**PR is independent of arming.** Arm already running from Phase 5. Agent pastes and finishes.
+**Auto-LF timing:** Background chain (`re_complete_sound_hook` → `auto_lf_after_re.py`) fires after 7-step text is visible. Best-guess from Quelle/Ziel/channel. Reiterate if needed.  
+**PR is independent of arming.** Arm already running from background closeout. Agent pastes and finishes.
 
 ### HARD — Prowler without RE/LF
 
@@ -158,18 +158,18 @@ Transfer (EMAIL or CALL):
 
 Every EMAIL extract (auto after login, `--await-arm`, `[AUTO_PIPELINE]`, or recovery `--once`):
 
-**TWO PHASES ONLY — no LF/closeout tools (sound hook handles them automatically):**
+**Agent response (text-only — no LF tools):**
+1. Read `.cursor/state/latest_extract.md` (or `run.py --pickup` if missing)
+2. Write `CHANNEL: EMAIL / Fall #X` + full **7-step sections 1–7** as plain chat text. End: `Auto-LF filing now.` **STOP.**
+3. Do **not** call `fill_case_tracker` / `--closeout-*` here — running them collapses the 7-step into a hidden dropdown.
 
-1. **Tool (Phase 1):** Read `.cursor/state/latest_extract.md` (or `run.py --pickup` if missing) — fast file read, tiny collapsed dropdown
-2. **Plain text (Phase 2) — VISIBLE PERMANENTLY:** Write `CHANNEL: EMAIL / Fall #X` then full **7-step RE sections 1–7** as plain markdown. End with: `Auto-LF filing now. (Background: sound hook handles LF + arm.)`
-3. **STOP.** Do NOT call `fill_case_tracker.py` or `--closeout-*`. The `re_complete_sound_hook` fires on section 7 detection, saves the RE, and spawns `auto_lf_after_re.py` which handles LF + arm automatically.
+**Background chain (automatic — no agent involvement):**
+`re_complete_sound_hook` detects section 7 → spawns `auto_lf_after_re.py` → `fill_case_tracker.py` + `--closeout-*` + Dexter.
+Path B hook silently spawns `auto_lf_after_re.py` if sound hook missed it — no chat message fires.
 
 **Do NOT paste the customer email body / Subject / From** — operator sees it in Sprinklr.
 
-**Why no LF tools:** `--closeout-anwenden` is a long-running shell tool. When it completes, Cursor collapses the entire response (including the 7-step text before it) into a "Finished background tasks" dropdown. Text-only response = 7-step stays visible permanently.
-
-**Background auto-LF chain:** `re_complete_sound_hook` → section 7 detected → `latest_re_visible.md` saved → `auto_lf_after_re.py` spawned → `fill_case_tracker.py` + closeout arm.
-
+**[AUTO_PIPELINE_TURN_C] is obsolete and blocked.** Do not process it. LF is handled by the background chain.
 
 ## OPERATOR INPUTS ONLY (hard)
 

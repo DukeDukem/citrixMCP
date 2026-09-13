@@ -40,21 +40,17 @@ Use these to make a best-guess:
 
 If the 7-step RE later reveals a different transfer target, operator sends **reiterate LF** → agent re-runs `fill_case_tracker.py` with corrected values. Auto-LF at extract is always the starting point.
 
-### Order (EMAIL) — compound response (replaces three-turn model)
+### Order (EMAIL) — agent writes 7-step text only; background chain files LF
 
-**TWO PHASES ONLY — agent writes text, background chain handles LF + arm:**
+**Current model (2026-09-13):** Agent response is text-only. Background chain handles LF + arm.
 
-1. **Phase 1 (tool):** Read `.cursor/state/latest_extract.md` (or `run.py --pickup`) — fast file read
-2. **Phase 2 (TEXT — visible permanently):** Write `CHANNEL: EMAIL / Fall #` then full **7-step RE sections 1–7** as plain chat markdown. End with: `Auto-LF filing now. (Background: sound hook handles LF + arm.)`
-3. **STOP.** Agent ends response here — no `fill_case_tracker.py`, no `--closeout-*`.
+1. **Agent response:** Read `latest_extract.md` → write `CHANNEL` + Fall # + **sections 1–7** as plain chat text. End: `Auto-LF filing now.` **STOP — no LF/closeout tools here.** Running tools here collapses the 7-step into a dropdown.
+2. **Background (automatic):** `re_complete_sound_hook` detects section 7 in agent output → spawns `auto_lf_after_re.py` → `fill_case_tracker.py` + `--closeout-*` + Dexter. No agent involvement.
+3. **Path B safety net (hook, silent):** If sound hook missed → `extract_auto_continue_hook` Path B detects `latest_re_visible.md` section 7 + missing `auto_lf_done.json` → spawns `auto_lf_after_re.py` silently. No chat message.
 
-**Background chain (automatic):** `re_complete_sound_hook` detects section 7 → saves `latest_re_visible.md` → spawns `auto_lf_after_re.py` → `fill_case_tracker.py` (best-guess transfer from 7-step text) + closeout arm.
-
-**Why no LF tools in agent response:** Long-running `--closeout-anwenden` tool causes Cursor to collapse the entire response (including the 7-step text) into a hidden “Finished background tasks” dropdown. Text-only response = 7-step stays visible permanently.
-
-**Transfer:** `auto_lf_after_re.py` parses "Transfer eligible: Yes/No" and target from the 7-step text. If transfer eligible, it runs `--closeout-weiter` (queue) or `--closeout-extern` (email `@`).  
-**PR does not start the arm.** Arm is started by `auto_lf_after_re.py` background process. PR just pastes the reply.
-
+**Transfer:** `auto_lf_after_re.py` parses §3 from `latest_re_visible.md` for transfer target.
+**PR does not start the arm.** Arm starts from `auto_lf_after_re.py` closeout. PR pastes only.
+**[AUTO_PIPELINE_TURN_C] is obsolete and blocked.** Do not process it.
 
 ### Order (CALL) — Auto-LF on CHANNEL detect (no BRIEF gate)
 

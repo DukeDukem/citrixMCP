@@ -29,7 +29,7 @@ When in doubt in a mixed thread: if the user sends **only** `RE`, `PR`, `LF`, `l
 | **login** | Sprinklr login-only / startup automation |
 | **DONE** / **Done for today** | `done_for_today.py` stop script (run in case chat) |
 | **`[AUTO_PIPELINE]`** (hook followup) | **DO NOT process.** The stop hook fired in this chat instead of the email processing chat. See warning below. |
-| **`[AUTO_PIPELINE_TURN_C]`** (stale hook) | **DO NOT process.** Obsolete — LF now handled by sound hook background chain. Block and warn. |
+| **`[AUTO_PIPELINE_TURN_C]`** | **DO NOT process.** Obsolete — LF is now handled by the background chain (sound hook → auto_lf_after_re.py). Block and warn. |
 
 **Allowed here (not case processing):** **`revert last`** — restore file checkpoint (see `.cursor/rules/revert-last.mdc`).
 
@@ -48,11 +48,11 @@ Also do **not** partially run case steps (no CDP Sprinklr reads "just to check" 
 ⚠️ Wrong chat — [AUTO_PIPELINE] fired in the instructions chat.
 The stop hook should only fire in the email processing chat.
 
-Auto-LF is being filed automatically in the background.
-Go to the email processing chat and type RE to get the 7-step and arm Anwenden.
+Go to the email processing chat — agent must write the 7-step and Auto-LF there.
+Sounds are operator audio cues only; they do not file Case Tracker.
 ```
 
-3. The `auto_lf_after_re.py` safety net already spawned at hook fire time — LF will file even though this chat refused the followup.
+3. **Do not** assume background Auto-LF from a sound hook — that path was removed.
 4. **Do not** arm `--closeout-anwenden`, `--closeout-weiter`, or any arm command here.
 
 **Prevention:** Keep the **email processing chat** in focus during a shift. Switch to this instructions chat only between cases or after DONE.
