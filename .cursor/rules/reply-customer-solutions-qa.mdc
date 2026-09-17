@@ -23,7 +23,7 @@ Matrix/channel rows that say **Hotline** or **Web/App/Hotline** mean **routing f
 
 When building the customer reply:
 
-1. Query **KB/TransferMatrix** first (existing flow).
+1. Query **TransferMatrix** first, then **`KnowledgeBase/REMAP/exports/`** (via `SEARCH_HINT.md` — existing flow). Legacy knowledgebase1–7 deleted.
 2. If KB gives thin/generic guidance, **or** the chat user’s post-RE rewrite instructions are **insufficient or lack substance**, **search the web** (official o2/Telefónica sources, help pages, reputable forums/community threads) for **viable paths that match this customer’s exact issue**.
 3. Include **1–3 concrete alternatives** in the reply body where helpful, e.g.:
    - exact **Mein o2** menu path,

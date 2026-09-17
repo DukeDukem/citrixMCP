@@ -349,7 +349,7 @@ Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflic
 ## Case processing (when customer IS verified)
 
 1. **Query TransferMatrix.md first** for Ziel-Kontakt + Action (handling path). Matrix wins over KB on routing.
-2. **If we handle (Transfer eligible: No):** follow the matrix **Action** hint; **then** query the KnowledgeBase (grep/search only – do not read entire files) for **compatible** articles and the most likely solution.
+2. **If we handle (Transfer eligible: No):** follow the matrix **Action** hint; **then** query **`KnowledgeBase/REMAP/exports/`** via `SEARCH_HINT.md` / grep (do not read entire files; **no** legacy knowledgebase1–7) for **compatible** articles and the most likely solution.
 3. **If KB output is generic or insufficient** for a substantive customer reply **and** the matrix says we handle, **search the web** for case-specific official or community-supported paths (Mein o2 flows, o2.de pages, documented workarounds). Use results only when relevant to **this** customer's issue and they do not invent a forbidden transfer.
 3. **Advise the customer service agent** on necessary **documentation or tickets** that need to be filled out (e.g. which form, which ticket type).
 4. **Create a fitting reply** for the customer that:
@@ -478,4 +478,4 @@ Default **`run.py`** / typed **RE**: **always `--once`** (extract open case). An
 
 ## Knowledge base
 
-**You (Cursor)** draft the reply using **KnowledgeBase/** at repo root. The files there (e.g. **KnowledgeBase_Complete.md**, **TransferMatrix_KnowledgeBase.md**) are **extremely long (millions of lines)**. You must **never read an entire KnowledgeBase file**. Instead: **grep or search** for keywords/phrases from the customer email (e.g. Rückerstattung, refund, Kündigung, transfer, Rechnung, IBAN, Kundennummer, specific product names) and read only the **matching lines or surrounding context**. Use the search results to draft and cite the reply.
+**You (Cursor)** draft the reply using **`KnowledgeBase/REMAP/exports/`** (full overwrite 2026-09-17). Use **`SEARCH_HINT.md`** / **`INDEX.md`** to pick files. **Grep or search** for keywords from the customer email; read only matching sections. **Never** use deleted `knowledgebase1–7.md` or obsolete mega-files (`KnowledgeBase_Complete.md`). TransferMatrix still first for routing. Skill: `query-knowledgebase`.

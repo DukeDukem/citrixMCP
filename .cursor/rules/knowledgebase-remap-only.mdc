@@ -1,0 +1,34 @@
+---
+description: HARD — Knowledge articles live only in REMAP/exports. Legacy knowledgebase1–7 deleted. TransferMatrix still first for routing.
+alwaysApply: true
+---
+
+# Knowledge Base = REMAP/exports only (full overwrite 2026-09-17)
+
+## Corpus
+
+| Path | Role |
+|------|------|
+| [`KnowledgeBase/TransferMatrix.md`](KnowledgeBase/TransferMatrix.md) | **Routing only** — Ziel-Kontakt / Action (beats all articles) |
+| [`KnowledgeBase/REMAP/exports/`](KnowledgeBase/REMAP/exports/) | **Only** process/system articles for case substance |
+| [`KnowledgeBase/SEARCH_HINT.md`](KnowledgeBase/SEARCH_HINT.md) / [`INDEX.md`](KnowledgeBase/INDEX.md) | Topic → export file maps |
+| [`KnowledgeBase/REMAP/_INDEX.md`](KnowledgeBase/REMAP/_INDEX.md) | L1 checklists / walk order |
+| [`KnowledgeBase/REMAP/skip-log.md`](KnowledgeBase/REMAP/skip-log.md) | Branches not used for routine cases |
+
+## Hard bans
+
+1. **Do not** open, grep, or restore `knowledgebase1.md` … `knowledgebase7.md` (deleted).
+2. **Do not** use `KnowledgeBase_Complete.md` / `TransferMatrix_KnowledgeBase.md` (obsolete names).
+3. **Do not** treat REMAP as “prefer if captured” — exports **are** the KB.
+4. **Do not** let article text override TransferMatrix routing (`.cursor/rules/transfer-matrix-priority.mdc`).
+
+## Query order (EMAIL / CALL BRIEF)
+
+1. Grep **TransferMatrix.md** → Ziel-Kontakt + Action.  
+2. Map topic via **SEARCH_HINT.md** / **INDEX.md**.  
+3. Grep/read only under **`KnowledgeBase/REMAP/exports/`** (compatible detail for the matrix path).  
+4. Skill: `.cursor/skills/query-knowledgebase/SKILL.md`.
+
+## Intent
+
+One article tree. No legacy fallback. Matrix routes; REMAP executes.

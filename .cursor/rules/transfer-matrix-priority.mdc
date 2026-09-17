@@ -29,7 +29,7 @@ If KB text suggests a different queue, “always transfer”, “always hotline�
 | **Kein Transfer** (+ instructions in Action) | **No** | Do **not** Sprinklr-transfer; follow **Action** handling hint |
 | Ticket instruction in Action | Per Action | e.g. create named ticket — not a free KB invent |
 
-4. Only then query KB articles — for **how** to execute the matrix path (Themen-ID, steps, customer wording), never to **re-route**.
+4. Only then query KB articles under **`KnowledgeBase/REMAP/exports/`** — for **how** to execute the matrix path (Themen-ID, steps, customer wording), never to **re-route**. Use `SEARCH_HINT.md` / `INDEX.md`. **No** legacy `knowledgebase1–7` (deleted 2026-09-17). See `.cursor/rules/knowledgebase-remap-only.mdc`.
 
 ## Non-transferable cases — handling hint first
 

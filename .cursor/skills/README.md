@@ -91,9 +91,12 @@ Run the sprinklr-read-answer-email skill to read the current email. In the Curso
 
 Sprinklr automation lives under `.cursor/skills/sprinklr-email-automation/`; Skill 1, Skill 2, and sprinklr-write-reply call that runner.
 
-## KnowledgeBase (search only — do not read entire files)
+## KnowledgeBase (REMAP/exports only — grep, do not read entire trees)
 
-The **KnowledgeBase/** folder (e.g. `KnowledgeBase_Complete.md`, `TransferMatrix_KnowledgeBase.md`) contains very large files (millions of lines). When a skill says to use the KnowledgeBase, **grep or search** for keywords from the email or task (e.g. Rückerstattung, refund, transfer, Rechnung) and read only the **matching sections**. Never read or load an entire KnowledgeBase file.
+**Articles:** `KnowledgeBase/REMAP/exports/` only (legacy `knowledgebase1–7.md` deleted).  
+**Routing:** `KnowledgeBase/TransferMatrix.md` first.  
+**Maps:** `SEARCH_HINT.md`, `INDEX.md`.  
+When a skill says to use the KnowledgeBase, **grep** under `REMAP/exports` for keywords and read only matching sections. Never restore legacy dumps. Rule: `.cursor/rules/knowledgebase-remap-only.mdc`.
 
 ## Requirements (once per machine)
 

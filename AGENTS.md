@@ -30,11 +30,12 @@
 - Typed **LF** / **LF TR** / **PR LF** — recovery/override only
 - **CALL vs EMAIL:** After every case open, classify via overlay. Post-arm sidetray: **EMAIL click**, **CALL auto-open** (no sidetray click). **Teleprompter/STT parked** — do **not** `--arm`/`--prime` call_listen. Rule: `sprinklr-call-vs-email.mdc`
 - **Transfer path:** Always **TransferMatrix.md** first. Rule: `transfer-matrix-priority.mdc`
+- **Knowledge articles:** **`KnowledgeBase/REMAP/exports/`** only (legacy knowledgebase1–7 deleted). Rule: `knowledgebase-remap-only.mdc`
 - **Auto-LF:** Rule: `lf-log-form.mdc`
 
 ## Instructions dashboard
 
-Rules, skills, TransferMatrix — no live case scripts. **`revert last`** restores Anwenden-RE checkpoint if needed.
+Rules, skills, TransferMatrix, REMAP KB — no live case scripts. **`revert last`** restores Anwenden-RE checkpoint if needed.
 
 ## September Incentive
 
