@@ -9,8 +9,8 @@ When **TransferMatrix** registry shows a goal as **Inactive (no longer exists)**
 
 1. **Do not** transfer in Sprinklr to that queue.
 2. **Do not** tell the customer their case was forwarded to a removed team/queue.
-3. Follow the matrix row’s **current** Ziel-Kontakt and Action (usually **CBC_CARE_ALLGEMEIN — HANDLE DIRECTLY**).
-4. Check **Removed transfer goals — alternate handling** in `KnowledgeBase/TransferMatrix.md` for case-type-specific KB Themen-IDs and Mein o2 paths.
+3. Follow the matrix row's **current** Ziel-Kontakt and Action — usually **EMAIL_O2_CARE — HANDLE DIRECTLY** (replaces old CBC_CARE_ALLGEMEIN).
+4. Check the **Removed / Legacy Transfer Goals** section in `KnowledgeBase/TransferMatrix.md` for the current replacement queue or handling steps.
 
 ## RE / customer reply impact
 
@@ -19,11 +19,37 @@ When **TransferMatrix** registry shows a goal as **Inactive (no longer exists)**
 - **No default hotline** unless KB explicitly requires it for that Fall.
 - Agent sections (4–5): KB ticket/Themen-ID steps; no Sprinklr transfer to inactive goals.
 
-## Known inactive goals (see TransferMatrix for full list)
+## Full retired goal → replacement table (2026-09-18 remap)
 
-| Former goal | Alternate |
+| Former goal (retired) | Replacement |
 |---|---|
+| **CBC_CARE_ALLGEMEIN** | **EMAIL_O2_CARE** (email) / handle directly |
+| CBC_KUENDIGUNGEN_SME_SOHO | EMAIL_O2_KUENDIGUNGEN_SME_SOHO |
+| CBC_XF_E_COLLECTIONS | EMAIL_COLLECTIONS |
+| CBC_XF_E_VERTRAGSSTILLLEGUNG | EMAIL_O2_VERTRAGSSTILLEGUNG |
+| CBC_XF_E_WIDERRUF | EMAIL_O2_WIDERRUF |
+| CBC_XF_E_KUNDENDATEN | EMAIL_O2_KUNDENDATEN |
+| CBC_ENGLISCH | EMAIL_O2_ENGLISCH |
+| CS_XF_E_HARDWARE | EMAIL_O2_MOBILE_TECHNIK (email) / o2 Tech Mobile (hotline) |
+| CS_E_XF_AKTION1 | EMAIL_O2_KUENDIGUNGEN_NETZ |
+| CS_E_XF_AKTION2 | EMAIL_O2_KUENDIGUNGEN_AUSLAND |
+| KUENDIGUNG_RECHNUNG | EMAIL_O2_KUENDIGUNG_RECHNUNG |
+| EKL_Onlineshop | EMAIL_O2_EKL_ONLINESHOP |
+| DM_XF_E_HAENDLERBESCHWERDEN | EMAIL_O2_HAENDLERBESCHWERDEN |
+| CS_E_XF_SELBSTSTAENDIGE | EMAIL_O2_SOHO (email) / oneSoho Care (hotline) |
+| BUSINESS-TEAM | See matrix — routing now channel-specific |
 | AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL | Kein Transfer — handle per KB (DSL Festnetz Kündigung) |
-| CBC_KUENDIGUNGEN_SME_SOHO | **CBC_CARE_ALLGEMEIN** — handle directly; KB 590 / 1849; Mein o2 Kündigung paths |
+| ALDITALK_XF_SERVICE | alditalk@cc.o2online.de (Externer Transfer) |
+| AYYILDIZ_XF_POSTPAID / AYYILDIZ_XF_PREPAID | ayyildiz@cc.o2online.de (Externer Transfer) |
+| NETTOKOM_XF_SERVICE | nettokom@cc.o2online.de (Externer Transfer) |
+| WHATSAPPSIM_XF_SERVICE | whatsappsim@cc.o2online.de (Externer Transfer) |
+| WHITELABEL_XF_SERVICE | service@kunde.aetkasmart.de (Externer Transfer) |
+| BLAU_E_XF_PREPAID | EMAIL_BLAU_PREPAID_CARE |
+| CS_XF_E_LOOP_ALLGEMEIN | See matrix Thema 2 — o2 Prepaid / Loop |
+| WB_ANFRAGEN_PRESSESTELLE | See matrix Thema 1 — Kein Transfer |
+| CS_Premium | See matrix — Exklusiv-Kunden routing |
+| BLAU_XF_IMPRESSUM | See matrix Thema 2 — BLAU |
 
-When updating rules for a newly removed goal, always add its alternate block to TransferMatrix and this table.
+**Note:** "Never Transfer Ja to `*CARE_ALLGEMEIN*`" remains a hard rule — that queue is retired. The equivalent "handle directly" signal in the new matrix is **Ziel-Kontakt = EMAIL_O2_CARE** or **Action = HANDLE DIRECTLY**.
+
+When updating rules for a newly removed goal, always add its alternate block to TransferMatrix.md's Removed section and to this table.

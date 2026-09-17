@@ -1,21 +1,23 @@
 ﻿# Transfer Matrix (Sabio Transfermatrix)
 
-> Extracted from transfer tree screenshots. Kanal is always **E-Mail** (unless noted otherwise).
-> Our domain: **CBC_CARE_ALLGEMEIN** -- cases with this Ziel-Kontakt stay with us and are processed directly.
-> Sprinklr (SIKAS) is the active platform. WDE notes are disregarded.
+> Extracted from Sabio Transfer Matrix screenshots. Covers both E-Mail and Hotline channels.
+> Last updated: 2026-09-18 (full remap from 512 screenshots).
+> Our domain (E-Mail): **EMAIL_O2_CARE** — email cases with this Ziel-Kontakt are handled directly.
+> Sprinklr (SIKAS) is the active platform. WDE is retired — all WDE-specific instructions are disregarded.
 
 ## How to use this document
 
-**Priority:** This Transfer Matrix is the **authoritative handling path** for every case. If Knowledge Base articles disagree on transfer vs handle-directly, **this matrix wins**. KB is used afterward for process detail that fits the matrix Action — not to re-route.
+**Priority:** This Transfer Matrix is the **authoritative handling path** for every case. If Knowledge Base articles disagree on transfer vs handle-directly, **this matrix wins**.
 
-1. **Identify the Thema** (topic) from the customer email.
-2. **Identify the Fall** (case type) that matches.
-3. **Look up the Ziel-Kontakt** (transfer goal) and read the **Action** column (handling hint).
-4. **If Ziel-Kontakt = CBC_CARE_ALLGEMEIN** (or Action = **HANDLE DIRECTLY**): Handle the case directly — use the **Action** text as the primary handling hint, then query KnowledgeBase only for compatible steps (Themen-ID, tickets, reply substance). Summarize, advise agent, draft reply.
-5. **If Ziel-Kontakt = another team/queue**: Transfer the case to that team in Sprinklr. Inform customer the case has been forwarded (customer-safe wording; no internal queue names unless policy allows).
-6. **If Ziel-Kontakt = an email address**: Forward the case/documents to that email address (LF TR extern).
-7. **If Ziel-Kontakt = "Kein Transfer"**: Do **not** transfer in Sprinklr. Follow the **Action** handling instructions (refer to hotline only if Action says so, use text block, handle per notes, etc.). KB may refine steps; it must not invent a transfer.
-8. **If Ziel-Kontakt / Action = a ticket instruction**: Create the specified ticket (e.g., "Ticket Themen-ID 653 an NP-Desk").
+1. **Identify the Thema** (topic) from the customer contact.
+2. **Identify the Fall** (case type) and **Kanal** (E-Mail or Hotline).
+3. **Look up the Ziel-Kontakt** and read the **Action** column.
+4. **If Ziel-Kontakt = EMAIL_O2_CARE** (or Action = **HANDLE DIRECTLY**): Handle the email case directly.
+5. **If Ziel-Kontakt = EMAIL_O2_*** queue: Forward the email via Sprinklr to that queue.
+6. **If Ziel-Kontakt = internal hotline team** (e.g. o2 Mobile Care, o2 Tech Fixnet): Transfer call — cold transfer unless Action says warm/traffic-light. Respect 120s wait threshold unless stated otherwise.
+7. **If Ziel-Kontakt = email address**: Forward via Sprinklr **Externer Transfer** to that address.
+8. **If Ziel-Kontakt = Kein Transfer**: Do not transfer. Follow the Action steps (Themen-ID tickets, text blocks, hotline referral for customer, etc.).
+9. **If Action = ticket instruction**: Create the specified ticket (Themen-ID number, copy email content to Problembeschreibung as instructed).
 
 See also: `.cursor/rules/transfer-matrix-priority.mdc`
 
@@ -23,51 +25,69 @@ See also: `.cursor/rules/transfer-matrix-priority.mdc`
 
 ## Quick Reference: All Transfer Goals
 
-### Cases WE handle (CBC_CARE_ALLGEMEIN)
+### Email queues (Sprinklr internal routing)
 
-These cases stay with us. Process directly: summarize, verify customer, query KB, draft reply, instruct agent.
-
-### Cases transferred to other teams
-
-| Transfer Goal | Description |
+| Queue | Description |
 |---|---|
-| ALDITALK_XF_SERVICE | ALDI TALK service |
-| AYYILDIZ_XF_POSTPAID | AY YILDIZ postpaid |
-| AYYILDIZ_XF_PREPAID | AY YILDIZ prepaid |
-| BLAU_XF_IMPRESSUM | Blau postpaid |
-| BLAU_E_XF_PREPAID | Blau prepaid |
-| BUSINESS-TEAM | Business customers (mobile) |
-| CBC_ENGLISCH | English-language care |
-| CBC_XF_E_KUNDENDATEN | Customer data / bank details team |
-| CBC_XF_E_VERTRAGSSTILLLEGUNG | Contract suspension team |
-| CBC_XF_E_WIDERRUF | Revocation/withdrawal team |
-| CBC_XF_E_COLLECTIONS | Collections / dunning / payment |
-| CS_E_XF_SELBSTSTAENDIGE | Self-employed (SOHO) service |
-| CS_XF_E_HARDWARE | Hardware support team |
-| CS_Premium | Premium/VIP customer service |
-| CS_E_XF_AKTION1 | Retention - network availability cancellations |
-| CS_E_XF_AKTION2 | Retention - move abroad cancellations |
-| CS_XF_E_LOOP_ALLGEMEIN | o2 Prepaid/Loop service |
-| DM_XF_E_HAENDLERBESCHWERDEN | Dealer complaints team |
-| EKL_Onlineshop | Online shop revocation team |
-| KUENDIGUNG_RECHNUNG | Cancellation due to billing/service complaints |
-| NETTOKOM_XF_SERVICE | NettoKOM service |
-| WB_ANFRAGEN_PRESSESTELLE | Press office |
-| WHATSAPPSIM_XF_SERVICE | WhatsApp SIM service |
-| WHITELABEL_XF_SERVICE | Whitelabel service (Mobilka, aetkaSMART) |
+| EMAIL_O2_CARE | General o2 care — handle directly |
+| EMAIL_O2_MOBILE_TECHNIK | Mobile technical support team |
+| EMAIL_O2_ENGLISCH | English-language care |
+| EMAIL_COLLECTIONS | Collections (dunning) |
+| EMAIL_O2_KUENDIGUNGEN_SME_SOHO | SOHO/SME cancellations |
+| EMAIL_O2_KUENDIGUNGEN_NETZ | Network-related cancellations |
+| EMAIL_O2_KUENDIGUNG_RECHNUNG | Billing-complaint cancellations |
+| EMAIL_O2_KUENDIGUNGEN_AUSLAND | Move-abroad cancellations |
+| EMAIL_O2_WIDERRUF | Revocation/withdrawal |
+| EMAIL_O2_EKL_ONLINESHOP | Online shop revocation |
+| EMAIL_O2_HAENDLERBESCHWERDEN | Dealer complaints |
+| EMAIL_O2_SOHO | SOHO customer service |
+| EMAIL_O2_VERTRAGSSTILLEGUNG | Contract suspension |
+| EMAIL_O2_KUNDENDATEN | Customer data / bank details |
+| EMAIL_O2_EVN_OFFICE | EVN (itemised billing) office |
+| EMAIL_BLAU_CARE | Blau postpaid care |
+| EMAIL_BLAU_PREPAID_CARE | Blau prepaid care |
+| EMAIL_O2_EXKLUSIV_SERVICE | Exklusiv / Premium TOP / VIP service |
+| EMAIL_O2_PRESSESTELLE | Press/media enquiries |
+| EMAIL_O2_PREPAID_CARE | o2 Prepaid care |
 
-### Email-based transfers
+### Hotline teams (internal transfer targets)
+
+| Team | Hours | Transfer type |
+|---|---|---|
+| o2 Mobile Care | Mo–Fr 7–20 Uhr, Sa 10–18 Uhr | Cold (kalt), 120s threshold |
+| o2 Fixnet Care | Mo–Fr 7–20 Uhr, Sa 10–18 Uhr | Cold (kalt), 120s threshold |
+| o2 Tech Mobile (Postpaid, Homespot, FMS) | Mo–Fr 7–20 Uhr, Sa 10–18 Uhr | Cold (kalt), 120s threshold |
+| o2 Tech Fixnet (DSL, FTTH, Kabel) | Mo–Fr 7–22 Uhr, Sa 10–18 Uhr | Cold (kalt), 120s threshold |
+| o2 Activation Care Fixnet (DSL, FTTH, Kabel) | Mo–Fr 7–20 Uhr, Sa 10–18 Uhr | Cold (kalt) |
+| o2 Activation Fixnet (DSL/FTTH/Kabel) | Mo–Fr 8–20 Uhr, Sa 10–18 Uhr | Cold (kalt), 120s threshold |
+| Mahnwesen Postpaid | Mo–Fr 8–18 Uhr | Cold (kalt), 120s threshold; CACS-aktive only |
+| Handyversicherung | Mo–Sa 09–18 Uhr | Cold (kalt) |
+| oneSoho (Care) | Mo–Fr 8–20 Uhr, Sa 10–18 Uhr | Warm (traffic-light system) |
+| Permission Mitarbeiter | Mo–Fr 9–20 Uhr | Cold (kalt) |
+| Türkisch o2 Care | Mo–Fr 06–20, Sa 10–18 Uhr | Cold (kalt) |
+| VVL Mobile – Privatkunden | Mo–Fr 9–20 Uhr, Sa 10–18 Uhr | Cold (kalt) |
+| Guru – kaufmännisch | Mo–Fr 7–20 Uhr, Sa 10–18 Uhr | Cold (kalt) |
+| Telesales Mobile/Data | Mo–Fr 8–20 Uhr, Sa 10–18 Uhr | Cold (kalt) |
+| Business_Mobile_Hotline | Mo–Fr 7–20 Uhr, Sa 10–18 Uhr | Transfer in Sprinklr |
+| Business_Mobile_Daimler_Team | Mo–Fr 7–18 Uhr | Transfer in Sprinklr |
+| Exklusiv Team (TOP/VIP) | Mo–Fr 7–20 Uhr, Sa 10–18 Uhr | Cold (kalt) |
+
+### Email-based external transfers (Externer Transfer in Sprinklr)
 
 | Email | When to use |
 |---|---|
-| geschaeftskunden-service@telefonica.com | Business customers (DSL) |
-| DS_Beauskunftung@telefonica.com | GDPR data disclosure requests |
+| alditalk@cc.o2online.de | ALDI TALK E-Mail |
+| ayyildiz@cc.o2online.de | AY YILDIZ E-Mail (Postpaid + Prepaid) |
+| nettokom@cc.o2online.de | NettoKOM E-Mail |
+| whatsappsim@cc.o2online.de | WhatsApp SIM E-Mail |
+| service@kunde.aetkasmart.de | aetkaSMART / Mobilka / Whitelabel E-Mail |
+| DS_Beauskunftung@telefonica.com | DSGVO data disclosure requests |
 | eretail-widerruf@telefonica.com | eRetail revocation |
-| Fremdcarrier-D019@telefonica.com | Festnetz import porting (DSL/Kabel/FTTH) |
 | HUR@telefonica.com | High-spend payment cases |
-| o2-portierung@telefonica.com | Festnetz number porting import (Homezone/Homespot) |
-| o2-rufnummernmitnahme@telefonica.com | MNP import - incoming porting documents |
+| o2-portierung@telefonica.com | Festnetz number porting import |
+| o2-rufnummernmitnahme@telefonica.com | MNP import — incoming porting documents |
 | Verbraucherauskunft@telefonica.com | Bundesnetzagentur (BNA) inquiries |
+| geschaeftskunden-service@telefonica.com | Business customers — DSL E-Mail |
 
 ---
 
@@ -75,98 +95,147 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 ---
 
-### 1. andere Kundentypen (z. B. SOHO, Business, Haendler, Presse, o.Ae.)
+### 1. andere Kundentypen (z. B. SOHO, Business, Händler, Presse, o.Ä.)
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 1 | Aemter/Sicherheitsbehoerden (Polizei, Gericht, Staatsanwaltschaft) - Anfragen | Alle Kanaele | Kein Transfer | Do not process directly. Use text block "anfragen_von_behoerden" (Sprinklr). Refer to internal security department. |
-| 2 | Businesskunde | E-Mail - DSL | geschaeftskunden-service@telefonica.com | Forward to email |
-| 3 | Businesskunde | E-Mail - Mobile | BUSINESS-TEAM | Transfer in Sprinklr |
-| 4 | Exklusiv-Kunden (nur Servicetyp "Premium TOP" und "VIP") | E-Mail | CS_Premium | Transfer in Sprinklr |
-| 5 | Geschaeftsfuehrung - Beschwerde | E-Mail | Kein Transfer | Handle per KB guidelines for executive complaints |
-| 6 | Haendleranfragen (Haendlerstornos, provisionsrelevante Aenderungen, etc.) | E-Mail | Kein Transfer | Handle per KB |
-| 7 | Haendlerbeschwerde - Kundenbeschwerden ueber Vertriebspartner (Haendlernr. 12/13/14/19) | E-Mail | DM_XF_E_HAENDLERBESCHWERDEN | Transfer in Sprinklr |
-| 8 | Journalisten / Presse - Anfragen | E-Mail | WB_ANFRAGEN_PRESSESTELLE | Transfer in Sprinklr |
-| 9 | Mitarbeiter - Anfrage zum Vertrag | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** (employee service card policies apply - see KB for Dienstkarten rules) |
-| 10 | Rechtsanwalt - im Auftrag eines Kunden | E-Mail | Kein Transfer | Handle per KB and Authentifizierung rules; do NOT process via Backoffice if third-party request |
-| 11 | Rechtsanwalt - in eigener Sache | E-Mail | Kein Transfer | Handle per KB |
-| 12 | Selbststaendige (SOHO) - kaufmaennisch/technisch - alle sonstigen Anfragen | E-Mail | CS_E_XF_SELBSTSTAENDIGE | Transfer in Sprinklr |
-| 13 | Selbststaendige (SOHO) - Kuendigung | E-Mail - Mobile | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; process per KB (Themen-ID 590/1849 as applicable); customer paths: Mein o2 > Tarif & SIM > Kündigung / Kündigung vormerken |
-| 14 | Selbststaendige (SOHO) - Stammdaten-Aenderung per Brief/Fax/E-Mail | E-Mail | CS_E_XF_SELBSTSTAENDIGE | Transfer in Sprinklr |
-| 15 | SOHO | E-Mail | CS_E_XF_SELBSTSTAENDIGE | Transfer in Sprinklr |
-| 16 | Verbraucherschutz - Anfragen | E-Mail | Kein Transfer | Handle per KB |
-| 17 | Verbraucherschutz - Anfragen von der Bundesnetzagentur | E-Mail | Verbraucherauskunft@telefonica.com | Forward to email |
+| 1 | Ämter/Sicherheitsbehörden (Polizei, Gericht, Staatsanwaltschaft) — Anfragen | Alle Kanäle | Kein Transfer | Verweis auf Schriftweg. Textbaustein/Formblatt nutzen (E-Mail: "anfragen von behoerden"; Brief/Fax: "anfragen_von_behoerden"). TIM: "Rechtliches - Anfragen von Sicherheitsbehörden". Hotline: Führungskraft kontaktieren; Angaben weiterleiten: Name/Kontaktperson der Behörde, Rückrufnummer, E-Mail. |
+| 2 | Businesskunde | Hotline – DSL / Hotline – Mobile | Kein Transfer | Zuordnung SOHO/Business per Kundentyp/Subtyp prüfen (Tabelle in TIM). Business Mobile/Fixnet: max. 2 Min. Wartezeit; Transfer an 56189 (Warm-Transfer); Nichterreichbarkeit: Kunden bitten, 0800 22 111 22 direkt anzurufen. Testkarten: Hazard Note "Testkarte/n" nicht löschen. |
+| 3 | Businesskunde | Hotline – Mobile | Business_Mobile_Hotline | Transfer in Sprinklr; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr. |
+| 4 | Businesskunde | E-Mail – DSL | geschaeftskunden-service@telefonica.com | Forward via Externer Transfer in Sprinklr to geschaeftskunden-service@telefonica.com. |
+| 5 | Businesskunde | E-Mail – Mobile | BUSINESS-TEAM | Transfer in Sprinklr. |
+| 6 | Daimler-MA | Hotline | Business_Mobile_Daimler_Team | Transfer in Sprinklr; Mo–Fr 7–18 Uhr. Außerhalb der Geschäftszeiten: kostenlose Rufnummer 0800 99 111 22 nennen. |
+| 7 | Exklusiv-Kunden (nur Servicetyp "Premium TOP" und "VIP") | Hotline | Exklusiv Team (TOP/VIP) | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 8 | Exklusiv-Kunden (nur Servicetyp "Premium TOP" und "VIP") | E-Mail | EMAIL_O2_EXKLUSIV_SERVICE | Transfer in Sprinklr. |
+| 9 | Geschäftsführung – Beschwerde | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 10 | Geschäftsführung – Beschwerde | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 11 | Geschäftsführung – Beschwerde | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 4073 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
+| 12 | Händleranfragen (Händlerstornos, provisionsrelevante Änderungen) | Hotline | Kein Transfer | Händler an Händlerbetreuung verweisen: 089/41551717 oder 0176/86888888. |
+| 13 | Händlerbeschwerde — Kundenbeschwerden über Vertriebspartner (Händlernr. 12..., 13..., 14..., 19...) | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 14 | Händlerbeschwerde — Kundenbeschwerden über Vertriebspartner (Händlernr. 12..., 13..., 14..., 19...) | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Ticket Themen-ID 4304 erstellen. |
+| 15 | Händlerbeschwerde — Kundenbeschwerden über Vertriebspartner (Händlernr. 12..., 13..., 14..., 19...) | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 4304 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
+| 16 | Journalisten / Presse — Anfragen | Hotline | Kein Transfer | Verweis auf Schriftweg. |
+| 17 | Journalisten / Presse — Anfragen | E-Mail | EMAIL_O2_PRESSESTELLE | Transfer in Sprinklr. |
+| 18 | Mitarbeiter — Anfrage zum Vertrag | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 19 | Mitarbeiter — Anfrage zum Vertrag | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. TIM "Diensttarif — Kundenbetreuung mit Dienstkarten". Legitimation mit PKK. Ticket Themen-ID 2823 bei Herausforderungen. |
+| 20 | Mitarbeiter — Anfrage zum Vertrag | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. TIM "Diensttarif — Kundenbetreuung mit Dienstkarten". Keine Änderung eigener Daten. Offboarding: Inhaberwechsel oder RNM möglich. Ticket Themen-ID 2823 bei Herausforderungen. |
+| 21 | Rechtsanwalt — im Auftrag eines Kunden | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 872 (Portalanfrage: Themen-ID ändern; sonst: neu anlegen mit vollst. E-Mail-Inhalt). Textbaustein "An Fachabteilung weitergeleitet". |
+| 22 | Rechtsanwalt — in eigener Sache | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 4073 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
+| 23 | Selbstständige (SOHO) — kaufmännisch/technisch — alle sonstigen Anfragen | Hotline | Kein Transfer | ⚠️ Routing flagged as potentially incorrect — verify with team |
+| 24 | Selbstständige (SOHO) — kaufmännisch/technisch — alle sonstigen Anfragen | E-Mail | EMAIL_O2_SOHO | Transfer in Sprinklr. |
+| 25 | Selbstständige (SOHO) — Kündigung | Hotline | Kein Transfer | ⚠️ Routing flagged as potentially incorrect — verify with team |
+| 26 | Selbstständige (SOHO) — Kündigung | E-Mail – Mobile | EMAIL_O2_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr. |
+| 27 | Selbstständige (SOHO) — Stammdaten-Änderung per Brief/Fax/E-Mail | E-Mail | EMAIL_O2_SOHO | Transfer in Sprinklr. |
+| 28 | SOHO | Hotline | Kein Transfer | ⚠️ Routing flagged as potentially incorrect — verify with team |
+| 29 | SOHO | E-Mail | EMAIL_O2_SOHO | Transfer in Sprinklr. |
+| 30 | Verbraucherschutz — Anfragen | Hotline | Kein Transfer | Verweis auf Schriftweg. |
+| 31 | Verbraucherschutz — Anfragen | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 4061 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
+| 32 | Verbraucherschutz — Anfragen von der Bundesnetzagentur | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 4079 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
 
 ---
 
-### 2. andere Marken (z. B. Aldi, Blau, Prepaid)
+### 2. andere Marken (z.B. Aldi, Blau, Prepaid)
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 18 | ALDI TALK | E-Mail | ALDITALK_XF_SERVICE | Transfer in Sprinklr |
-| 19 | AOL Anfragen | Alle Kanaele | Kein Transfer | Inform customer AOL is discontinued; handle per KB |
-| 20 | AY YILDIZ | E-Mail - Postpaid | AYYILDIZ_XF_POSTPAID | Transfer in Sprinklr |
-| 21 | AY YILDIZ | E-Mail - Prepaid | AYYILDIZ_XF_PREPAID | Transfer in Sprinklr |
-| 22 | BLAU | E-Mail - Postpaid | BLAU_XF_IMPRESSUM | Transfer in Sprinklr |
-| 23 | BLAU | E-Mail - Prepaid | BLAU_E_XF_PREPAID | Transfer in Sprinklr |
-| 24 | FONIC | E-Mail | Kein Transfer | Refer customer to FONIC directly (Hotline: 0176 8888 0000, service@fonic.de) |
-| 25 | Mobilka | E-Mail | WHITELABEL_XF_SERVICE | Transfer in Sprinklr |
-| 26 | NettoKOM | E-Mail | NETTOKOM_XF_SERVICE | Transfer in Sprinklr |
-| 27 | novamobil | E-Mail | Kein Transfer | Handle per KB |
-| 28 | o2 Prepaid/Loop | E-Mail | CS_XF_E_LOOP_ALLGEMEIN | Transfer in Sprinklr |
-| 29 | simyo | E-Mail | Kein Transfer | Handle per KB |
-| 30 | Tchibo mobil | E-Mail | Kein Transfer | Refer customer to Tchibo MOBIL (040-605 90 00 95) |
-| 31 | WhatsApp SIM | E-Mail | WHATSAPPSIM_XF_SERVICE | Transfer in Sprinklr |
-| 32 | Whitelabel (aetkaSMART) | E-Mail | WHITELABEL_XF_SERVICE | Transfer in Sprinklr |
+| 1 | ALDI TALK | Hotline | Kein Transfer | Kunden an ALDI TALK Kundenbetreuung verweisen: +49 177 177 1157 / +49 800 552 2255; Mo–Fr 7–23, Sa/So/Feiertage 10–18 Uhr; alditalk@eplus.de; www.alditalk.de. |
+| 2 | ALDI TALK | E-Mail | alditalk@cc.o2online.de | Forward via Externer Transfer in Sprinklr to alditalk@cc.o2online.de. (WDE instructions disregarded — Sprinklr Externer Transfer applies.) |
+| 3 | AOL Anfragen | Alle Kanäle | Kein Transfer | Kunden an AOL Hotline 089-78 79 79 431 verweisen. |
+| 4 | AY YILDIZ | Hotline | Kein Transfer | Kunden an AY YILDIZ Kundenbetreuung verweisen: +49 177 177 1135 / 0800 55 222 55; Mo–Fr 8–22, Sa 10–20, So/Feiertage 10–18 Uhr; service@ayyildiz.de. Ausnahme Zahlung: Transfer an Mahnwesen (56156). |
+| 5 | AY YILDIZ | E-Mail – Postpaid | ayyildiz@cc.o2online.de | Forward via Externer Transfer in Sprinklr to ayyildiz@cc.o2online.de. (WDE instructions disregarded — Sprinklr Externer Transfer applies.) |
+| 6 | AY YILDIZ | E-Mail – Prepaid | ayyildiz@cc.o2online.de | Forward via Externer Transfer in Sprinklr to ayyildiz@cc.o2online.de. (WDE instructions disregarded — Sprinklr Externer Transfer applies.) |
+| 7 | BLAU | Hotline | Kein Transfer | Kunden an Blau Kundenbetreuung verweisen: +49 177 1 77 11 59 (Prepaid), +49 177 1 77 11 60 (Postpaid), +49 89 78 79 79 420 (My-Handy); Mo–Fr 8–20, Sa 10–16 Uhr. Bestellhotline: 0800 40 40 410. |
+| 8 | BLAU | E-Mail – Postpaid | EMAIL_BLAU_CARE | Transfer in Sprinklr. |
+| 9 | BLAU | E-Mail – Prepaid | EMAIL_BLAU_PREPAID_CARE | Transfer in Sprinklr. |
+| 10 | FONIC | Hotline / E-Mail | Kein Transfer | Kunden an FONIC verweisen: 0176 8888 0000 (Mo–Fr 8–18, Sa 10–18 Uhr); service@fonic.de; FONIC Kundenbetreuung, Postfach 1038, 90001 Nürnberg. |
+| 11 | Mobilka | Hotline | Kein Transfer | Kunden an Mobilka Kundenbetreuung verweisen. |
+| 12 | Mobilka | E-Mail | service@kunde.aetkasmart.de | Forward via Externer Transfer in Sprinklr to service@kunde.aetkasmart.de. |
+| 13 | NettoKOM | Hotline | Kein Transfer | Kunden an NettoKOM verweisen: +49 177 17 11415 (Mo–Fr 8–20, Sa 10–18 Uhr); service@nettokom.de; www.nettokom.de. |
+| 14 | NettoKOM | E-Mail | nettokom@cc.o2online.de | Forward via Externer Transfer in Sprinklr to nettokom@cc.o2online.de. |
+| 15 | novamobil | Hotline / E-Mail | Kein Transfer | Marke zu FONIC migriert. Kunden an FONIC verweisen: 0176 8888 0000 (Mo–Fr 8–18, Sa 10–18 Uhr); service@fonic.de. |
+| 16 | o2 Prepaid/Loop | Hotline | Kein Transfer | Kunden an o2 Prepaidhotline verweisen. |
+| 17 | o2 Prepaid/Loop | E-Mail | EMAIL_O2_PREPAID_CARE | Transfer in Sprinklr. |
+| 18 | simyo | Hotline | Kein Transfer | Kunden an simyo Kundenservice (mobilezone) verweisen. |
+| 19 | simyo | E-Mail | Kein Transfer | Kunden auf kundenservice@simyo.de und widerruf@simyo.de verweisen. Kein Transfer. |
+| 20 | Tchibo mobil | Hotline / E-Mail | Kein Transfer | Kunden an Tchibo mobil verweisen: 040-605 90 00 95 (Mo–Sa 8–22 Uhr, außer Feiertage); www.tchibo-mobilfunk.de. |
+| 21 | WhatsApp SIM | Hotline | Kein Transfer | Kunden an WhatsApp SIM Kundenbetreuung verweisen. |
+| 22 | WhatsApp SIM | E-Mail | whatsappsim@cc.o2online.de | Forward via Externer Transfer in Sprinklr to whatsappsim@cc.o2online.de. |
+| 23 | Whitelabel (aetkaSMART) | Hotline | Kein Transfer | Kunden an jeweilige Kundenbetreuung verweisen. |
+| 24 | Whitelabel (aetkaSMART) | E-Mail | service@kunde.aetkasmart.de | Forward via Externer Transfer in Sprinklr to service@kunde.aetkasmart.de. |
 
 ---
 
-### 3. Englisch/Tuerkisch (o2 Postpaid Privatkunden)
+### 3. Englisch/Türkisch (o2 Postpaid Privatkunden)
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 33 | Inhouse Dunning - Englisch | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
-| 34 | Vertragsthemen o2 Postpaid Care - Englisch | E-Mail | CBC_ENGLISCH | Transfer in Sprinklr |
-| 35 | Vertragsthemen o2 Postpaid Care - Tuerkisch | Hotline | Tuerkisch o2 Care | Refer customer to Turkish hotline |
+| 1 | Inhouse Dunning — Englisch | Hotline | Kein Transfer | Kein Transfer. E-Mail an FPF: rueckruf-englisch-inhouse-dunning@telefonica.com. Rückrufnummer + Anliegen angeben. |
+| 2 | Inhouse Dunning — Englisch | E-Mail | EMAIL_COLLECTIONS | Transfer in Sprinklr. |
+| 3 | Vertragsthemen o2 Postpaid Care — Englisch | Hotline | Kein Transfer | Kein Transfer. Verweis auf Hotline. |
+| 4 | Vertragsthemen o2 Postpaid Care — Englisch | E-Mail | EMAIL_O2_ENGLISCH | Transfer in Sprinklr. |
+| 5 | Vertragsthemen o2 Postpaid Care — Türkisch | Hotline | Türkisch o2 Care | Cold transfer to Türkisch o2 Care; Mo–Fr 6–20, Sa 10–18 Uhr. |
 
 ---
 
-### 4. Hardware - Benutzen & Defekt
+### 4. Hardware — Benutzen & Defekt
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 36 | Defekt - Beschwerde ueber Bearbeitung | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
-| 37 | Defekt - DSL Router | E-Mail | Kein Transfer | Handle per KB (router troubleshooting) |
-| 38 | Defekt - mobile Hardware | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
-| 39 | DSL-Zugangsdaten, MAC-Adresse und Telefon-PIN | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 40 | Installation, Nutzung, Hilfe - DSL/Glasfaser/Kabel Router | E-Mail | Kein Transfer | Handle per KB (installation guides) |
-| 41 | Installation, Nutzung, Hilfe - mobile Hardware/Homespot | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
-| 42 | WLAN-Hotspots | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
+| 1 | Defekt — Beschwerde über Bearbeitung | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 2 | Defekt — Beschwerde über Bearbeitung | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 3 | Defekt — Beschwerde über Bearbeitung | E-Mail | EMAIL_O2_MOBILE_TECHNIK | Transfer in Sprinklr. |
+| 4 | Defekt — DSL Router | Hotline | o2 Tech Fixnet (DSL, FTTH, Kabel) | Cold transfer; Mo–Fr 7–22 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 5 | Defekt — DSL Router | E-Mail | Kein Transfer | Kein Transfer. Verweis auf Hotline 0176-888 55 222. |
+| 6 | Defekt — mobile Hardware | Hotline | Guru – kaufmännisch | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 7 | Defekt — mobile Hardware | E-Mail | EMAIL_O2_MOBILE_TECHNIK | Transfer in Sprinklr. |
+| 8 | DSL-Zugangsdaten, MAC-Adresse und Telefon-PIN | Hotline | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 9 | DSL-Zugangsdaten, MAC-Adresse und Telefon-PIN | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 10 | Installation, Nutzung, Hilfe — DSL/Glasfaser/Kabel Router | Hotline – DSL/Glasfaser/Kabel | o2 Tech Fixnet (DSL, FTTH, Kabel) | Cold transfer; Mo–Fr 7–22 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 11 | Installation, Nutzung, Hilfe — DSL/Glasfaser/Kabel Router | E-Mail | Kein Transfer | Kein Transfer. Verweis auf Hotline 0176-888 55 222. |
+| 12 | Installation, Nutzung, Hilfe — mobile Hardware/Homespot | Hotline | o2 Tech Mobile (Postpaid, Homespot, FMS) | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Bedienungsfragen: Deeplink per SMS aus TIM; Zugangsdaten mobiles Internet: OTA Konfigbox zusenden. |
+| 13 | Installation, Nutzung, Hilfe — mobile Hardware/Homespot | E-Mail | EMAIL_O2_MOBILE_TECHNIK | Transfer in Sprinklr. |
+| 14 | WLAN-Hotspots | Hotline | o2 Tech Mobile (Postpaid, Homespot, FMS) | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 15 | WLAN-Hotspots | E-Mail | EMAIL_O2_MOBILE_TECHNIK | Transfer in Sprinklr. |
 
 ---
 
-### 5. Hardware - Logistik, Beratung & Vertrag
+### 5. Hardware — Logistik, Beratung & Vertrag
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 43 | Beratung zu Hardware und Routern | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 44 | Fundsachen/Fundbuero (kein Prepaid) | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 45 | Handyversicherung | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 46 | Logistik - Lieferung und Retouren | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 47 | o2 My Handy - Fragen zum Ratenplan | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 48 | o2 My Handy - Vorzeitige Vertragsaufloesung beantragen & Beschwerden | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 49 | o2 My Handy - Vorzeitige Vertragsaufloesung stornieren | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
+| 1 | Beratung zu Hardware und Routern | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 2 | Beratung zu Hardware und Routern | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 3 | Beratung zu Hardware und Routern | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 4 | Fundsachen/Fundbüro (kein Prepaid) | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 5 | Fundsachen/Fundbüro (kein Prepaid) | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 6 | Fundsachen/Fundbüro (kein Prepaid) | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 7 | Handyversicherung | Hotline | Handyversicherung | Cold transfer; Mo–Sa 9–18 Uhr; ab 120 s Wartezeit informieren. |
+| 8 | Handyversicherung | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 9 | Logistik — Lieferung und Retouren | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 10 | Logistik — Lieferung und Retouren | Hotline – Mobile/Homespot | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 11 | Logistik — Lieferung und Retouren | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 12 | o2 My Handy — Fragen zum Ratenplan | Hotline | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 13 | o2 My Handy — Fragen zum Ratenplan | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 14 | o2 My Handy — Vorzeitige Vertragsauflösung beantragen & Beschwerden | Hotline | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Transfer vermeiden wenn möglich: Online-Selfcare oder Shorty-SMS. |
+| 15 | o2 My Handy — Vorzeitige Vertragsauflösung beantragen & Beschwerden | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. Transfer vermeiden wenn möglich: Selfcare oder Shorty-SMS. |
+| 16 | o2 My Handy — Vorzeitige Vertragsauflösung stornieren | Hotline | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 17 | o2 My Handy — Vorzeitige Vertragsauflösung stornieren | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
 
 ---
 
-### 6. Hardware - SIM Karte & Sperren
+### 6. Hardware — SIM Karte & Sperren
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 50 | eSIM Installation, Einrichten, Synchronisieren, Beeintraechtigungen | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
-| 51 | eSIM/SIM/Multicard/Datacard - Bestellung, Tausch, Versand, Aktivierung, Deaktivierung | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 52 | PIN/PUK - Auskunft | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 53 | Sperren & Entsperren (SIM, DSL, Drittanbieter etc.) | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
+| 1 | eSIM — Installation, Einrichten, Synchronisieren, Beeinträchtigungen | Hotline | o2 Tech Mobile (Postpaid, Homespot, FMS) | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 2 | eSIM — Installation, Einrichten, Synchronisieren, Beeinträchtigungen | E-Mail | EMAIL_O2_MOBILE_TECHNIK | Transfer in Sprinklr. |
+| 3 | eSIM/SIM/Multicard/Datacard — Bestellung, Tausch, Versand, Aktivierung, Deaktivierung | Hotline | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 4 | eSIM/SIM/Multicard/Datacard — Bestellung, Tausch, Versand, Aktivierung, Deaktivierung | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 5 | PIN/PUK — Auskunft | Hotline | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 6 | PIN/PUK — Auskunft | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 7 | Sperren & Entsperren (SIM, DSL, Drittanbieter etc.) | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 8 | Sperren & Entsperren (SIM, DSL, Drittanbieter etc.) | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 9 | Sperren & Entsperren (SIM, DSL, Drittanbieter etc.) | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
 
 ---
 
@@ -174,11 +243,24 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 54 | Aendern/Einrichten Rechnungseinstellungen (Rechnungsart, Zustellungsart, EVN-Typ) | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 55 | Anfrage/Reklamation Rechnungsinhalt | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 56 | Drittanbieter - Reklamation/Anzweiflung | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 57 | Rechnungsduplikat | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 58 | Rechnungsduplikat Hardware | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
+| 1 | Ändern/Einrichten Rechnungseinstellungen (Rechnungsart, Zustellungsart, EVN-Typ) | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 2 | Ändern/Einrichten Rechnungseinstellungen (Rechnungsart, Zustellungsart, EVN-Typ) | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 3 | Ändern/Einrichten Rechnungseinstellungen (Rechnungsart, Zustellungsart, EVN-Typ) | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 4 | Anfrage / Reklamation Rechnungsinhalt (EVN Einsicht nötig) | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 5 | Anfrage / Reklamation Rechnungsinhalt (EVN Einsicht nötig) | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 6 | Anfrage / Reklamation Rechnungsinhalt (EVN Einsicht nötig) | E-Mail | EMAIL_O2_EVN_OFFICE | Transfer in Sprinklr. |
+| 7 | Anfrage / Reklamation Rechnungsinhalt (keine EVN Einsicht nötig) | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 8 | Anfrage / Reklamation Rechnungsinhalt (keine EVN Einsicht nötig) | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 9 | Anfrage / Reklamation Rechnungsinhalt (keine EVN Einsicht nötig) | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 10 | Drittanbieter — Reklamation / Anzweiflung | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 11 | Drittanbieter — Reklamation / Anzweiflung | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 12 | Drittanbieter — Reklamation / Anzweiflung | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 13 | Rechnungsduplikat | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 14 | Rechnungsduplikat | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 15 | Rechnungsduplikat | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 16 | Rechnungsduplikat Hardware | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 17 | Rechnungsduplikat Hardware | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 18 | Rechnungsduplikat Hardware | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
 
 ---
 
@@ -186,8 +268,10 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 59 | Kaufmaennisch - Optionen und Kosten | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 60 | Technisch - Nutzung im Ausland nicht moeglich | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
+| 1 | Kaufmännisch — Optionen und Kosten | Hotline | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 2 | Kaufmännisch — Optionen und Kosten | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 3 | Technisch — Nutzung im Ausland nicht möglich | Hotline | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 4 | Technisch — Nutzung im Ausland nicht möglich | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
 
 ---
 
@@ -195,9 +279,11 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 61 | Export - Beauftragung auflaufendem Vertrag, gekuendigt | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 62 | Export - Beauftragung auflaufendem Vertrag, ungekuendigt | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 63 | Import - Rufnummernmitnahme zu DSL, Kabel, Glasfaser - Auftrag, Terminverschiebung | E-Mail | Fremdcarrier-D019@telefonica.com | Forward to email |
+| 1 | Export — Beauftragung auflaufendem Vertrag, gekündigt | Hotline | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 2 | Export — Beauftragung auflaufendem Vertrag, gekündigt | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 3 | Export — Beauftragung auflaufendem Vertrag, ungekündigt | Hotline | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 4 | Export — Beauftragung auflaufendem Vertrag, ungekündigt | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 5 | Import — Rufnummernmitnahme zu DSL/Kabel/Glasfaser — Auftrag, Terminverschiebung | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
 
 ---
 
@@ -205,9 +291,9 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 64 | Export - Portierungsstatus unklar | Alle Kanaele | Kein Transfer | Handle per KB (check porting status in system) |
-| 65 | Import - Beauftragung per Formular | E-Mail | o2-portierung@telefonica.com | Forward to email |
-| 66 | Import - Portierungsstatus unklar | Alle Kanaele | Kein Transfer | Handle per KB |
+| 1 | Export — Portierungsstatus unklar | Alle Kanäle | Kein Transfer | Kein Transfer. Übersicht Portierungsstatus in Sabio prüfen. |
+| 2 | Import — Beauftragung per Formular | E-Mail | o2-portierung@telefonica.com | Forward via Externer Transfer in Sprinklr to o2-portierung@telefonica.com. |
+| 3 | Import — Portierungsstatus unklar | Alle Kanäle | Kein Transfer | Kein Transfer. Übersicht Portierungsstatus in Sabio prüfen. |
 
 ---
 
@@ -215,15 +301,16 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 67 | Betrugsverdacht | E-Mail | Kein Transfer | Handle per KB (fraud procedures) |
-| 68 | Export - Portierungserklaerung zur Freigabe aus dem Vertrag | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 69 | Import - automatische Aenderung Portierungstermin | Alle Kanaele | Kein Transfer | Handle per KB |
-| 70 | Import - Beauftragung (ausser interne Portierung) | Alle Kanaele | Kein Transfer | Handle per KB |
-| 71 | Import - Eingang wichtiger Dokumente (Portierungsauftraege, Kuendigungsbestaetigung, MNP Beschwerden) | E-Mail | o2-rufnummernmitnahme@telefonica.com | Forward to email |
-| 72 | Import - Portierungsstatus unklar | Alle Kanaele | Kein Transfer | Handle per KB (check porting status) |
-| 73 | Import - Sonstiges/spezieller Fehlerfall | E-Mail | Kein Transfer | Handle per KB |
-| 74 | Import - Storno fuer Portierung zum Vertragsende | Alle Kanaele | Kein Transfer | Handle per KB |
-| 75 | interne Portierung (innerhalb Telefonica Marken) | Alle Kanaele | Kein Transfer | Handle per KB; use internal porting form via Shorty SMS |
+| 1 | Betrugsverdacht | Hotline / E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 653 an NP-Desk erstellen. |
+| 2 | Export — Portierungserklärung zur Freigabe aus dem Vertrag | Hotline | Kein Transfer | Kein Transfer. Opt-In durch #1st Level/Care setzen. |
+| 3 | Export — Portierungserklärung zur Freigabe aus dem Vertrag | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 4 | Import — automatische Änderung Portierungstermin | Alle Kanäle | Kein Transfer | Kein Transfer. Kunde bekommt Info per E-Mail oder SMS. Kein Ticket nötig. |
+| 5 | Import — Beauftragung (außer interne Portierung) | Alle Kanäle | Kein Transfer | Kein Transfer. Verweis auf Selfservice-Portal oder App. Kein Ticket an NP-Desk. |
+| 6 | Import — Eingang wichtiger Dokumente (Portierungsaufträge, Formulare, Kündigungsbestätigung, MNP-Beschwerden) | E-Mail | o2-rufnummernmitnahme@telefonica.com | Forward via Externer Transfer in Sprinklr to o2-rufnummernmitnahme@telefonica.com. |
+| 7 | Import — Portierungsstatus unklar | Alle Kanäle | Kein Transfer | Kein Transfer. Portierungsstatus prüfen. Ablehnungsgründe erläutern (Rufnummer unbekannt, Kundendaten falsch, Opt-In fehlt, Portierung zu früh/spät, Storno, etc.). |
+| 8 | Import — Sonstiges / spezieller Fehlerfall | Hotline / E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 653 an NP-Desk erstellen. |
+| 9 | Import — Storno für Portierung zum Vertragsende | Alle Kanäle | Kein Transfer | Kein Transfer. Ticket Themen-ID 653 an NP-Desk erstellen. |
+| 10 | Interne Portierung (innerhalb Telefónica Marken) | Alle Kanäle | Kein Transfer | Kein Transfer. Shorty SMS mit Link zu Formular interne Portierung versenden: https://www.o2online.de/service/downloads/formulare/internes-portierungsformular/ |
 
 ---
 
@@ -231,140 +318,254 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 76 | Newsletter | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 77 | o2 Apps (z. B. Mein o2, o2 Protect) | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
-| 78 | o2 E-Mail | E-Mail - Festnetz | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 79 | o2 E-Mail | E-Mail - Mobile | CS_XF_E_HARDWARE | Transfer in Sprinklr |
-| 80 | o2.de Portal | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
+| 1 | Newsletter | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 2 | Newsletter | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 3 | Newsletter | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 4 | o2 Apps (z.B. Mein o2, o2 Protect) | E-Mail | EMAIL_O2_MOBILE_TECHNIK | Transfer in Sprinklr. |
+| 5 | o2 E-Mail (@o2mail.de — Festnetz) | Hotline – Festnetz | o2 Tech Fixnet (DSL, FTTH, Kabel) | Cold transfer; Mo–Fr 7–22 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 6 | o2 E-Mail (@o2online.de — Mobile) | Hotline – Mobile | o2 Tech Mobile (Postpaid, Homespot, FMS) | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 7 | o2 E-Mail | E-Mail – Festnetz | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 8 | o2 E-Mail | E-Mail – Mobile | EMAIL_O2_MOBILE_TECHNIK | Transfer in Sprinklr. |
+| 9 | o2.de Portal | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 10 | o2.de Portal | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 11 | o2.de Portal | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
 
 ---
 
-### 13. Stoerung
+### 13. Störung
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 81 | DSL | E-Mail | Kein Transfer | Handle per KB (DSL troubleshooting) |
-| 82 | Forderung Entschaedigung/Minderung EECC TKG | E-Mail | Kein Transfer | Handle per KB (EECC compensation rules) |
-| 83 | Homespot | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
-| 84 | Kabel | E-Mail | Kein Transfer | Handle per KB (cable troubleshooting) |
-| 85 | Mailbox, Visual Voice Mail, o2 Voicemail | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 86 | MMS | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
-| 87 | Mobilfunk Daten (Ursache vermutlich Hardware/Konfiguration) | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
-| 88 | Mobilfunk Daten (Ursache vermutlich Netz) | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 89 | Mobilfunk Daten (Netz) - Anfragen Bundesnetzagentur | E-Mail | Verbraucherauskunft@telefonica.com | Forward to email |
-| 90 | Mobilfunk Sprache | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 91 | Mobilfunk Sprache - Anfragen Bundesnetzagentur | E-Mail | Verbraucherauskunft@telefonica.com | Forward to email |
-| 92 | o2 Mehrwertdienste (keine Drittanbieterdienste) | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
+| 1 | DSL | Hotline – DSL/Glasfaser | o2 Tech Fixnet (DSL, FTTH, Kabel) | Cold transfer; Mo–Fr 7–22 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 2 | DSL | E-Mail | Kein Transfer | Kein Transfer. Kunden bitten, unter 0800 525 13 78 anzurufen. |
+| 3 | Forderung Entschädigung/Minderung EECC TKG | Hotline | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Transfer vermeiden: Kunden zur Beantragung auf Landingpage verweisen (Link per Shorty). |
+| 4 | Forderung Entschädigung/Minderung EECC TKG | E-Mail | Kein Transfer | Kein Transfer. Textbaustein "Forderung Verweis auf Online" verwenden. |
+| 5 | Homespot | Hotline | o2 Tech Mobile (Postpaid, Homespot, FMS) | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 6 | Homespot | E-Mail | EMAIL_O2_MOBILE_TECHNIK | Transfer in Sprinklr. |
+| 7 | Kabel | Hotline – Kabel | o2 Tech Fixnet (DSL, FTTH, Kabel) | Cold transfer; Mo–Fr 7–22 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 8 | Kabel | E-Mail | Kein Transfer | Kein Transfer. Kunden bitten, unter 0800 525 13 78 anzurufen. |
+| 9 | Mailbox, Visual Voice Mail, o2 Voicemail (Infos, Menü, Kontaktwege) | Hotline | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 10 | Mailbox, Visual Voice Mail, o2 Voicemail (Infos, Menü, Kontaktwege) | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 11 | MMS | Hotline | o2 Tech Mobile (Postpaid, Homespot, FMS) | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 12 | MMS | E-Mail | EMAIL_O2_MOBILE_TECHNIK | Transfer in Sprinklr. |
+| 13 | Mobilfunk Daten (Ursache vermutlich Hardware/Konfiguration) | Hotline | o2 Tech Mobile (Postpaid, Homespot, FMS) | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 14 | Mobilfunk Daten (Ursache vermutlich Hardware/Konfiguration) | E-Mail | EMAIL_O2_MOBILE_TECHNIK | Transfer in Sprinklr. |
+| 15 | Mobilfunk Daten (Ursache vermutlich Netz) | Hotline | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 16 | Mobilfunk Daten (Ursache vermutlich Netz) | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 17 | Mobilfunk Daten (Ursache vermutlich Netz) — Anfragen von der Bundesnetzagentur | E-Mail | Verbraucherauskunft@telefonica.com | Forward via Externer Transfer in Sprinklr to Verbraucherauskunft@telefonica.com. |
+| 18 | Mobilfunk Sprache | Hotline | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 19 | Mobilfunk Sprache | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 20 | Mobilfunk Sprache — Anfragen von der Bundesnetzagentur | E-Mail | Verbraucherauskunft@telefonica.com | Forward via Externer Transfer in Sprinklr to Verbraucherauskunft@telefonica.com. |
+| 21 | o2 Mehrwertdienste (keine Drittanbieterdienste) | Hotline | o2 Tech Mobile (Postpaid, Homespot, FMS) | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 22 | o2 Mehrwertdienste (keine Drittanbieterdienste) | E-Mail | EMAIL_O2_MOBILE_TECHNIK | Transfer in Sprinklr. |
+| 23 | o2 TV (technisches Problem) | Hotline | o2 Tech Mobile (Postpaid, Homespot, FMS) | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr. Transfer nur wenn: (1) technisches Problem mit o2 TV; (2) o2 TV Pack aktiv; (3) passende App (GVP weiß / waipu blau) genutzt; (4) keine Großstörung; (5) Login in Mein o2 funktioniert (wenn nein: Ticket 793, kein Transfer). |
 
 ---
 
-### 14. Vertrag - Kuendigung
+### 14. Vertrag — Kündigung
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 93 | Androhung, Fristen, Ablauf - fristgerecht & ausserordentlich | E-Mail - Festnetz | Kein Transfer | Former queue AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL no longer exists — handle per KB; do not transfer |
-| 94 | Androhung, Fristen, Ablauf - fristgerecht & ausserordentlich | E-Mail - Mobile | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 95 | Beschwerde ueber fehlende Kuendigungsbestaetigung / verzoegerte Deaktivierung | E-Mail - Festnetz | Kein Transfer | Former queue AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL no longer exists — handle per KB; do not transfer |
-| 96 | Beschwerde ueber fehlende Kuendigungsbestaetigung / verzoegerte Deaktivierung | E-Mail - Mobile/FMS | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; KB Themen-ID 1849; confirm deactivation date; Kündigungsbestätigung typically 16 days after deactivation (Mobile) |
-| 97 | eingehende Kuendigung - ausserordentlich (AOK) - DSL - sonstige Faelle | E-Mail | Kein Transfer | Handle per KB (AOK DSL procedures) |
-| 98 | eingehende Kuendigung - ausserordentlich (AOK) - DSL - specific cases | E-Mail | Kein Transfer | Former queue AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL no longer exists — handle per KB; do not transfer |
-| 99 | eingehende Kuendigung - AOK - Mobile/FMS - Haft/Krankheit/Nutzertod | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; process AOK per KB; request proof if required; do not transfer |
-| 100 | eingehende Kuendigung - AOK - Mobile/FMS - Insolvenz | E-Mail | Kein Transfer | Handle per KB (insolvency procedures) |
-| 101 | eingehende Kuendigung - AOK - Mobile/FMS - Handydefekt | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
-| 102 | eingehende Kuendigung - AOK - Mobile/FMS - Handyverlust | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; process AOK per KB; do not transfer |
-| 103 | eingehende Kuendigung - AOK - Mobile/FMS - Netzverfuegbarkeit | E-Mail | CS_E_XF_AKTION1 | Transfer in Sprinklr |
-| 104 | eingehende Kuendigung - AOK - Mobile/FMS - Rechnungs-/Servicebeschwerde | E-Mail | KUENDIGUNG_RECHNUNG | Transfer in Sprinklr |
-| 105 | eingehende Kuendigung - AOK - Mobile/FMS - Todesfall Vertragsinhaber | E-Mail | Kein Transfer | Handle per KB (death of account holder procedures) |
-| 106 | eingehende Kuendigung - AOK - Mobile/FMS - Umzug ins Ausland | E-Mail | CS_E_XF_AKTION2 | Transfer in Sprinklr |
-| 107 | eingehende Kuendigung - fristgerecht - DSL | E-Mail - DSL | Kein Transfer | Former queue AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL no longer exists — handle per KB; do not transfer |
-| 108 | eingehende Kuendigung - fristgerecht - Mobile Handydefekt | E-Mail | CS_XF_E_HARDWARE | Transfer in Sprinklr |
-| 109 | eingehende Kuendigung - fristgerecht - Mobile Rechnungs-/Servicebeschwerde | E-Mail | KUENDIGUNG_RECHNUNG | Transfer in Sprinklr |
-| 110 | eingehende Kuendigung - fristgerecht - Mobile/FMS Netzverfuegbarkeit | E-Mail | CS_E_XF_AKTION1 | Transfer in Sprinklr |
-| 118 | Kuendigungstermin falsch hinterlegt | E-Mail - Mobile/FMS | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; verify/correct termination date per KB; customer can check status in Mein o2 |
-| 119 | Reaktivierungswunsch durch Kunde | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 120 | Reklamation Kuendigungsruecknahme | E-Mail - DSL | Kein Transfer | Former queue AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL no longer exists — handle per KB; do not transfer |
-| 121 | Reklamation Kuendigungsruecknahme | E-Mail - Mobile/FMS | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** — former queue CBC_KUENDIGUNGEN_SME_SOHO removed; KB Themen-ID 590 (Kündigungsrücknahme); process in Backoffice E-Mail |
+| 1 | Androhung, Fristen, Ablauf — fristgerecht & außerordentlich | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Kunden von Kündigung abhalten; auf OCF/Shorty-SMS verweisen. Kein Transfer durch CCS & OCF bei erkennbarer Kündigungsabsicht. |
+| 2 | Androhung, Fristen, Ablauf — fristgerecht & außerordentlich | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Kunden von Kündigung abhalten; auf OCF/Shorty-SMS verweisen. Kein Transfer durch CCS & OCF bei erkennbarer Kündigungsabsicht. |
+| 3 | Androhung, Fristen, Ablauf — fristgerecht & außerordentlich | E-Mail – Festnetz / E-Mail – Mobile | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 4 | Beschwerde über fehlende Kündigungsbestätigung / verzögerte Deaktivierung | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 5 | Beschwerde über fehlende Kündigungsbestätigung / verzögerte Deaktivierung | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 6 | Beschwerde über fehlende Kündigungsbestätigung / verzögerte Deaktivierung | E-Mail – Festnetz | Kein Transfer | Kein Transfer. Ticket Themen-ID 5134 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
+| 7 | Beschwerde über fehlende Kündigungsbestätigung / verzögerte Deaktivierung | E-Mail – Mobile/FMS | EMAIL_O2_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr. |
+| 8 | eingehende Kündigung — außerordentlich (AOK) — DSL — Insolvenz | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 897 (Portalanfrage: Themen-ID ändern; sonst: neu anlegen mit vollst. E-Mail-Inhalt). Textbaustein "An Fachabteilung weitergeleitet". |
+| 9 | eingehende Kündigung — außerordentlich (AOK) — DSL — sonstige Fälle | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 2537 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
+| 10 | eingehende Kündigung — außerordentlich (AOK) — Mobile/FMS — Haft/Krankheit/Nutzertod | E-Mail | EMAIL_O2_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr. |
+| 11 | eingehende Kündigung — außerordentlich (AOK) — Mobile/FMS — Insolvenz | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 897 (Portalanfrage: Themen-ID ändern; sonst: neu anlegen mit vollst. E-Mail-Inhalt). Textbaustein "An Fachabteilung weitergeleitet". |
+| 12 | eingehende Kündigung — außerordentlich (AOK) — Mobile/FMS — Handydefekt | E-Mail | EMAIL_O2_MOBILE_TECHNIK | Transfer in Sprinklr. |
+| 13 | eingehende Kündigung — außerordentlich (AOK) — Mobile/FMS — Handyverlust | E-Mail | EMAIL_O2_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr. |
+| 14 | eingehende Kündigung — außerordentlich (AOK) — Mobile/FMS — Netzverfügbarkeit | E-Mail | EMAIL_O2_KUENDIGUNGEN_NETZ | Transfer in Sprinklr. |
+| 15 | eingehende Kündigung — außerordentlich (AOK) — Mobile/FMS — Rechnungs-/Servicebeschwerde | E-Mail | EMAIL_O2_KUENDIGUNG_RECHNUNG | Transfer in Sprinklr. |
+| 16 | eingehende Kündigung — außerordentlich (AOK) — Mobile/FMS — Todesfall Vertragsinhaber | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 895 (Portalanfrage: Themen-ID ändern; sonst: neu anlegen mit vollst. E-Mail-Inhalt). Textbaustein "An Fachabteilung weitergeleitet". |
+| 17 | eingehende Kündigung — außerordentlich (AOK) — Mobile/FMS — Umzug ins Ausland | E-Mail | EMAIL_O2_KUENDIGUNGEN_AUSLAND | Transfer in Sprinklr. |
+| 18 | eingehende Kündigung — fristgerecht — DSL | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 5134 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
+| 19 | eingehende Kündigung — fristgerecht — Mobile Handydefekt | E-Mail | EMAIL_O2_MOBILE_TECHNIK | Transfer in Sprinklr. |
+| 20 | eingehende Kündigung — fristgerecht — Mobile Rechnungs-/Servicebeschwerde | E-Mail | EMAIL_O2_KUENDIGUNG_RECHNUNG | Transfer in Sprinklr. |
+| 21 | eingehende Kündigung — fristgerecht — Mobile/FMS Netzverfügbarkeit | E-Mail | EMAIL_O2_KUENDIGUNGEN_NETZ | Transfer in Sprinklr. |
+| 22 | eingehende Kündigung — fristgerecht — Mobile/FMS ohne Grund | E-Mail | EMAIL_O2_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr. |
+| 23 | eingehende Kündigung als Anhang in E-Mail (PDF/Word) — DSL | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 5134 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
+| 24 | eingehende Kündigung als Anhang in E-Mail (PDF/Word) — Mobile/FMS | E-Mail | EMAIL_O2_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr. |
+| 25 | Kündigungsrücknahme mit VVL-Interesse | Hotline – DSL | Kein Transfer | Kein Transfer. VVL durchführen; Kündigungsrücknahme erfolgt automatisch durch VVL. |
+| 26 | Kündigungsrücknahme mit VVL-Interesse | Hotline – Mobile | Kein Transfer | Kein Transfer. VVL durchführen; Kündigungsrücknahme erfolgt automatisch. Für spätere Entscheidung: 0800 3310 130 nennen. |
+| 27 | Kündigungsrücknahme mit VVL-Interesse | E-Mail | EMAIL_O2_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr. |
+| 28 | Kündigungsrücknahmen ohne VVL-Interesse | Hotline – DSL | Kein Transfer | Kein Transfer. Kunden bitten, von gekündigter Rufnummer 0800 8780 800 anzurufen (Mo–Fr 8–20, Sa 10–18 Uhr). Winback-Flag Voraussetzung. |
+| 29 | Kündigungsrücknahmen ohne VVL-Interesse | Hotline – Mobile | Kein Transfer | Kein Transfer. Kunden bitten, von gekündigter Rufnummer 0800 3310 130 anzurufen. Winback-Flag Voraussetzung. |
+| 30 | Kündigungsrücknahmen ohne VVL-Interesse | E-Mail – DSL | Kein Transfer | Kein Transfer. Ticket Themen-ID 17 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
+| 31 | Kündigungsrücknahmen ohne VVL-Interesse | E-Mail – Mobile/FMS | EMAIL_O2_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr. |
+| 32 | Kündigungstermin falsch hinterlegt | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 33 | Kündigungstermin falsch hinterlegt | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 34 | Kündigungstermin falsch hinterlegt | E-Mail – Festnetz | Kein Transfer | Kein Transfer. Ticket Themen-ID 17 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
+| 35 | Kündigungstermin falsch hinterlegt | E-Mail – Mobile/FMS | EMAIL_O2_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr. |
+| 36 | Reaktivierungswunsch durch Kunden | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 37 | Reaktivierungswunsch durch Kunden | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 38 | Reaktivierungswunsch durch Kunden | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 39 | Reklamation Kündigungsrücknahme | Hotline | Kein Transfer | Kein Transfer. Kunden bitten, von gekündigter Rufnummer 0800 3310 130 anzurufen. Winback-Flag Voraussetzung. |
+| 40 | Reklamation Kündigungsrücknahme | E-Mail – DSL | Kein Transfer | Kein Transfer. Ticket Themen-ID 17 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
+| 41 | Reklamation Kündigungsrücknahme | E-Mail – Mobile/FMS | EMAIL_O2_KUENDIGUNGEN_SME_SOHO | Transfer in Sprinklr. |
 
 ---
 
-### 15. Vertrag - Stammdaten
+### 15. Vertrag — Stammdaten
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 122 | Accountzusammenfuehren/-trennung | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 123 | Bankverbindung / SEPA / Einzugsermaechtigung aendern / erteilen / widerrufen | E-Mail | CBC_XF_E_KUNDENDATEN | Transfer in Sprinklr |
-| 124 | Beauskunftung gemaess DSGVO (Datenschutz) | E-Mail | DS_Beauskunftung@telefonica.com | Forward to email |
-| 125 | Betreuung (Unterlagen zur gesetzlichen Betreuung von Kunden) | E-Mail | Kein Transfer | Handle per KB (guardianship documentation) |
-| 126 | Datenschutzanfragen allgemein | E-Mail | Kein Transfer | Handle per KB |
-| 127 | Festnetz - Umzug | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 128 | Kundendaten aendern (Name, Adresse, Geburtsdatum) | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 129 | Kundeneinwilligung/Permission Aenderung/Beschwerde | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 130 | Kundenkennzahl aendern | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 131 | Kundentyp aendern (Privat auf SOHO) | E-Mail | CS_E_XF_SELBSTSTAENDIGE | Transfer in Sprinklr |
-| 132 | Kundentyp aendern (SOHO auf Privat) | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 133 | Vertragslaufzeit Anfrage | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 134 | Vertragsstilllegung | E-Mail | CBC_XF_E_VERTRAGSSTILLLEGUNG | Transfer in Sprinklr |
-| 135 | Vertragsuebernahme/Inhaberwechsel | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
+| 1 | Accountzusammenführen/-trennung | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 2 | Accountzusammenführen/-trennung | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 3 | Accountzusammenführen/-trennung | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 4 | Bankverbindung / SEPA / Einzugsermächtigung ändern/erteilen/widerrufen | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 5 | Bankverbindung / SEPA / Einzugsermächtigung ändern/erteilen/widerrufen | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 6 | Bankverbindung / SEPA / Einzugsermächtigung ändern/erteilen/widerrufen | E-Mail | EMAIL_O2_KUNDENDATEN | Transfer in Sprinklr. |
+| 7 | Beauskunftung gemäß DSGVO (Datenschutz) | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 8 | Beauskunftung gemäß DSGVO (Datenschutz) | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 9 | Beauskunftung gemäß DSGVO (Datenschutz) | E-Mail | DS_Beauskunftung@telefonica.com | Forward via Externer Transfer in Sprinklr to DS_Beauskunftung@telefonica.com. |
+| 10 | Betreuung (Unterlagen zur gesetzlichen Betreuung von Kunden) | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 11 | Betreuung (Unterlagen zur gesetzlichen Betreuung von Kunden) | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 12 | Betreuung (Unterlagen zur gesetzlichen Betreuung von Kunden) | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 826 (Portalanfrage: Themen-ID ändern; sonst: neu anlegen mit vollst. E-Mail-Inhalt). Textbaustein "An Fachabteilung weitergeleitet". |
+| 13 | Datenschutzanfragen allgemein | Hotline / E-Mail | Kein Transfer | Kein Transfer. Allgemeine Anfragen direkt bearbeiten (TIM-Einträge und Textbausteine). Infoseite: https://www.telefonica.de/unternehmen/datenschutzanfrage.html |
+| 14 | Festnetz — Umzug | Hotline | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 15 | Festnetz — Umzug | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 16 | Kundendaten ändern (Name, Adresse, Geburtsdatum) | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 17 | Kundendaten ändern (Name, Adresse, Geburtsdatum) | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 18 | Kundendaten ändern (Name, Adresse, Geburtsdatum) | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 19 | Kundeneinwilligung / Permission Änderung/Beschwerde | Hotline | Permission Mitarbeiter | Cold transfer to Permission Mitarbeiter; Mo–Fr 9–20 Uhr. Nur wenn NBA-Aktivität zur Permissionabfrage vorliegt. Transfercode 56659. Außerhalb Servicezeiten: Rückrufwunsch mit Ticket 4479 aufnehmen. |
+| 20 | Kundeneinwilligung / Permission Änderung/Beschwerde | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 21 | Kundenkennzahl ändern | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 22 | Kundenkennzahl ändern | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 23 | Kundenkennzahl ändern | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 24 | Kundentyp ändern (Privat auf SOHO) | Hotline | oneSoho (Care) | Warm transfer zu oneSoho (Care); Mo–Fr 8–20, Sa 10–18 Uhr; Transfercode 56129. Traffic-Light: Grün (<60 s) → warm; Gelb (61–120 s) → kalt mit Wartehinweis; Rot (>121 s) → nur auf Kundenwunsch transferieren oder Rückruf empfehlen. |
+| 25 | Kundentyp ändern (Privat auf SOHO) | E-Mail | EMAIL_O2_SOHO | Transfer in Sprinklr. |
+| 26 | Kundentyp ändern (SOHO auf Privat) | Hotline | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 27 | Kundentyp ändern (SOHO auf Privat) | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 28 | Vertragslaufzeit Anfrage | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Wenn möglich: Laufzeit aus SalCus-Reiter "Vertragsdaten" mitteilen. |
+| 29 | Vertragslaufzeit Anfrage | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Wenn möglich: Laufzeit aus SalCus mitteilen. |
+| 30 | Vertragslaufzeit Anfrage | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. Wenn möglich: Laufzeit aus SalCus "Vertragsdaten" mitteilen. |
+| 31 | Vertragsstillegung | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 32 | Vertragsstillegung | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 33 | Vertragsstillegung | E-Mail | EMAIL_O2_VERTRAGSSTILLEGUNG | Transfer in Sprinklr. |
+| 34 | Vertragsübernahme / Inhaberwechsel | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 35 | Vertragsübernahme / Inhaberwechsel | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 36 | Vertragsübernahme / Inhaberwechsel | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
 
 ---
 
-### 16. Vertrag - Tarife & Optionen
+### 16. Vertrag — Tarife & Optionen
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 136 | Information zu Produkten, Optionen und Tarifen | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 137 | Mailbox (Infos, Menue, Kontaktwege etc.) | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 138 | Packs und Optionen aktivieren & deaktivieren | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 139 | Reklamation zu Tarif-, Pack- oder Optionswechsel (wenn nicht im Shop durchgefuehrt) | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 140 | Rufnummerntausch | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 141 | Super Select Tarife (Mediamarkt/Saturn) | Alle Kanaele | Kein Transfer | Refer customer to Mediamarkt/Saturn |
+| 1 | Information zu Produkten, Optionen und Tarifen | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 2 | Information zu Produkten, Optionen und Tarifen | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 3 | Information zu Produkten, Optionen und Tarifen | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 4 | Mailbox (Infos, Menü, Kontaktwege etc.) | Hotline | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 5 | Mailbox (Infos, Menü, Kontaktwege etc.) | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 6 | Packs und Optionen aktivieren & deaktivieren | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 7 | Packs und Optionen aktivieren & deaktivieren | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 8 | Packs und Optionen aktivieren & deaktivieren | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 9 | Reklamation zu Tarif-, Pack- oder Optionswechsel (wenn nicht im Shop) | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 10 | Reklamation zu Tarif-, Pack- oder Optionswechsel (wenn nicht im Shop) | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 11 | Reklamation zu Tarif-, Pack- oder Optionswechsel (wenn nicht im Shop) | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 12 | Rufnummerntausch | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 13 | Rufnummerntausch | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 14 | Rufnummerntausch | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 15 | Super Select Tarife (Mediamarkt/Saturn) | Alle Kanäle | Kein Transfer | Kein Transfer. Kunden an MSD Service verweisen: 0176 8885 3330 (Mo–Sa 8–20 Uhr). Post: Telefonica Germany, Kundenbetreuung MSD, Postfach 45 20, 90024 Nürnberg. TBS: "Kontakt Kundenbetreuung MSD". |
+| 16 | Tarifwechsel (keine Vertragsverlängerung) | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 17 | Tarifwechsel (keine Vertragsverlängerung) | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 18 | Tarifwechsel (keine Vertragsverlängerung) | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 19 | Telefon-Dienste (Anruf-Info-SMS, CLIP, CLIR etc.) | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 20 | Telefon-Dienste (Anruf-Info-SMS, CLIP, CLIR etc.) | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 21 | Telefon-Dienste (Anruf-Info-SMS, CLIP, CLIR etc.) | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 22 | Widerruf — Tarifwechsel, Pack- und Optionsbuchung | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 23 | Widerruf — Tarifwechsel, Pack- und Optionsbuchung | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 24 | Widerruf — Tarifwechsel, Pack- und Optionsbuchung | E-Mail | EMAIL_O2_WIDERRUF | Transfer in Sprinklr. |
 
 ---
 
-### 17. Vertrag - Vertragsabschluss
+### 17. Vertrag — Vertragsabschluss
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 145 | Ablehnung Neuvertrag (z. B. Bonitaet) - Anfrage/Reklamation | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 146 | DSL-Auftrag im Aktivierungs-Status - Rueckfragen | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 147 | Neuvertrag - Interessentenanfrage | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 148 | Neuvertrag - Reklamation - Abschluss Hotline/Online | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 149 | Portierung - Export - aus laufendem Vertrag - gekuendigt | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 150 | Portierung - Export - aus laufendem Vertrag - ungekuendigt | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 151 | Portierung - Import - Beauftragung/Bearbeitungsstand/Fehler | E-Mail - Festnetz | Fremdcarrier-D019@telefonica.com | Forward to email |
-| 152 | Portierung - Import - Beauftragung/Bearbeitungsstand/Fehler | E-Mail - Mobile | Ticket Themen-ID 653 an NP-Desk erstellen | Create SalCus ticket with Themen-ID 653, forward to NP-Desk |
-| 153 | Terminverschiebung/Anfragen Technikertermin fuer Neuvertrag | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 154 | Vertragsanzweiflung/Betrugsverdacht | E-Mail | Kein Transfer | Handle per KB (fraud/contract dispute procedures) |
-| 155 | Vertragskopie | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
+| 1 | Ablehnung Neuvertrag (z.B. Bonität) — Anfrage/Reklamation | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 2 | Ablehnung Neuvertrag (z.B. Bonität) — Anfrage/Reklamation | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 3 | Ablehnung Neuvertrag (z.B. Bonität) — Anfrage/Reklamation | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 4 | DSL-Auftrag im Aktivierungs-Status — Rückfragen | Hotline | o2 Activation Care Fixnet (DSL, FTTH, Kabel) | Transfer in Sprinklr; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr. |
+| 5 | DSL-Auftrag im Aktivierungs-Status — Rückfragen | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 6 | Neuvertrag — Interessentenanfrage | Hotline | Telesales Mobile/Data | Cold transfer; Mo–Fr 8–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 7 | Neuvertrag — Interessentenanfrage | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 8 | Neuvertrag — Reklamation — Abschluss Hotline/Online | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 9 | Neuvertrag — Reklamation — Abschluss Hotline/Online | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 10 | Neuvertrag — Reklamation — Abschluss Hotline/Online | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 11 | Portierung — Export — aus laufendem Vertrag — Vertrag gekündigt | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 12 | Portierung — Export — aus laufendem Vertrag — Vertrag gekündigt | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Winback: Kunden auf 0800 3310 130 verweisen. |
+| 13 | Portierung — Export — aus laufendem Vertrag — Vertrag gekündigt | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 14 | Portierung — Export — aus laufendem Vertrag — Vertrag ungekündigt | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 15 | Portierung — Export — aus laufendem Vertrag — Vertrag ungekündigt | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Transfer vermeiden: Portierungserklärung in SalCus "SIM-Details" aktivieren. Kein Transfer bei erkennbarer Kündigungsabsicht. |
+| 16 | Portierung — Export — aus laufendem Vertrag — Vertrag ungekündigt | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 17 | Portierung — Import — Beauftragung, Bearbeitungsstand oder Fehler | Hotline – DSL/Glasfaser | o2 Activation Care Fixnet (DSL, FTTH, Kabel) | Transfer in Sprinklr; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr. |
+| 18 | Portierung — Import — Beauftragung, Bearbeitungsstand oder Fehler | Hotline – Kabel | o2 Activation Fixnet (DSL/FTTH/Kabel) | Cold transfer; Mo–Fr 8–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 19 | Portierung — Import — Beauftragung, Bearbeitungsstand oder Fehler | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 20 | Portierung — Import — Beauftragung, Bearbeitungsstand oder Fehler | E-Mail – Festnetz | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 21 | Portierung — Import — Beauftragung, Bearbeitungsstand oder Fehler | E-Mail – Mobile | Kein Transfer | Kein Transfer. Ticket Themen-ID 653 an NP-Desk erstellen. |
+| 22 | Terminverschiebung / Anfragen Technikertermin für Neuvertrag | Hotline | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 23 | Terminverschiebung / Anfragen Technikertermin für Neuvertrag | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 24 | Vertragsanzweiflung / Betrugsverdacht | Hotline – DSL/Glasfaser / Hotline – Kabel / Hotline – Mobile | Kein Transfer | Kein Transfer. Nur schriftliche Bearbeitung. Checkliste "Vorgehen bei Identitätsmissbrauch" per SMS-Link zusenden. SIM kostenfrei sperren. Ticket Themen-ID 609 (Fraud) erstellen. SalCus-Vorgehen: erfüllt → Inbox "AnzweiflVertr_Fraud"; nicht erfüllt → Fachbereich. Hinweise intern — nicht an Kunden kommunizieren. |
+| 25 | Vertragsanzweiflung / Betrugsverdacht | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 609 (Portalanfrage: Themen-ID ändern; sonst: neu anlegen mit vollst. E-Mail-Inhalt). Textbaustein "An Fachabteilung weitergeleitet". |
+| 26 | Vertragskopie | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 27 | Vertragskopie | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 28 | Vertragskopie | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
 
 ---
 
-### 18. Vertrag - Vertragsverlaengerung
+### 18. Vertrag — Vertragsverlängerung
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 156 | Vertragsverlaengerung (VVL) Anfrage / Angebot | E-Mail | Kein Transfer | Refer customer to hotline (089 78 79 79 400) -- Backoffice does not handle VVL offers/sales |
-| 157 | Laufzeit - Anfrage ohne VVL-Wunsch | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 158 | Reklamation/Rueckfrage nach Vertragsverlaengerung | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
+| 1 | Laufzeit — Anfrage mit VVL-Wunsch | Hotline – DSL | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 2 | Laufzeit — Anfrage mit VVL-Wunsch | Hotline – Mobile | VVL Mobile – Privatkunden | Cold transfer; Mo–Fr 9–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Nur für Worktypes ohne VVL-Berechtigung AAW. |
+| 3 | Laufzeit — Anfrage mit VVL-Wunsch | E-Mail | Kein Transfer | Kein Transfer. Wenn keine Klärung per Solution by Call möglich: Verweis auf Hotline 0176-888 55 222. |
+| 4 | Laufzeit — Anfrage ohne VVL-Wunsch | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Wenn möglich: Laufzeit aus SalCus "Vertragsdaten" mitteilen. |
+| 5 | Laufzeit — Anfrage ohne VVL-Wunsch | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Wenn möglich: Laufzeit aus SalCus mitteilen. |
+| 6 | Laufzeit — Anfrage ohne VVL-Wunsch | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. Wenn möglich: Laufzeit aus SalCus "Vertragsdaten" mitteilen. |
+| 7 | Reklamation / Rückfrage nach Vertragsverlängerung | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 8 | Reklamation / Rückfrage nach Vertragsverlängerung | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 9 | Reklamation / Rückfrage nach Vertragsverlängerung | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 10 | Vertragsverlängerung (VVL) Anfrage / Angebot | Hotline – DSL | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 11 | Vertragsverlängerung (VVL) Anfrage / Angebot | Hotline – Mobile | VVL Mobile – Privatkunden | Cold transfer; Mo–Fr 9–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 12 | Vertragsverlängerung (VVL) Anfrage / Angebot | E-Mail | Kein Transfer | Kein Transfer. Wenn keine Klärung per Solution by Call möglich: Verweis auf Hotline 0176-888 55 222. |
 
 ---
 
-### 19. Vertrag - Widerruf
+### 19. Vertrag — Widerruf
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 160 | Neuvertrag - DSL | E-Mail - DSL | Kein Transfer | Handle per KB (DSL revocation procedure) |
-| 161 | Neuvertrag - eRetail | E-Mail | eretail-widerruf@telefonica.com | Forward to email |
-| 162 | Neuvertrag - Hotline/Online - nur Storno - Abschluss < 14 Tage | E-Mail - Festnetz | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 163 | Neuvertrag - Hotline/Online - nur Storno - Abschluss < 14 Tage | E-Mail - Homespot | CBC_XF_E_WIDERRUF | Transfer in Sprinklr |
-| 164 | Neuvertrag - Hotline/Online - nur Storno - Abschluss < 14 Tage | E-Mail - Mobile | EKL_Onlineshop | Transfer in Sprinklr |
-| 165 | Neuvertrag - Hotline/Online - nur Storno - Abschluss > 14 Tage | E-Mail | CBC_XF_E_WIDERRUF | Transfer in Sprinklr |
-| 166 | Neuvertrag - Reklamation - Abschluss Hotline/Online | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 167 | Neuvertrag - Reklamation - Abschluss Shop | E-Mail | DM_XF_E_HAENDLERBESCHWERDEN | Transfer in Sprinklr |
-| 168 | Neuvertrag - Shop - Storno | E-Mail | CBC_XF_E_WIDERRUF | Transfer in Sprinklr |
-| 169 | Neuvertrag - Shop - Storno - DSL | E-Mail - DSL | Kein Transfer | Handle per KB |
-| 170 | Vertragsverlaengerung - Hotline/Online | E-Mail | CBC_XF_E_WIDERRUF | Transfer in Sprinklr |
-| 171 | Widerruf - Tarifwechsel, Pack- und Optionsbuchung | E-Mail | CBC_XF_E_WIDERRUF | Transfer in Sprinklr |
+| 1 | Neuvertrag — DSL | E-Mail – DSL | Kein Transfer | Kein Transfer. Ticket Themen-ID 1671 erstellen; E-Mail-Inhalt vollständig in "Problembeschreibung" kopieren. |
+| 2 | Neuvertrag — eRetail | E-Mail | eretail-widerruf@telefonica.com | Forward via Externer Transfer in Sprinklr to eretail-widerruf@telefonica.com. |
+| 3 | Neuvertrag — Hotline/Online — nur Storno — Abschluss < 14 Tage | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 4 | Neuvertrag — Hotline/Online — nur Storno — Abschluss < 14 Tage | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 5 | Neuvertrag — Hotline/Online — nur Storno — Abschluss < 14 Tage | E-Mail – Festnetz | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 6 | Neuvertrag — Hotline/Online — nur Storno — Abschluss < 14 Tage | E-Mail – Homespot | EMAIL_O2_WIDERRUF | Transfer in Sprinklr. Hinweis: Kein Transfer aus o2 Care! Stattdessen direkt Ticket 1671 erstellen und Fragebaum befüllen. |
+| 7 | Neuvertrag — Hotline/Online — nur Storno — Abschluss < 14 Tage | E-Mail – Mobile | EMAIL_O2_EKL_ONLINESHOP | Transfer in Sprinklr. |
+| 8 | Neuvertrag — Hotline/Online — nur Storno — Abschluss > 14 Tage | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 9 | Neuvertrag — Hotline/Online — nur Storno — Abschluss > 14 Tage | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 10 | Neuvertrag — Hotline/Online — nur Storno — Abschluss > 14 Tage | E-Mail | EMAIL_O2_WIDERRUF | Transfer in Sprinklr. |
+| 11 | Neuvertrag — Reklamation — Abschluss Hotline/Online | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 12 | Neuvertrag — Reklamation — Abschluss Hotline/Online | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 13 | Neuvertrag — Reklamation — Abschluss Hotline/Online | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 14 | Neuvertrag — Reklamation — Abschluss Shop | Hotline | Kein Transfer | Kein Transfer. Verweis auf Händler oder Händlerbeschwerde. |
+| 15 | Neuvertrag — Reklamation — Abschluss Shop | E-Mail | EMAIL_O2_HAENDLERBESCHWERDEN | Transfer in Sprinklr. |
+| 16 | Neuvertrag — Shop — Storno | Hotline | Kein Transfer | Kein Transfer. Verweis auf Händler. |
+| 17 | Neuvertrag — Shop — Storno | E-Mail | EMAIL_O2_WIDERRUF | Transfer in Sprinklr. |
+| 18 | Neuvertrag — Shop — Storno — DSL | E-Mail – DSL | Kein Transfer | Kein Transfer. Ticket Themen-ID 1671 erstellen; E-Mail-Inhalt vollständig in "Problembeschreibung" kopieren. |
+| 19 | Vertragsverlängerung — Hotline/Online | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 20 | Vertragsverlängerung — Hotline/Online | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Transfer vermeiden wenn möglich: Ticket 604 erstellen und Fragebaum befüllen. |
+| 21 | Vertragsverlängerung — Hotline/Online | E-Mail | EMAIL_O2_WIDERRUF | Transfer in Sprinklr. |
+| 22 | Widerruf — Tarifwechsel, Pack- und Optionsbuchung | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 23 | Widerruf — Tarifwechsel, Pack- und Optionsbuchung | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 24 | Widerruf — Tarifwechsel, Pack- und Optionsbuchung | E-Mail | EMAIL_O2_WIDERRUF | Transfer in Sprinklr. |
 
 ---
 
@@ -372,75 +573,73 @@ These cases stay with us. Process directly: summarize, verify customer, query KB
 
 | # | Fall | Kanal | Ziel-Kontakt | Action |
 |---|---|---|---|---|
-| 172 | Auszahlung | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 173 | Highspend - NUR aktuelle Ticketeintraege und "wichtigen Hinweis" im Kundendatensatz beachten | E-Mail | HUR@telefonica.com | Forward to email |
-| 174 | Inkasso - Rueckfragen nach Abgabe | E-Mail | Kein Transfer | Handle per KB (post-collection inquiry procedures) |
-| 175 | Mahnung - Rueckfragen | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
-| 176 | Ratenzahlung | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
-| 177 | Rechnungslauf aendern | E-Mail | **CBC_CARE_ALLGEMEIN** | **HANDLE DIRECTLY** |
-| 178 | Ruecklastschrift - Ankuendigung | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
-| 179 | Ruecklastschrift - Rueckfragen | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
-| 180 | Sperrung - Rueckfragen | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
-| 181 | Umbuchung (Einzahlung unter falscher Kundennummer) | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
-| 182 | Verbleib einer Einzahlung / Ueberweisung | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
-| 183 | Zahlung - Zahlungsaufschub - CACS-Status "rof" | E-Mail | CBC_XF_E_COLLECTIONS | Transfer in Sprinklr |
+| 1 | Auszahlung | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 2 | Auszahlung | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 3 | Auszahlung | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 4 | Highspend — nur aktuelle Ticketeinträge und "wichtigen Hinweis" im Kundendatensatz beachten | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 5 | Highspend — nur aktuelle Ticketeinträge und "wichtigen Hinweis" im Kundendatensatz beachten | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 6 | Highspend — nur aktuelle Ticketeinträge und "wichtigen Hinweis" im Kundendatensatz beachten | E-Mail | HUR@telefonica.com | Forward via Externer Transfer in Sprinklr to HUR@telefonica.com. |
+| 7 | Inkasso — Rückfragen nach Abgabe | Hotline | Kein Transfer | Kein Transfer. Ansprechpartner ist das Inkassobüro. |
+| 8 | Inkasso — Rückfragen nach Abgabe | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 887 (Portalanfrage: Themen-ID ändern; sonst: neu anlegen mit vollst. E-Mail-Inhalt). Textbaustein "An Fachabteilung weitergeleitet". |
+| 9 | Mahnung — Rückfragen | Hotline | Mahnwesen Postpaid | Cold transfer; Mo–Fr 8–18 Uhr; ab 120 s Wartezeit informieren. |
+| 10 | Mahnung — Rückfragen | E-Mail | EMAIL_COLLECTIONS | Transfer in Sprinklr. |
+| 11 | Ratenzahlung | Hotline | Mahnwesen Postpaid | Cold transfer; Mo–Fr 8–18 Uhr; ab 120 s Wartezeit informieren. Nur CACS-aktive Kunden. Keine Inkassoabgaben. |
+| 12 | Ratenzahlung | E-Mail | EMAIL_COLLECTIONS | Transfer in Sprinklr. Nur CACS-aktive Kunden. Keine Inkassoabgaben. |
+| 13 | Rechnungslauf ändern | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 14 | Rechnungslauf ändern | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
+| 15 | Rechnungslauf ändern | E-Mail | EMAIL_O2_CARE | HANDLE DIRECTLY. |
+| 16 | Rücklastschrift — Ankündigung | Hotline | Mahnwesen Postpaid | Cold transfer; Mo–Fr 8–18 Uhr; ab 120 s Wartezeit informieren. |
+| 17 | Rücklastschrift — Ankündigung | E-Mail | EMAIL_COLLECTIONS | Transfer in Sprinklr. |
+| 18 | Rücklastschrift — Rückfragen | Hotline | Mahnwesen Postpaid | Cold transfer; Mo–Fr 8–18 Uhr; ab 120 s Wartezeit informieren. |
+| 19 | Rücklastschrift — Rückfragen | E-Mail | EMAIL_COLLECTIONS | Transfer in Sprinklr. |
+| 20 | Sperrung — Rückfragen | Hotline | Mahnwesen Postpaid | Cold transfer; Mo–Fr 8–18 Uhr; ab 120 s Wartezeit informieren. |
+| 21 | Sperrung — Rückfragen | E-Mail | EMAIL_COLLECTIONS | Transfer in Sprinklr. |
+| 22 | Umbuchung (Einzahlung unter falscher Kundennummer) | Hotline | Mahnwesen Postpaid | Cold transfer; Mo–Fr 8–18 Uhr; ab 120 s Wartezeit informieren. |
+| 23 | Umbuchung (Einzahlung unter falscher Kundennummer) | E-Mail | EMAIL_COLLECTIONS | Transfer in Sprinklr. |
+| 24 | Verbleib einer Einzahlung / Überweisung | Hotline | Mahnwesen Postpaid | Cold transfer; Mo–Fr 8–18 Uhr; ab 120 s Wartezeit informieren. Vor Transfer: prüfen ob Überweisung > 2 Tage her und ob an richtige Bankverbindung überwiesen. |
+| 25 | Verbleib einer Einzahlung / Überweisung | E-Mail | EMAIL_COLLECTIONS | Transfer in Sprinklr. |
+| 26 | Zahlung — Zahlungsaufschub — CACS-Status "rot" | Hotline | Mahnwesen Postpaid | Cold transfer; Mo–Fr 8–18 Uhr; ab 120 s Wartezeit informieren. |
+| 27 | Zahlung — Zahlungsaufschub — CACS-Status "rot" | E-Mail | EMAIL_COLLECTIONS | Transfer in Sprinklr. |
 
 ---
 
-## Removed transfer goals — alternate handling (Backoffice E-Mail)
+## Removed / Legacy Transfer Goals
 
-When a registry goal is **Inactive (no longer exists)**, do **not** transfer to that queue or tell the customer the case was forwarded there.
+The following Sprinklr queue names from previous versions of this matrix are **no longer used** after the 2026-09-18 remap:
 
-### CBC_KUENDIGUNGEN_SME_SOHO (removed 2026-07-27)
-
-**Alternate routing:** affected matrix rows now point to **CBC_CARE_ALLGEMEIN** — **HANDLE DIRECTLY** in Backoffice E-Mail.
-
-**Agent:** query KB for the specific Fall; use Themen-IDs where noted in matrix Action column (e.g. **590** Kündigungsrücknahme, **1849** fehlende Kündigungsbestätigung Mobile). Create/document tickets per KB; do not Sprinklr-transfer to removed queue.
-
-**Customer reply (section 6) — prefer self-service / status paths (no default hotline):**
-- **Kündigung / Vormerkung:** Mein o2 (App oder o2.de) → **Tarif & SIM** → **SIM & Vertrag** → **Kündigung vormerken** / Kündigung
-- **Status prüfen:** Vertrag und Kündigungstermin in Mein o2 unter Tarif & Vertrag
-- **Fehlende Kündigungsbestätigung (Mobile):** Hinweis Versanddauer (typ. 16 Tage nach Deaktivierung); Kunde kann Status in Mein o2 prüfen
-- **Kündigungsrücknahme:** Bearbeitung per KB Themen-ID 590 — keine Weiterleitung an entfernte Queue
-
-If KB is thin, web-search official o2 help for case-specific Mein o2 paths (see `.cursor/rules/reply-customer-solutions-qa.mdc`).
+| Former Goal | Replacement |
+|---|---|
+| CBC_CARE_ALLGEMEIN | EMAIL_O2_CARE (email) / handle directly |
+| CBC_KUENDIGUNGEN_SME_SOHO | EMAIL_O2_KUENDIGUNGEN_SME_SOHO |
+| CBC_XF_E_COLLECTIONS | EMAIL_COLLECTIONS |
+| CBC_XF_E_VERTRAGSSTILLLEGUNG | EMAIL_O2_VERTRAGSSTILLEGUNG |
+| CBC_XF_E_WIDERRUF | EMAIL_O2_WIDERRUF |
+| CBC_XF_E_KUNDENDATEN | EMAIL_O2_KUNDENDATEN |
+| CS_XF_E_HARDWARE | EMAIL_O2_MOBILE_TECHNIK (email) / o2 Tech Mobile (hotline) |
+| BUSINESS-TEAM | See matrix — routing now channel-specific |
+| KUENDIGUNG_RECHNUNG | EMAIL_O2_KUENDIGUNG_RECHNUNG |
+| AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL | Inactive — Kein Transfer, handle per KB |
+| EKL_Onlineshop | EMAIL_O2_EKL_ONLINESHOP |
+| ALDITALK_XF_SERVICE | alditalk@cc.o2online.de (Externer Transfer) |
+| AYYILDIZ_XF_POSTPAID | ayyildiz@cc.o2online.de (Externer Transfer) |
+| AYYILDIZ_XF_PREPAID | ayyildiz@cc.o2online.de (Externer Transfer) |
+| NETTOKOM_XF_SERVICE | nettokom@cc.o2online.de (Externer Transfer) |
+| WHATSAPPSIM_XF_SERVICE | whatsappsim@cc.o2online.de (Externer Transfer) |
+| WHITELABEL_XF_SERVICE | service@kunde.aetkasmart.de (Externer Transfer) |
+| CS_E_XF_AKTION1 | EMAIL_O2_KUENDIGUNGEN_NETZ |
+| CS_E_XF_AKTION2 | EMAIL_O2_KUENDIGUNGEN_AUSLAND |
+| DM_XF_E_HAENDLERBESCHWERDEN | EMAIL_O2_HAENDLERBESCHWERDEN |
+| WB_ANFRAGEN_PRESSESTELLE | See matrix Thema 1 — Kein Transfer |
+| CS_XF_E_LOOP_ALLGEMEIN | See matrix Thema 2 — o2 Prepaid/Loop |
+| CBC_ENGLISCH | EMAIL_O2_ENGLISCH |
+| CS_Premium | See matrix — Exklusiv-Kunden routing |
+| CS_E_XF_SELBSTSTAENDIGE | EMAIL_O2_SOHO (email) / oneSoho Care (hotline) |
+| BLAU_XF_IMPRESSUM | See matrix Thema 2 — BLAU |
+| BLAU_E_XF_PREPAID | EMAIL_BLAU_PREPAID_CARE |
 
 ---
 
-> **BACKDOOR FOR UPDATES**: Transfer goal names may be updated. When instructed to rename a transfer goal,
-> search this file for the old name and replace with the new name throughout.
-> When a transfer goal **no longer exists**, mark it Inactive in the registry, remove it from Quick Reference,
-> and repoint affected rows to **CBC_CARE_ALLGEMEIN** (handle directly) with KB/self-service alternate notes — or `Kein Transfer` when no direct handling applies.
-> Use the `update-transfer-goals` skill or manually grep and replace.
-
-Current transfer goal names and their last-known status:
-
-| Transfer Goal | Status | Last Updated |
-|---|---|---|
-| AS_E_XF_DSL_SALCUS_KUENDIGUNG_ANFRAGEN_2ND_LEVEL | Inactive (no longer exists) | 2026-07-24 |
-| ALDITALK_XF_SERVICE | Active | 2026-03-02 |
-| AYYILDIZ_XF_POSTPAID | Active | 2026-03-02 |
-| AYYILDIZ_XF_PREPAID | Active | 2026-03-02 |
-| BLAU_XF_IMPRESSUM | Active | 2026-03-02 |
-| BLAU_E_XF_PREPAID | Active | 2026-03-02 |
-| BUSINESS-TEAM | Active | 2026-03-02 |
-| CBC_CARE_ALLGEMEIN | Active (US) | 2026-03-02 |
-| CBC_ENGLISCH | Active | 2026-03-02 |
-| CBC_XF_E_KUNDENDATEN | Active | 2026-07-26 |
-| CBC_KUENDIGUNGEN_SME_SOHO | Inactive (no longer exists) | 2026-07-27 |
-| CBC_XF_E_VERTRAGSSTILLLEGUNG | Active | 2026-03-02 |
-| CBC_XF_E_WIDERRUF | Active | 2026-03-02 |
-| CBC_XF_E_COLLECTIONS | Active | 2026-08-30 |
-| CS_E_XF_SELBSTSTAENDIGE | Active | 2026-03-02 |
-| CS_XF_E_HARDWARE | Active | 2026-09-01 |
-| CS_Premium | Active | 2026-03-02 |
-| CS_E_XF_AKTION1 | Active | 2026-03-02 |
-| CS_E_XF_AKTION2 | Active | 2026-03-02 |
-| CS_XF_E_LOOP_ALLGEMEIN | Active | 2026-03-02 |
-| DM_XF_E_HAENDLERBESCHWERDEN | Active | 2026-03-02 |
-| EKL_Onlineshop | Active | 2026-03-02 |
-| KUENDIGUNG_RECHNUNG | Active | 2026-03-02 |
-| NETTOKOM_XF_SERVICE | Active | 2026-03-02 |
-| WB_ANFRAGEN_PRESSESTELLE | Active | 2026-03-02 |
-| WHATSAPPSIM_XF_SERVICE | Active | 2026-03-02 |
-| WHITELABEL_XF_SERVICE | Active | 2026-03-02 |
+> **BACKDOOR FOR UPDATES**: When a transfer goal changes, find the row and update Ziel-Kontakt + Action.
+> When a goal is retired, add it to the Removed section above.
+> Last full remap: **2026-09-18** from 512 Sabio screenshots.
+> Use the `update-transfer-goals` skill for targeted updates.
