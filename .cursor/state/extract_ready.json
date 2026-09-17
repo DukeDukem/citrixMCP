@@ -1,13 +1,12 @@
 {
   "ready": true,
-  "consumed": true,
-  "at": "2026-09-12T11:19:27.149760+00:00",
-  "marker": "ANWENDEN_RE_EXTRACT_DONE",
+  "consumed": false,
+  "at": "2026-09-11T18:21:13.429288+00:00",
+  "marker": "WEITER_RE_EXTRACT_DONE",
   "source": "await_arm",
-  "case_id": "#57563858",
+  "case_id": "#57816951",
   "channel": "EMAIL",
   "gate": "RE_TEXT_ONLY_GATE",
   "extract_file": "C:\\Users\\PC ENTER\\Desktop\\Citrix\\.cursor\\state\\latest_extract.md",
-  "arm_log": "C:\\Users\\PC ENTER\\Desktop\\Citrix\\.cursor\\state\\arm_watch.log",
-  "consumed_at": "2026-09-12T11:23:11.672094+00:00"
+  "arm_log": "C:\\Users\\PC ENTER\\Desktop\\Citrix\\.cursor\\state\\arm_watch.log"
 }

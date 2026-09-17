@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Transfer Matrix priority over Knowledge Base
 
-**Hard rule for RE / CALL / routing:** [`KnowledgeBase/TransferMatrix.md`](KnowledgeBase/TransferMatrix.md) decides **whether** and **where** a case is handled. The Knowledge Base (knowledgebase1–7, articles, templates) must **not** override that path.
+**Hard rule for RE / CALL / routing:** [`KnowledgeBase/TransferMatrix.md`](KnowledgeBase/TransferMatrix.md) decides **whether** and **where** a case is handled. The Knowledge Base (`REMAP/exports` articles, templates) must **not** override that path.
 
 ## Authority order
 

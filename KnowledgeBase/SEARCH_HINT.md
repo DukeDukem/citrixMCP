@@ -1,59 +1,87 @@
 # KnowledgeBase Search Instructions
 
-This file explains how Cursor should query the O2/Telefonica knowledge base.
+Full overwrite 2026-09-17. Article corpus = `REMAP/exports/` only.
+Legacy `knowledgebase1–7.md` removed — do not search them.
 
-## Purpose
+---
 
-You are an AI advisor for the O2/Telefonica Backoffice E-Mail customer support team.
-This knowledge base contains:
-- Handling procedures for customer requests (Tarif, Vertrag, Rechnung, SIM, eSIM, Geraet)
-- Ticket IDs and workflows for SalCus, Marquez, Viagint
-- Transfer Matrix (Sabio Transfermatrix) for routing to other divisions
-- Authentication rules and verification steps
-- Response templates and escalation paths
+## Query strategy
 
-## Files in this Knowledge Base
-
+### Step 0 — TransferMatrix FIRST (hard rule)
 ```
-KnowledgeBase/
-  INDEX.md
-  SEARCH_HINT.md
-  knowledgebase1.md
-  knowledgebase4.md
-  knowledgebase5.md
-  knowledgebase6.md
-  knowledgebase7.md
-  images/           <- extracted images and diagrams
+grep KnowledgeBase/TransferMatrix.md
 ```
+Matrix decides routing. KB supports execution, never overrides Ziel-Kontakt.
 
-## Query Strategy for Cursor Agent
+### Step 1 — REMAP exports only
+1. Find the right export file from the table below
+2. Grep or read that file under `KnowledgeBase/REMAP/exports/`
+3. Never use `REMAP/skip-log.md` branches for routine cases
 
-### Step 1 - Identify relevant document
-Read `KnowledgeBase/INDEX.md` to see previews of each document.
+---
 
-### Step 2 - Keyword search
-Use Grep with path="KnowledgeBase/" to find relevant sections:
-- Ticket/program search: "SalCus", "Marquez", "Viagint", "Ticket"
-- Topic search: "Tarif", "Kuendigung", "Rechnung", "SIM", "eSIM", "Sperrung"
-- Transfer: "Transfermatrix", "Weiterleitung", "Sabio"
-- Verification: "Authentifizierung", "Verifizierung", "Kundendaten"
+## Topic → export file quick map
 
-### Step 3 - Read relevant sections
-Use Read tool on the matching .md file to get the full procedure.
+| Customer topic | Primary export file(s) | Keywords |
+|---|---|---|
+| **Rechnung / Reklamation** | `rechnung-zahlung/reklamation.md` · `rechnung-zahlung/rechnung.md` | Rechnung, Gutschrift, Doppelabbuchung, Reklamation, EVN |
+| **SEPA / Zahlung** | `rechnung-zahlung/zahlung.md` | SEPA, Bankeinzug, Lastschrift, Zahlungsart |
+| **Mahnung / Inkasso** | `rechnung-zahlung/mahnwesen.md` | Mahnung, Inkasso, Ratenzahlung, Sperrung |
+| **Drittanbieter** | `rechnung-zahlung/drittanbieter-zahlung.md` · `optionen/drittanbieter-optionen.md` | Drittanbieter, WAP, Premium-SMS, Sperre |
+| **Kündigung** | `vertrag/kuendigung.md` | Kündigung, Sonderrecht, Frist, Portierungskündigung |
+| **Widerruf / Storno** | `vertrag/widerruf.md` | Widerruf, Storno, 14 Tage, Fernabsatz |
+| **Stammdaten / Adresse** | `vertrag/aenderung-vertrag.md` | Stammdaten, Adresse, Name, E-Mail, IBAN, Bankverbindung |
+| **MNP / Rufnummer** | `vertrag/rufnummer.md` | MNP, Portierung, Mitnahme, Rufnummer, Wunschrufnummer |
+| **Aktivierung / Technikertermin** | `vertrag/2a-vertragsabschluss-aktivierung.md` | Aktivierung, Technikertermin, DSL-Zugangsdaten, Expressaktivierung |
+| **DSL Verfügbarkeit / Beratung** | `vertrag/2b-vertragsabschluss-beratung.md` | Verfügbarkeit, DSL, Glasfaser, Kabel, Wechselservice |
+| **Umzug** | `vertrag/umzug.md` | Umzug, Anschlussübernahme, Neubestellung |
+| **Betrug / SIM-Swap** | `vertrag/betrugsverdacht.md` · `technik/cyber-kriminalitaet.md` | Betrug, SIM-Swap, Phishing, Identitätsmissbrauch |
+| **Tarifwechsel** | `tarife/tarifwechsel.md` | Tarifwechsel, VVL, ARES, Tarifupgrade |
+| **Aktuelle Tarife** | `tarife/mobilfunk-tarife.md` · `tarife/festnetz-tarife.md` | o2 Mobile, Unlimited, Home, DSL, Kabel |
+| **Servicegebühren** | `tarife/servicegebuehren.md` | Servicegebühr, Shipping, Verwaltungsgebühr |
+| **Sonderrufnummern** | `tarife/sonderrufnummern.md` | Sonderrufnummer, Freecall, Premium, Notruf |
+| **eSIM / SIM-Karte** | `hardware/sim-karte-hardware.md` | eSIM, SIM-Tausch, Multicard, Triple-SIM, SIM-Lock |
+| **Reparatur / Austausch** | `hardware/reparatur-austausch.md` | Reparatur, Garantie, Austausch, Defekt |
+| **Roaming / Ausland** | `ausland/roaming.md` · `ausland/ins-ausland.md` | Roaming, RLAH, Ausland, VoWiFi, Fair Use |
+| **Mein o2 / Login** | `self-service/registrierung-login-passwort.md` · `self-service/mein-o2-sitemap.md` | Mein o2, Login, Passwort, 2FA, Registrierung |
+| **Datenpakete / Internet** | `optionen/internet-optionen.md` | Datenpaket, Throttling, 5G-Option, SpeedOn |
+| **Fernsehen** | `optionen/fernsehen-tv.md` | o2 TV, Sender, Buchung, Streaming |
+| **VVL / Kundenbindung** | `vermarktung/kunden-halten-vvl.md` | VVL, ARES, Vertragsverlängerung, Berechtigung |
+| **Entstörung Mobile** | `technik/mobilfunk-technik.md` | Entstörung, LTE, 5G, Empfang, Datenfehler |
+| **Entstörung Festnetz** | `technik/festnetz-technik.md` | DSL, Glasfaser, Router, Entstörung, Speed |
+| **EECC Minderung** | `technik/kundenbeschwerden.md` · `systems/telefonica-prozesse/1a-uebergreifend-rechtliches.md` | Minderung, Entschädigung, Netzstörung, EECC |
+| **Authentifizierung** | `systems/telefonica-prozesse/4a-prozesse-authentifizierung.md` | Authentifizierung, OTP, PKK, SMS-Ident, Vollmacht |
+| **Kontaktbearbeitung / Beschwerden** | `systems/telefonica-prozesse/4b-prozesse-kontaktbearbeitung.md` | Kontakteintrag, Backoffice, Beschwerde, Schriftweg, TBS |
+| **SalCus** | `systems/telefonica-systeme/systeme-s-z.md` | SalCus, GoodWill, Hazard, Inbox, Ticketing |
+| **SIKAS / Sprinklr** | `systems/telefonica-systeme/systeme-s-z.md` | SIKAS, Sprinklr, Transfer, Mailbearbeitung |
+| **Marquez / HaLoS** | `systems/telefonica-systeme/systeme-d-m.md` | Marquez, HaLoS, Fiori, DPM, Dokument |
+| **Excalibur / DSL-Tool** | `systems/telefonica-systeme/systeme-d-m.md` | Excalibur, TTM, DSL, Troubleshoot |
+| **Rechtliches / TKG / EECC** | `systems/telefonica-prozesse/1a-uebergreifend-rechtliches.md` | TKG, EECC, DSGVO, AGB, Widerspruch, GffV |
+| **Bankverbindungen / Kontaktdaten** | `systems/telefonica-prozesse/1b-uebergreifend-kontakt.md` | Bankverbindung, IBAN, Kontaktdaten, Hotline |
 
-### Step 4 - Images
-If a procedure includes a diagram referenced as `![...]`, read the PNG from
-`KnowledgeBase/images/<doc>/img_NNN.png` to inspect it visually.
+---
 
-## Key German System Terms (always use exact German labels)
-- "GERAETE & SIM-KARTEN" - device and SIM management section
-- "ESIM-PROFILE" - eSIM management
-- "RECHNUNGSHISTORIE" - billing history
-- "KUNDENDATEN" - customer data
-- "VERTRAGSDETAILS" - contract details
+## Deleted files (no longer in KB)
 
-## Output Rules
-- Communicate in English for all explanations
-- Use original German labels for system fields, buttons, tabs
-- Always include: Ticket ID, Program name, specific tray/location, step-by-step actions
-- If transferable: cite Transfer Matrix destination
+The following were removed in the 2026-09-17 triage — do not search for them:
+
+| Removed file | Reason |
+|---|---|
+| `1. Tarifberatung.docx` | Stub (empty) |
+| `6. Handyankauf.docx` | Pure upsell / Foxway VVL |
+| `3. Deeplinks versenden (App).docx` | Internal Shorty UI guide |
+| `6. App Bonus.docx` | Time-bound promotion |
+| `5. Trainings.docx` | SuccessFactors catalog |
+| `5. Home Office Support.docx` | IT onboarding |
+| `2. Aktionen.docx` | Weekly hardware promos |
+| `3. Sales in Service (SIS).docx` | Monthly sales briefing |
+| `5. Vertriebskanäle.docx` | Sales channel management |
+
+---
+
+## Output format reminder
+
+- **Sections 1–5, 7** → English (to agent)
+- **Section 6** → German (to customer)
+- Ticket/Themen-ID + program + steps from exports; TransferMatrix for routing
+- Never mention internal system names in section 6

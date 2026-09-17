@@ -1,31 +1,31 @@
-ARM_WATCH_RESET started_at=2026-09-12T11:20:01.499787+00:00 mode=--watch-anwenden-re
-2026-09-12 13:20:02,121 - INFO - Found cursor CLI: C:\Users\PC ENTER\AppData\Local\Programs\cursor\resources\app\bin\cursor.CMD
-2026-09-12 13:20:02,121 - INFO - Connecting to existing Chrome browser instance...
-2026-09-12 13:20:02,628 - INFO - Connecting to CDP endpoint: http://127.0.0.1:9222
-(node:43748) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+ARM_WATCH_RESET started_at=2026-09-11T18:21:39.506848+00:00 mode=--watch-anwenden-re
+2026-09-11 20:21:40,118 - INFO - Found cursor CLI: C:\Users\PC ENTER\AppData\Local\Programs\cursor\resources\app\bin\cursor.CMD
+2026-09-11 20:21:40,118 - INFO - Connecting to existing Chrome browser instance...
+2026-09-11 20:21:40,641 - INFO - Connecting to CDP endpoint: http://127.0.0.1:9222
+(node:90444) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-2026-09-12 13:20:02,929 - INFO - Successfully connected to existing Chrome instance
-2026-09-12 13:20:02,930 - INFO - Selected open-case Sprinklr tab for process_current_only/read-email flow
-2026-09-12 13:20:02,933 - INFO - Brought chosen browser tab to front
-2026-09-12 13:20:02,933 - INFO - Connected to existing page/tab
-2026-09-12 13:20:02,935 - INFO - Added init script to auto-grant audio permissions (no popups)
-2026-09-12 13:20:03,940 - INFO - Granted microphone and notifications permissions for current page: https://telefonica-germany.sprinklr.com
-2026-09-12 13:20:03,942 - INFO - Dialog listener added: dialogs will be accepted automatically
-2026-09-12 13:20:03,986 - INFO - Detected: Email content page (indicator: [data-testid="html-message-content"])
-2026-09-12 13:20:03,986 - INFO - Detected page state: email_content
-2026-09-12 13:20:03,986 - INFO - Running login verification gate...
-2026-09-12 13:20:03,987 - INFO - Leave-page-unchanged: skipping ensure_console_page and status/email checks
-2026-09-12 13:20:03,987 - INFO - Browser connected successfully
-2026-09-12 13:20:03,997 - INFO - Detected: Email content page (indicator: [data-testid="html-message-content"])
-2026-09-12 13:20:03,997 - INFO - Initial page state: email_content
-2026-09-12 13:20:03,997 - INFO - Starting Anwenden-gated auto-RE (sidetray poll after click)
+2026-09-11 20:21:40,845 - INFO - Successfully connected to existing Chrome instance
+2026-09-11 20:21:40,847 - INFO - Selected open-case Sprinklr tab for process_current_only/read-email flow
+2026-09-11 20:21:40,859 - INFO - Brought chosen browser tab to front
+2026-09-11 20:21:40,859 - INFO - Connected to existing page/tab
+2026-09-11 20:21:40,861 - INFO - Added init script to auto-grant audio permissions (no popups)
+2026-09-11 20:21:41,865 - INFO - Granted microphone and notifications permissions for current page: https://telefonica-germany.sprinklr.com
+2026-09-11 20:21:41,866 - INFO - Dialog listener added: dialogs will be accepted automatically
+2026-09-11 20:21:41,891 - INFO - Detected: Email content page (indicator: [data-testid="html-message-content"])
+2026-09-11 20:21:41,891 - INFO - Detected page state: email_content
+2026-09-11 20:21:41,891 - INFO - Running login verification gate...
+2026-09-11 20:21:41,891 - INFO - Leave-page-unchanged: skipping ensure_console_page and status/email checks
+2026-09-11 20:21:41,891 - INFO - Browser connected successfully
+2026-09-11 20:21:41,897 - INFO - Detected: Email content page (indicator: [data-testid="html-message-content"])
+2026-09-11 20:21:41,897 - INFO - Initial page state: email_content
+2026-09-11 20:21:41,897 - INFO - Starting Anwenden-gated auto-RE (sidetray poll after click)
 
 ================================================================================
 MODE: --watch-anwenden-re (Anwenden click → sidetray poll → open case → extract)
 ================================================================================
 
 [INFO] Connected to existing Chrome instance
-[INFO] Using existing page/tab: https://telefonica-germany.sprinklr.com/app/console/c/6aa119f30924e72fc54d03f4
+[INFO] Using existing page/tab: https://telefonica-germany.sprinklr.com/app/console/c/6aa2c8980924e72fc538c043
 [PERMISSIONS] Added script to auto-grant audio permissions - NO POPUPS
 [PERMISSIONS] Granted sound/audio permissions for current page - NO POPUPS
 [PAGE DETECTION] Email content page detected via: [data-testid="html-message-content"]
@@ -46,4 +46,4 @@ Ctrl+C to cancel. Manual extract: run.py --once
 ================================================================================
 
 ANWENDEN_RE_ARMED
-[13:20:04] Waiting for Anwenden left-click...
+[20:21:41] Waiting for Anwenden left-click...
