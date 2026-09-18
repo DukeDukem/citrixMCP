@@ -6851,6 +6851,16 @@ def main():
                         encoding="utf-8",
                     )
                     print("EMAIL_SESSION_ACTIVE")
+                    # Next stop in THIS chat claims AUTO_PIPELINE ownership (blocks instructions chat)
+                    _bind = _script_dir.parent.parent / "state" / "pipeline_bind_pending.json"
+                    _bind.write_text(
+                        _json.dumps(
+                            {"pending": True, "at": _dt.now(_tz.utc).isoformat()},
+                            indent=2,
+                        ),
+                        encoding="utf-8",
+                    )
+                    print("PIPELINE_BIND_PENDING")
                 except Exception as _se:
                     logger.warning(f"Could not set email_session_active flag: {_se}")
             except Exception as e:

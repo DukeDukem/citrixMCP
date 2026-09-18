@@ -88,11 +88,35 @@ def write_extract_ready(
     }
     try:
         _STATE_DIR.mkdir(parents=True, exist_ok=True)
-        _READY_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        prev = read_extract_ready() or {}
+        new_case = payload["case_id"]
+        prev_case = str(prev.get("case_id") or "")
+        new_d = re.sub(r"\D", "", new_case or "")
+        prev_d = re.sub(r"\D", "", prev_case)
+
         _dispatched = _STATE_DIR / "auto_continue_dispatched.json"
+        d = {}
         if _dispatched.exists():
+            try:
+                d = json.loads(_dispatched.read_text(encoding="utf-8"))
+            except Exception:
+                d = {}
+        d_case = re.sub(r"\D", "", str(d.get("case_id") or ""))
+
+        # Same Fall # already dispatched/consumed → do not reopen (stops PR re-fire)
+        if new_d and (d_case == new_d or (prev.get("consumed") and prev_d == new_d)):
+            payload["consumed"] = True
+            payload["ready"] = True
+            payload["note"] = "same_case_not_reopened"
+            payload["at"] = prev.get("at") or payload["at"]
+            _READY_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+            print(f"EXTRACT_READY_SKIP_REOPEN {new_case}", flush=True)
+            return
+
+        _READY_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        # Clear dispatched only when Fall # changes
+        if _dispatched.exists() and d_case and d_case != new_d:
             _dispatched.unlink(missing_ok=True)
-        # Keep processing window open until AUTO_PIPELINE consumes this extract
         set_monitoring_armed(True)
         print(f"EXTRACT_READY_WRITTEN {_READY_FILE}", flush=True)
     except Exception as e:
@@ -137,25 +161,10 @@ def write_extract_ready_simple(
 ) -> None:
     """Minimal ready flag when full log segment is not available yet."""
     gate = "CALL_LF_GATE" if channel.upper() == "CALL" else "RE_TEXT_ONLY_GATE"
-    payload = {
-        "ready": True,
-        "consumed": False,
-        "at": _now_iso(),
-        "marker": marker,
-        "source": source,
-        "case_id": case_id if case_id.startswith("#") else (f"#{case_id}" if case_id else ""),
-        "channel": channel.upper(),
-        "gate": gate,
-        "extract_file": str(_STATE_DIR / "latest_extract.md"),
-        "arm_log": str(_STATE_DIR / "arm_watch.log"),
-    }
-    try:
-        _STATE_DIR.mkdir(parents=True, exist_ok=True)
-        _READY_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-        _dispatched = _STATE_DIR / "auto_continue_dispatched.json"
-        if _dispatched.exists():
-            _dispatched.unlink(missing_ok=True)
-        set_monitoring_armed(True)
-        print(f"EXTRACT_READY_WRITTEN {_READY_FILE}", flush=True)
-    except Exception as e:
-        print(f"[WARN] extract_ready simple write failed: {e}", flush=True)
+    cid = case_id if case_id.startswith("#") else (f"#{case_id}" if case_id else "")
+    # Reuse full writer path for same-case guards
+    write_extract_ready(
+        f"Case ID: Fall {cid}\nCHANNEL: {channel.upper()}\n",
+        marker=marker or "SIMPLE",
+        source=source,
+    )
