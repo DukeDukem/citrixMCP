@@ -94,8 +94,8 @@ EMAIL case:
     play-ready note
   → agent rests, awaiting:
       PR          → paste only → "PR done for #FALL_ID"
-      reiterate LF → re-run fill_case_tracker with corrected values
-      reiterate PR → rewrite reply section 6
+      reiterate LF → re-run fill_case_tracker with corrected values (**case exception** for this Fall # only — does not change TM/KB/rules)
+      reiterate PR → rewrite reply section 6 (**case exception** for this Fall # only)
       arm fires   → [Monitoring active] → next case
 
 CALL case:

@@ -16,7 +16,7 @@ alwaysApply: true
 | **PR** | Each non-transfer EMAIL case — pastes reply |
 | **DONE** | End of workday |
 | **BRIEF** (optional) | During a CALL — provides KB/TM context; does not gate Auto-LF |
-| Reiteration / correction | Any case — agent updates reply/LF, stays in armed+resting state |
+| Reiteration / correction | Any case — agent updates reply/LF for **this Fall # only** (case exception; does **not** overwrite TM/KB/rules — `.cursor/rules/operator-case-exceptions.mdc`) |
 
 **Physical Sprinklr clicks** (Anwenden, Weiter, Next, Senden, Speichern, transfer UI) are **not** chat commands.
 

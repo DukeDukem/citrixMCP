@@ -38,7 +38,8 @@ Use these to make a best-guess:
 | Kundennummer = numeric | Salcus = those digits; Ticketstatus 1 |
 | Kundennummer = `C-…` / unset | Salcus empty; Ticketstatus 3 |
 
-If the 7-step RE later reveals a different transfer target, operator sends **reiterate LF** → agent re-runs `fill_case_tracker.py` with corrected values. Auto-LF at extract is always the starting point.
+If the 7-step RE later reveals a different transfer target, or the operator sends **reiterate LF** / typed **LF** / **LF TR** that **differs from** TransferMatrix or Auto-LF → agent re-runs `fill_case_tracker.py` with the operator’s values for **this Fall # only**. That is a **case exception**, not a permanent TM/KB/rule change — see `.cursor/rules/operator-case-exceptions.mdc`. Auto-LF at extract remains the default starting point for every new Fall #.
+
 
 ### Order (EMAIL) — three turns
 
@@ -119,7 +120,9 @@ uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --clear-sp
 
 ---
 
-## Manual override map (optional — not the default path)
+## Manual override map (optional — case exception only, not a rule overwrite)
+
+Typed **LF** / **LF TR** / **PR LF** / reiterate after a completed extract apply **only to the visible Fall #**. They do **not** rewrite TransferMatrix, REMAP/KB, or always-applied rules. Label in chat: `Case exception for #FALL_ID — operator LF override…`. Next case uses matrix + Auto-LF defaults again. Rule: `.cursor/rules/operator-case-exceptions.mdc`.
 
 | User says | Meaning | Arm after success |
 |-----------|---------|-------------------|

@@ -29,7 +29,8 @@ When RE §3 / CALL pack says **Transfer eligible: Yes**:
 4. Finishing quote: **`LF TR done for #FALL_ID`**.  
 5. User completes Sprinklr transfer UI (below).
 
-Manual **`LF TR`** / **`lf tr`** (+ optional alternate target) remains for override if Auto-LF missed or target must change.
+Manual **`LF TR`** / **`lf tr`** (+ optional alternate target) remains for override if Auto-LF missed or target must change. If the target **differs from** TransferMatrix / agent §3, treat as a **case-only exception** for that Fall # — do **not** rewrite TM/KB/rules (`.cursor/rules/operator-case-exceptions.mdc`).
+
 
 ## Required fill
 
@@ -74,7 +75,7 @@ After trigger: sidetray poll → **EMAIL:** click `collapsed-case-item` (`CASE_I
 
 ## Integrity
 
-- ONE Fall #; target from this case’s RE/pack (or explicit override).  
+- ONE Fall #; target from this case’s RE/pack (or explicit **case-exception** override for this Fall # only — not a standing TM change).  
 - Do not arm Anwenden after transfer.  
 - Do not arm Weiter/Extern after non-transfer **PR**.  
 - Arms are **detached**; re-run **`--await-arm`** if Cursor aborts the poll.

@@ -44,9 +44,10 @@ When the user prompts with PR/pr:
    - Hard gate: if latest RE case ID does not match the currently visible case ID, PR must STOP and refuse paste (never fallback to any other draft file).
    - Only two source types are allowed for PR (same visible case only):
      1) exact section-5 reply from latest RE (7-step output), or
-     2) explicit user-directed replacement text provided after RE for that same case.
+     2) explicit user-directed replacement text provided after RE for that same case (**case exception** — does **not** rewrite TransferMatrix, KB, or standing rules; see `.cursor/rules/operator-case-exceptions.mdc`).
    - Any other payload source is forbidden and must be blocked.
    - Explicitly forbidden: inserting unrelated canned replies (e.g., generic cancellation/deactivation confirmations) that are not the case-locked RE reply or a case-locked user-directed override.
+   - When the operator’s rewrite **differs from** matrix/KB/agent draft: apply it for **this Fall # only**; note `Case exception for #FALL_ID — operator PR override (does not change TM/KB/rules).` Do **not** carry that wording to the next case.
    - Do **not** reuse stale cached text, old temp files, clipboard remnants, or prior-case drafts.
    - Do **not** fuse/append text fragments from any other case under any circumstances.
 2. BEFORE writing to file: do a final visual check

@@ -1,0 +1,51 @@
+---
+description: HARD — Operator LF/PR chat overrides after extract are case-only exceptions, never permanent overwrites of TransferMatrix, KB, or rules.
+alwaysApply: true
+priority: CRITICAL
+---
+
+# Case-only operator exceptions (LF / PR / reiterate)
+
+**Scope:** Email processing chat after a completed extract / 7-step for the **currently visible Fall #**.
+
+## What counts as an operator exception
+
+Any chat instruction from the operator that **differs from** TransferMatrix, REMAP/KB, or the agent’s Auto-LF / drafted reply for **this Fall #**, including:
+
+- **`LF` / `LF TR` / reiterate LF** — different Transfer Ja/Nein, target queue, Salcus handling note, or ticketstatus than Auto-LF / §3
+- **`PR` with rewrite** / pasted alternate reply / “change the reply to …” — wording or path different from RE section 6 / matrix-compatible KB draft
+- Mid-case corrections: “transfer to X instead”, “don’t transfer”, “use this German text”, “leave Salcus empty”, etc.
+
+## Hard rule — exception, not overwrite
+
+| Layer | Effect of operator chat override |
+|-------|----------------------------------|
+| **This Fall # only** | Apply exactly as instructed (fill tracker / paste reply / arm as needed) |
+| **TransferMatrix.md** | **Unchanged** — do not edit, “fix”, or treat the override as the new matrix row |
+| **REMAP / KB articles** | **Unchanged** — do not rewrite articles to match the override |
+| **Always-applied rules / skills** | **Unchanged** — do not invent a standing exception for future cases |
+| **Next Fall #** | Start again from TransferMatrix + KB + Auto-LF defaults — **no carry-forward** of the prior override |
+
+## Agent behaviour
+
+1. **Execute** the override for the visible case (LF fill, PR paste, reply rewrite).
+2. **Label it** in agent chat (English) as a **case exception**, e.g.  
+   `Case exception for #FALL_ID — operator LF/PR override (does not change TM/KB/rules).`
+3. **Do not** say “updated the Transfer Matrix”, “new rule”, “from now on we always…”, or patch guideline files because of this chat turn.
+4. **Do not** reuse the exception on the next case unless the operator repeats it for that new Fall #.
+5. Safety gates still apply: one customer / one Fall #, no data leak, no internal system names in customer body, salutation/identifier integrity — unless the operator’s exact paste is what they demand and it already passes those gates.
+
+## Authority stack (unchanged for defaults)
+
+1. TransferMatrix (+ own-team non-transfer: `EMAIL_O2_CARE` / `o2 Mobile Care`)  
+2. Documented always-applied exceptions (English queue, Widerruf Quelle, inactive goals)  
+3. REMAP/KB execution detail  
+4. **Operator case exception** — wins **only** for the current Fall # after extract; does **not** rewrite 1–3
+
+## Related
+
+- `.cursor/rules/transfer-matrix-priority.mdc`
+- `.cursor/rules/lf-log-form.mdc`
+- `.cursor/rules/pr-paste-reply.mdc`
+- `.cursor/rules/operator-minimal-input.mdc`
+- `.cursor/rules/lf-tr-transfer.mdc`

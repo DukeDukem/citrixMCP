@@ -24,10 +24,11 @@ Legacy aliases still treated as our team (non-transfer): `*CARE_ALLGEMEIN*`, `CB
 
 1. **Transfer Matrix** — Thema → Fall → **Ziel-Kontakt** + **Action** (handling hint)
 2. **Own-team override** (table above) — if Ziel is our team → Transfer eligible **No**
-3. **Documented chat exceptions** / inactive-goal alternates
-4. **Knowledge Base** — ticket/Themen-ID detail, process steps, reply substance **only when compatible with (1)–(2)**
+3. **Documented chat exceptions** / inactive-goal alternates (standing rules)
+4. **Knowledge Base** — ticket/Themen-ID detail, process steps, reply substance **only when compatible with (1)–(3)**
+5. **Operator case exception** (typed LF / PR / reiterate after extract for **this Fall # only**) — follow for that case; **never** treat as a permanent TransferMatrix / KB / rule overwrite — see `.cursor/rules/operator-case-exceptions.mdc`
 
-If KB text suggests a different queue, “always transfer”, “always hotline”, or “handle elsewhere” than the matrix row → **ignore that KB routing**. Follow the matrix (+ own-team override).
+If KB text suggests a different queue, “always transfer”, “always hotline”, or “handle elsewhere” than the matrix row → **ignore that KB routing**. Follow the matrix (+ own-team override), unless the operator issues a **case-only** LF/PR exception for the visible Fall #.
 
 ## Every case (verified / CALL brief / awaiting manual verification)
 
@@ -71,4 +72,4 @@ Matrix queue names stay in **agent** sections only. Customer body: no TransferMa
 
 ## Intent
 
-Agents always open with **Transfer Matrix for the handling path**; **own team Ziel = no transfer**; KB supports execution, it does not outrank Ziel-Kontakt / Action / own-team override.
+Agents always open with **Transfer Matrix for the handling path**; **own team Ziel = no transfer**; KB supports execution, it does not outrank Ziel-Kontakt / Action / own-team override. Operator LF/PR chat overrides after extract are **case-only exceptions** — not TM/KB/rule overwrites (`.cursor/rules/operator-case-exceptions.mdc`).
