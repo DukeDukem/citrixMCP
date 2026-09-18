@@ -86,7 +86,15 @@ Hook (`extract_auto_continue_hook.py`) and sidetray poll run only during this wi
 
 ## Stop hook backup
 
-`.cursor/hooks/extract_auto_continue_hook.py` fires `[AUTO_PIPELINE]` only during the monitoring window (`monitoring_armed.json = true`). Silent outside it — no false flags during wait-for-PR.
+`.cursor/hooks/extract_auto_continue_hook.py` fires `[AUTO_PIPELINE]` only when all of these hold:
+
+1. **monitoring_armed** (set on arm / new extract_ready)
+2. **extract_ready pending** (not consumed)
+3. **This Fall # not already dispatched / LF’d**
+4. **conversation_id = pipeline owner** (bound at login or first legitimate fire — email chat only)
+5. **loop_count == 0** (never on the AUTO_PIPELINE follow-up turn)
+
+Silent on PR / idle / instructions chat. Sounds never trigger processing.
 
 ## Transfer / CALL
 
