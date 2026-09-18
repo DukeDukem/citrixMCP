@@ -5518,15 +5518,8 @@ Use cursor-agent's file reading capabilities to read these files before generati
         return False
 
     def _cue_armed_re_start_sound(self) -> None:
-        """Play Prowler only after armed extract fully finished (CUSTOMER EMAIL + RE_PENDING_SOUND)."""
-        try:
-            from re_complete_sound import play_re_complete_sound
-
-            if play_re_complete_sound():
-                print("ARMED_RE_START_SOUND", flush=True)
-        except Exception as e:
-            logger.debug(f"Armed RE start sound failed: {e}")
-            print(f"[WARN] Armed RE start sound failed: {e}", flush=True)
+        """RETIRED — audio cues disabled; extract_ready / AUTO_PIPELINE drive processing."""
+        print("AUDIO_RETIRED — skip Prowler (arm/extract/AUTO_PIPELINE only)", flush=True)
 
     def monitor_anwenden_then_open_case_for_re(self, wait_seconds: int | None = None) -> bool:
         """
@@ -6275,18 +6268,15 @@ Use cursor-agent's file reading capabilities to read these files before generati
         try:
             if str(_script_dir) not in sys.path:
                 sys.path.insert(0, str(_script_dir))
-            from re_pending_sound import set_re_pending_sound
-
-            set_re_pending_sound(case_id=case_id)
-            print("RE_PENDING_SOUND")
+            # RE_PENDING_SOUND retired with audio cues — no-op flag write removed
+            print("AUDIO_RETIRED — skip RE_PENDING_SOUND", flush=True)
         except Exception as e:
             logger.debug(f"RE pending sound flag failed: {e}")
 
-        # Armed auto-RE: cue AFTER extract is fully printed + pending flag set
-        # (not before sidetray click — Prowler fires only after extract stdout is complete).
+        # Armed auto-RE: extract done → extract_ready / await-arm notify (no audio)
         if cue_on_extract_start:
             self._cue_armed_re_start_sound()
-            print("ARMED_EXTRACT_DONE_SOUND", flush=True)
+            print("ARMED_EXTRACT_DONE", flush=True)
 
     def monitor_next_email_extract_only(self, check_interval: int = 5) -> None:
         """

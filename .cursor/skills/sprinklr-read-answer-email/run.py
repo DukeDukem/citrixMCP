@@ -294,16 +294,8 @@ def _spawn_detached(runner: Path, watch_flag: str, env: dict, *, auto_await: boo
         "You may click now. Agent will await extract with: run.py --await-arm",
         flush=True,
     )
-    # Dexter = close-out armed / safe to click (do not rely on Cursor hooks)
-    try:
-        if str(_AUTO_DIR) not in sys.path:
-            sys.path.insert(0, str(_AUTO_DIR))
-        from re_complete_sound import play_pr_lf_done_sound
-
-        if play_pr_lf_done_sound():
-            print("PR_LF_DONE_SOUND (armed — click when ready)", flush=True)
-    except Exception as e:
-        print(f"[WARN] close-out sound failed: {e}", flush=True)
+    # Audio (Dexter) RETIRED — READY_FOR_YOUR_CLICK is the only click-ready signal
+    print("AUDIO_RETIRED — skip Dexter on arm", flush=True)
     if auto_await:
         _spawn_detached_await_arm(env)
     # Do not wait on proc; leave log_f open for child on Windows
@@ -331,7 +323,7 @@ def _spawn_detached_await_arm(env: dict) -> None:
         )
         print("AWAIT_ARM_BACKGROUND_SPAWNED", flush=True)
         print(
-            "AGENT: after close-out click, run --await-arm OR type NEXT when Prowler plays.",
+            "AGENT: after close-out click, run --await-arm (audio cues retired).",
             flush=True,
         )
     except Exception as e:

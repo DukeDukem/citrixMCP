@@ -24,8 +24,8 @@ BACKGROUND (once, automatic — NOT audio):
   → spawns auto_lf_after_re.py
   → fill_case_tracker (from §3 / Sprinklr) + closeout arm-only + bg await
 
-Sounds (Prowler / book / Dexter) are cues only — never processing triggers.
-Extract → 7-step uses arm + extract_ready → extract_auto_continue_hook [AUTO_PIPELINE].
+Sounds (Prowler / book / Dexter) are **RETIRED** — never play, never trigger processing.
+Use arm → extract_ready → `[AUTO_PIPELINE]` → `re_auto_lf_hook` only.
 
 Agent must NOT run a second LF for the same Fall # if auto_lf_done.json / Speichern pending already has it.
 ```

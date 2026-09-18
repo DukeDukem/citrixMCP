@@ -1,4 +1,4 @@
-"""Track armed extract completion so the agent can pick up RE/LF after Prowler."""
+"""Track armed extract completion so the agent can pick up RE/LF via AUTO_PIPELINE."""
 from __future__ import annotations
 
 import json

@@ -3,10 +3,6 @@
   "hooks": {
     "afterAgentResponse": [
       {
-        "command": ".cursor/hooks/re_complete_sound_hook.cmd",
-        "timeout": 30
-      },
-      {
         "command": ".cursor/hooks/re_auto_lf_hook.cmd",
         "timeout": 30
       }
@@ -19,10 +15,6 @@
       },
       {
         "command": ".cursor/hooks/re_auto_lf_hook.cmd",
-        "timeout": 30
-      },
-      {
-        "command": ".cursor/hooks/re_complete_sound_hook.cmd",
         "timeout": 30
       }
     ]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Auto-LF once after full 7-step RE is visible in chat (not at extract).
 
-Triggered by re_complete_sound_hook when section 7 is detected.
+Triggered by re_auto_lf_hook when section 7 / 7-step-complete is detected (not audio).
 Idempotent via auto_lf_done.json / Speichern pending.
 Parses Transfer Ja/Nein + target from RE text when present; else Sprinklr resolve.
 """
