@@ -1,63 +1,52 @@
 ---
-description: HARD — Auto-LF at extract Turn A before 7-step. Never skip LF. Never fake "Auto-LF filing now".
+description: HARD — 7-step visible first; Auto-LF once after section 7 (never at extract; no double LF).
 alwaysApply: true
 priority: CRITICAL
 ---
 
-# HARD — Auto-LF at extract (Turn A) before 7-step (Turn B)
+# HARD — 7-step first; Auto-LF once after section 7
 
 **Scope:** Email processing chat (`EMAIL-PROCESSING-AGENT.md`).
 
 ## Absolute order (EMAIL)
 
 ```
-TURN A (tools — same turn as extract / [AUTO_PIPELINE] / DETACHED_ARM_EXTRACT_READY):
-  1. Extract already done (run.py / await-arm / pickup)
-  2. fill_case_tracker.py --case-id "#FALL"   (best-guess; resolve_transfer from Sprinklr)
-  3. --closeout-anwenden | --closeout-weiter | --closeout-extern
-  Script may also print AUTO_LF_REQUIRED / AUTO_LF_AT_EXTRACT_SPAWNED — that is a safety net.
-  Agent still verifies LF for this Fall # (auto_lf_done.json / Speichern pending) before resting.
+EXTRACT (script): run.py / await-arm — NO Auto-LF spawn for EMAIL
 
-TURN B (ZERO tools — plain visible chat):
-  CHANNEL: EMAIL / Fall # / sections 1–7
-  End: "Auto-LF filed at extract — best-guess: Transfer Nein/Ja to X."
-  Do NOT paste customer email body / Subject / From.
+AGENT MESSAGE (text-only):
+  Optional: Read latest_extract.md
+  Write CHANNEL: EMAIL / Fall # / sections 1–7 as PLAIN chat text
+  End: "7-step complete — Auto-LF starts after this message."
+  STOP. NO fill_case_tracker. NO --closeout-* in this message.
 
-TURN C: None — arm already live from Turn A. Await PR or reiteration.
+BACKGROUND (once, automatic):
+  re_complete_sound_hook detects section 7
+  → saves latest_re_visible.md
+  → spawns auto_lf_after_re.py
+  → fill_case_tracker (from §3 / Sprinklr) + --closeout-* + Dexter
+
+Agent must NOT run a second LF for the same Fall # if auto_lf_done.json / Speichern pending already has it.
 ```
 
-## RE_TEXT_ONLY_GATE — correct reading
+## Why not at extract
 
-`RE_TEXT_ONLY_GATE` means: **Turn B** must be text-only (no tools that collapse the 7-step).
-
-It does **NOT** mean: skip Turn A LF until after the 7-step.
+Extract-time Auto-LF + a second LF after the agent read the email caused **two Case Tracker fills per case**. LF now waits until the full 7-step (with correct §3) is typed.
 
 ## Hard bans
 
-1. Ending extract / `[AUTO_PIPELINE]` with 7-step only and **no** LF for that Fall #
-2. Writing **"Auto-LF filing now"** unless `fill_case_tracker.py` already succeeded for that Fall # (or `AUTO_LF_AT_EXTRACT_SPAWNED` / `auto_lf_done.json` confirms it)
-3. Treating typed **RE** (first case) as exempt from Turn A LF
-4. Deferring LF to "after 7-step" / sound hook / Response 2 as the primary path
-5. Task/explore for RE or LF
-
-## Notification path (mandatory)
-
-On `DETACHED_ARM_EXTRACT_READY` / `RE_TEXT_ONLY_GATE` / `[AUTO_PIPELINE]`:
-
-1. **Turn A tools first** (LF + closeout) — or confirm script spawn already filed this Fall #
-2. **Then** Turn B 7-step text
-
-## Failure mode (incident 2026-09-13)
-
-Cases #57677586, #57728816, #57732503, #57734062: agent pasted 7-step + "Auto-LF filing now" and **never** ran `fill_case_tracker.py`. Tracker empty until operator yelled.
+1. `fill_case_tracker` / `--closeout-*` **before** the full 7-step is visible for this Fall #
+2. `AUTO_LF_AT_EXTRACT_SPAWNED` / extract-time LF for EMAIL (removed)
+3. Running Auto-LF twice for the same Fall # (skip if already filed)
+4. Putting LF tools in the same message as the 7-step (collapses RE)
+5. Task/explore for RE / LF
 
 ## CALL exception
 
-`CHANNEL: CALL` → voice Auto-LF + `--closeout-next` same turn; no email 7-step.
+`CHANNEL: CALL` → Auto-LF voice immediately in same turn (no email 7-step).
 
 ## Related
 
+- `.cursor/hooks/auto_lf_after_re.py`
+- `.cursor/hooks/re_complete_sound_hook.py`
 - `.cursor/rules/lf-log-form.mdc`
-- `.cursor/rules/re-read-email.mdc`
 - `.cursor/rules/re-no-background-tasks-ui.mdc`
-- `.cursor/hooks/auto_lf_at_extract.py`

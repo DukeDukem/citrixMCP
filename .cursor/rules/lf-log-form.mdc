@@ -22,7 +22,7 @@ The agent fills Case Tracker **while processing** each newly opened case. The op
 
 | Channel | When | Tracker |
 |---------|------|---------|
-| **EMAIL** | **At extract start** — parallel to extract in Turn A, before 7-step RE. Best-guess from Fall #, Quelle, Ziel, channel available in extract stdout. | E-Mail Care; Transfer best-guess from Quelle/Ziel/TransferMatrix |
+| **EMAIL** | **Once after full 7-step is typed in chat** (sound hook → `auto_lf_after_re.py`). Never at extract. Transfer from RE §3 / Sprinklr. | E-Mail Care; one LF per Fall # |
 | **CALL** | As soon as **CHANNEL: CALL** is known (no BRIEF wait) | **`--channel voice`**; Transfer via `resolve_transfer()` / Ziel |
 
 ### Best-guess Auto-LF (EMAIL — at extract time)
@@ -38,30 +38,27 @@ Use these to make a best-guess:
 | Kundennummer = numeric | Salcus = those digits; Ticketstatus 1 |
 | Kundennummer = `C-…` / unset | Salcus empty; Ticketstatus 3 |
 
-If the 7-step RE later reveals a different transfer target, or the operator sends **reiterate LF** / typed **LF** / **LF TR** that **differs from** TransferMatrix or Auto-LF → agent re-runs `fill_case_tracker.py` with the operator’s values for **this Fall # only**. That is a **case exception**, not a permanent TM/KB/rule change — see `.cursor/rules/operator-case-exceptions.mdc`. Auto-LF at extract remains the default starting point for every new Fall #.
+If the 7-step RE later reveals a different transfer target, or the operator sends **reiterate LF** / typed **LF** / **LF TR** that **differs from** TransferMatrix or Auto-LF → agent re-runs `fill_case_tracker.py` with the operator’s values for **this Fall # only**. That is a **case exception**, not a permanent TM/KB/rule change — see `.cursor/rules/operator-case-exceptions.mdc`. Default Auto-LF for every new EMAIL Fall # runs **once after** the full 7-step (not at extract).
 
 
-### Order (EMAIL) — three turns
+### Order (EMAIL) — 7-step first; Auto-LF once after section 7
 
-**Turn A (tools only, no operator-facing chat prose):**
-1. `run.py` extract (stdout: Fall #, Quelle, Ziel, channel, Kundennummer)
-2. `fill_case_tracker.py --case-id "#FALL_ID"` — best-guess from extract data (parallel / immediately after)
-3. `--closeout-anwenden` or `--closeout-weiter/extern` — arm starts immediately
+**Extract (script):** `run.py` / await-arm — **no** EMAIL Auto-LF at extract (prevents double LF).
 
-**Turn B (ZERO tools — visible chat only):**
-1. `CHANNEL: EMAIL` + Fall #
-2. Full **7-step RE sections 1–7** as plain chat text — mandatory, never hidden
-3. End note: `Auto-LF filed at extract — best-guess: Transfer [Nein/Ja to X]. Reiterate if needed.`
-   **Banned:** `Auto-LF filing now` (implies LF not done yet).
+**Agent message (ZERO LF tools):**
+1. Optional: Read `latest_extract.md`
+2. Write `CHANNEL: EMAIL` + Fall # + **sections 1–7** as plain chat text
+3. End: `7-step complete — Auto-LF starts after this message.`
+4. **STOP** — do not call `fill_case_tracker` / `--closeout-*` here (collapses RE)
 
-**Turn C:** None. Arm already running. Agent rests, awaiting PR or reiteration.
+**Background (once):** `re_complete_sound_hook` detects section 7 → `auto_lf_after_re.py` → `fill_case_tracker` (from §3) + `--closeout-*`. Idempotent via `auto_lf_done.json`.
 
-**Hard failure:** 7-step visible for Fall #N with **no** prior `fill_case_tracker` / no `auto_lf_done.json` / no Speichern-pending for #N = **workflow failure**. Fix with Turn A LF immediately; do not wait for operator.
+**Hard failure:** Agent runs Auto-LF **before** 7-step, or runs a **second** LF after the hook already filed this Fall #.
 
-**Transfer arm (if best-guess = Transfer Ja):** `--closeout-weiter` (queue) or `--closeout-extern` (email `@`). No PR. Finishing quote: `LF TR done for #FALL_ID`.  
-**Non-transfer arm:** `--closeout-anwenden`. Await PR (paste only). Finishing quote: `LF done for #FALL_ID — awaiting PR or Anwenden.`
+**Transfer arm:** From §3 via `auto_lf_after_re` — `--closeout-weiter` / `--closeout-extern` / `--closeout-anwenden`.  
+**PR does not start the arm.** Arm starts when post-7-step Auto-LF completes. PR pastes only.
 
-**PR does not start the arm.** Arm starts in Turn A. PR just pastes the reply.
+**Operator reiterate LF** after that = case exception only (`.cursor/rules/operator-case-exceptions.mdc`).
 
 ### Order (CALL) — Auto-LF on CHANNEL detect (no BRIEF gate)
 

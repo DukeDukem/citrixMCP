@@ -1,5 +1,5 @@
 ---
-description: HARD — ALL agent output visible in chat; Turn A = LF at extract; Turn B = 7-step text only (zero tools).
+description: HARD — ALL agent output visible in chat; 7-step text first; Auto-LF once after section 7 (never at extract).
 alwaysApply: true
 priority: CRITICAL
 ---
@@ -32,47 +32,42 @@ All prior Fall # extracts and 7-steps hidden in dropdowns are **lost from the op
 
 After **each** EMAIL extract for **each** new Fall #:
 
-**Turn A (tools first):** `fill_case_tracker.py` + `--closeout-*` (or confirm `AUTO_LF_AT_EXTRACT_SPAWNED` / `auto_lf_done.json` for this Fall #).
-
-**Turn B (ZERO tools — plain visible markdown):**
+**Agent message (ZERO LF tools — plain visible markdown):**
 
 1. **`CHANNEL: EMAIL`** + **this** Fall #
 2. **Full 7-step RE** — sections **1–7**
-3. End: `Auto-LF filed at extract — best-guess: Transfer [Nein/Ja to X]. Reiterate if needed.`
+3. End: `7-step complete — Auto-LF starts after this message.`
 
 **Do NOT paste the customer email body / Subject / From into chat.** Operator sees it in Sprinklr.
 
-**Banned placeholder:** `Auto-LF filing now` — only write `Auto-LF filed at extract…` after LF succeeded.
+**Auto-LF:** once in background after section 7 (`re_complete_sound_hook` → `auto_lf_after_re.py`). **Never** at extract. **Never** a second LF for the same Fall #.
 
 ### Notification path (DETACHED_ARM_EXTRACT_READY / [AUTO_PIPELINE])
 
-**Turn A LF + closeout first**, **then** Turn B 7-step. Never paste 7-step-only and skip LF.
-
-`RE_TEXT_ONLY_GATE` = Turn B text-only constraint only — **not** permission to skip Turn A.
+Write **full 7-step text first** (zero LF tools). Auto-LF runs **once** after section 7. Never Auto-LF at extract.
 
 ### Forbidden post-extract chat (hard ban)
 
 - `CHANNEL: EMAIL — Fall #…. extracted. Full 7-step next.`
 - `Extract done — writing RE…`
 - Any ack that **promises** the 7-step without **pasting** it
-- 7-step for Fall #N with **no** Turn A LF for #N
+- `fill_case_tracker` / `--closeout-*` **before** the full 7-step is typed
+- Second Auto-LF after `auto_lf_done.json` already has this Fall #
 
 ### Also forbidden
 
 1. **explore/Task** reading terminal capture files
 2. **Read** of `terminals/*.txt` instead of `run.py` stdout
-3. **Tools + 7-step in one message** (collapses RE) — LF tools in Turn A; 7-step alone in Turn B
-4. Stopping after extract without Turn A + Turn B
+3. **LF tools + 7-step in one message** (collapses RE)
+4. Stopping after extract without pasting sections 1–7
 
-## Three-turn protocol (EMAIL)
+## Protocol (EMAIL)
 
-| Turn | What | Tools |
-|------|------|-------|
-| **A** | Extract + Auto-LF + closeout arm | `run.py`, `fill_case_tracker.py`, `--closeout-*` |
-| **B** | Full 7-step sections 1–7 | **ZERO** |
-| **C** | None — arm already live | — |
-
-Script may emit `AUTO_LF_REQUIRED` / spawn `auto_lf_at_extract.py` — safety net. Agent still verifies LF for this Fall #.
+| Phase | What | Tools |
+|-------|------|-------|
+| Extract | `run.py` / await-arm / pickup | extract only — **no** Auto-LF |
+| Agent chat | Full 7-step sections 1–7 | **ZERO** (no LF) |
+| After §7 | Auto-LF once via sound hook | `auto_lf_after_re.py` (background) |
 
 ## Auto-start
 
@@ -90,4 +85,4 @@ Agent starts A→B automatically on `--await-arm` / `[AUTO_PIPELINE]` / first-ca
 - `.cursor/rules/re-before-auto-lf.mdc`
 - `.cursor/rules/lf-log-form.mdc`
 - `.cursor/rules/re-read-email.mdc`
-- `.cursor/hooks/auto_lf_at_extract.py`
+- `.cursor/hooks/auto_lf_after_re.py`

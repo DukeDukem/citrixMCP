@@ -32,12 +32,12 @@ COMMANDS (operator types ONLY these in chat):
 - DONE -> end session. Rule: .cursor/rules/operator-minimal-input.mdc
 - EMAIL sidetray click -> CASE_ITEM_AUTO_CLICKED -> SIDETRAY_EMAIL_PROCESSING_IMMEDIATE -> extract runs immediately in script; agent immediately continues 7-step + Auto-LF when await-arm/extract stdout completes (no pause, no new operator message).
 - Typed RE / run.py --once = RECOVERY ONLY (re-read visible case, await-arm failed). NEVER arm Anwenden on recovery RE.
-- EMAIL RE = EVERY CASE, EVERY TIME: THREE TURNS — (1) TURN A (tools): extract + fill_case_tracker.py best-guess Auto-LF + --closeout-* NOW (script may AUTO_LF_AT_EXTRACT_SPAWN); (2) TURN B TEXT-ONLY 7-step (sections 1–7, ZERO tools) — DO NOT paste email body; end with 'Auto-LF filed at extract — best-guess…'; (3) rest — arm already live. NEVER write 'Auto-LF filing now' without LF done. NEVER hide 7-step under background tasks. Rule: re-before-auto-lf.mdc.
+- EMAIL RE = EVERY CASE, EVERY TIME: (1) extract only (NO Auto-LF at extract); (2) TEXT-ONLY 7-step (sections 1–7, ZERO LF tools) — DO NOT paste email body; end with '7-step complete — Auto-LF starts after this message.'; (3) Auto-LF once via re_complete_sound_hook → auto_lf_after_re.py (fill + closeout). NEVER hide 7-step under background tasks. NEVER double-LF same Fall #. Rule: re-before-auto-lf.mdc.
 - If I type RE SHOW / visible RE / RE FILE: recover per EMAIL-PROCESSING-AGENT.md troubleshooting — re-print extract + 7-step. Backup file: .cursor/state/latest_re_visible.md
 - Section 6 in chat: UTF-8 code block soft-wrapped ~72 chars for vertical reading only. **PR / Sprinklr paste** must stay **mail format** (previous length, encoding, signature layout) — never let chat wraps change the pasted email.
-- Auto-LF runs in TURN A at extract (BEFORE Turn B 7-step). Do NOT wait for typed LF. Script emits AUTO_LF_REQUIRED / may spawn auto_lf_at_extract.py. Agent verifies LF for this Fall #. Transfer best-guess from Sprinklr; reiterate if §3 differs.
+- Auto-LF runs ONCE after the full 7-step is typed in chat (sound hook → auto_lf_after_re.py). NEVER at extract. Do NOT wait for typed LF. Transfer from RE §3; operator reiterate LF = case exception only.
 - After AUTO-LF transfer: IMMEDIATELY --arm-weiter (queue) or --arm-extern (email @) + await. Quote: LF TR done for #FALL_ID. No PR.
-- After TURN A (extract + Auto-LF + arm): TURN B = 7-step visible in chat. Then rest, await PR or reiterate-LF.
+- After extract: write full 7-step in chat (no LF tools). Auto-LF + closeout arm start after section 7. Then rest, await PR or reiterate-LF.
 - PR (EMAIL non-transfer) -> paste + verify only. --closeout-anwenden already running from Auto-LF time. Quote: PR done for #FALL_ID. No new arm at PR. Operator clicks Senden (independent) + Anwenden (arm reacts) in any order.
 - After CLEAN PR: closeout-anwenden is already listening. Senden is a SEPARATE INDEPENDENT process — it is NOT an arming criterion and has NO ordering relationship with Anwenden. I click Senden whenever I want to send the reply; I click Anwenden whenever I want to close the case. Either can happen in any order. Sprinklr may show a grammar warning — I click Ignorieren und senden (same testid). Empty reply box after Senden = mail sent, NOT a paste failure. Outbound bubble (inboundChatConversationItemBrandMessage) = extra send confirmation, not new inbound.
 - PR LF / LF / LF TR -> optional recovery/override only (same arms as before).
@@ -55,15 +55,16 @@ CLOSE-OUT LISTEN (background + notify — case 2+):
 | Auto-LF TR (email) | --closeout-extern | Externer Transfer → Weiterleiten |
 | CALL Auto-LF | --closeout-next | exact Next |
 
-On notify or stop-hook [AUTO_PIPELINE]: TURN A LF+closeout first (or confirm spawn), THEN Turn B 7-step. Zero operator chat input.
+On notify or stop-hook [AUTO_PIPELINE]: write full 7-step text first (zero LF tools); Auto-LF once after section 7 via sound hook. Zero operator chat input.
 
 AUTO-LF (mandatory — user does not type LF):
-- EMAIL: at extract TURN A → fill_case_tracker.py for Fall # (best-guess from Sprinklr resolve_transfer). BEFORE 7-step.
+- EMAIL: once AFTER full 7-step is typed (`re_complete_sound_hook` → `auto_lf_after_re.py`). NEVER at extract. Transfer from RE §3.
 - CALL: as soon as CHANNEL: CALL → fill_case_tracker.py --channel voice (no BRIEF wait).
 - Speichern stays manual. After each LF fill, script arms Speichern watch (`LF_SPEICHERN_WATCH_ARMED`).
 - Speichern gate: if next case Auto-LF runs and previous Speichern was NOT registered → PAUSE_AUTO_LF + **LF_CONTINUE_AFTER_SPEICHERN_ARMED** (exit 3). Warn me to Speichern previous LF; Auto-LF for the **current** case continues automatically after that click. Agent must `--await-speichern-continue`, then on CONTINUE_LF_DONE do transfer arm or wait for PR. Do not ask me to re-run Auto-LF unless continue failed.
 - Typed LF / LF TR / PR LF = recovery only.
 - Rule: lf-log-form.mdc
+- Rule: re-before-auto-lf.mdc
 
 CALL LF ARM (disposition Next — not Anwenden):
 - After CALL Auto-LF (--channel voice): IMMEDIATELY run.py --arm-next (NOT --arm).
@@ -253,13 +254,13 @@ Cursor **collapses tool/subagent work** into rows like `Finished 2 background ta
 
 **Most common cause with Auto:** an **explore** subagent reads a **terminal capture `.txt`** instead of using `run.py` stdout — the RE ends up entirely under that menu.
 
-### Three-turn protocol (agent must follow)
+### Protocol (agent must follow)
 
-| Turn | Content |
-|------|---------|
-| **A** | Extract + `fill_case_tracker.py` + `--closeout-*` (tools). `AUTO_LF_REQUIRED` / spawn may already run — still verify. |
-| **B** | **Full 7-step (sections 1–7)** — text-only, zero tools. End: `Auto-LF filed at extract — best-guess…`. No email body paste. |
-| **C** | None — arm already running; rest, await PR or reiterate-LF |
+| Phase | Content |
+|-------|---------|
+| Extract | `run.py` / await-arm only — **no** Auto-LF |
+| Agent chat | **Full 7-step (sections 1–7)** — text-only, **zero LF tools**. End: `7-step complete — Auto-LF starts after this message.` No email body paste. |
+| After §7 | Auto-LF once via `re_complete_sound_hook` → `auto_lf_after_re.py` (fill + closeout). Await PR or arm fires. |
 
 ### Your recovery (when chat shows only trays / no extract)
 
@@ -380,9 +381,9 @@ When a new EMAIL arrives in CollapsedPreviewsList (BrandEmailCircleClr):
 1) Script clicks -> CASE_ITEM_AUTO_CLICKED -> SIDETRAY_EMAIL_PROCESSING_IMMEDIATE
 2) Extract runs immediately in the same automation chain (no operator RE)
 3) On --await-arm / DETACHED_ARM_EXTRACT_READY / RE_TEXT_ONLY_GATE / [AUTO_PIPELINE]:
-   TURN A first: fill_case_tracker + closeout (or confirm AUTO_LF_AT_EXTRACT_SPAWNED / auto_lf_done.json)
-   THEN TURN B: 7-step text only
-4) Do NOT stop between sidetray click and Turn A+B. Do NOT write 'Auto-LF filing now' without LF done.
+   Write full 7-step text first (ZERO LF tools). End: '7-step complete — Auto-LF starts after this message.'
+   Auto-LF runs once after section 7 (sound hook → auto_lf_after_re.py). Never at extract.
+4) Do NOT stop between sidetray click and 7-step. Do NOT Auto-LF before the 7-step is typed.
 
 CALL sidetray: still no click (SIDETRAY_CALL_AUTO_OPEN) -> Auto-LF voice only.
 
@@ -403,9 +404,9 @@ AUTO-TRIGGER (agent runs without RE command):
 - After login when first case is visible (agent runs run.py --once; FIRST_RE_ONCE_PENDING)
 
 AUTO PIPELINE (EMAIL):
-1) Extract + Auto-LF + closeout arm (TURN A — tools; script may spawn auto_lf_at_extract)
-2) Full 7-step visible chat text (TURN B — zero tools). End: Auto-LF filed at extract…
-3) Rest — arm already live (TURN C). Await PR or arm fires.
+1) Extract only (NO Auto-LF at extract)
+2) Full 7-step visible chat text (ZERO LF tools). End: 7-step complete — Auto-LF starts after this message.
+3) Auto-LF once after section 7 (hook → auto_lf_after_re.py) + closeout arm. Await PR or arm fires.
 
 OPERATOR NORMAL COMMANDS: login, PR, close-out clicks (Anwenden/Weiter/Next), DONE — NOT RE, NOT LF.
 

@@ -168,6 +168,33 @@ def _read_stdin_payload() -> dict:
         return {}
 
 
+def _spawn_auto_lf_after_re(text: str) -> None:
+    """One Auto-LF after full 7-step is visible — never at extract."""
+    try:
+        import subprocess
+
+        worker = Path(__file__).resolve().parent / "auto_lf_after_re.py"
+        if not worker.exists():
+            _log("auto_lf_after_re.py missing")
+            return
+        creationflags = 0
+        if sys.platform == "win32":
+            creationflags = 0x08000000 | 0x00000200
+        # Prefer saved latest_re_visible; also pass text via spawn's write
+        subprocess.Popen(
+            [sys.executable, str(worker), "--spawn", "--text-file", str(_LATEST_RE_VISIBLE)],
+            cwd=str(_REPO),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=creationflags,
+            close_fds=False if sys.platform == "win32" else True,
+        )
+        _log("auto_lf_after_re spawn requested")
+    except Exception as e:
+        _log(f"auto_lf_after_re spawn failed: {e!r}")
+
+
 def main() -> int:
     # Always emit empty JSON decision object so Cursor does not treat hook as failed
     def _ok() -> int:
@@ -197,8 +224,10 @@ def main() -> int:
     if _should_play_re_ready(text):
         _save_latest_re_visible(text)
         if not _debounce_allow("re_ready"):
-            _log("re_ready_book debounced")
+            _log("re_ready_book debounced (skip sound + skip duplicate auto_lf spawn)")
             return _ok()
+        # Primary Auto-LF path: once after section 7 is in chat (not at extract)
+        _spawn_auto_lf_after_re(text)
         ok = play_re_ready_sound()
         clear_re_pending_sound()
         _log(f"re_ready_book ok={ok}")

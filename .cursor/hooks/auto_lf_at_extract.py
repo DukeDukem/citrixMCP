@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Auto-LF at extract (Turn A) — best-guess fill + closeout, no RE text required.
+"""DEPRECATED for EMAIL — Auto-LF now runs once after the full 7-step
+(see auto_lf_after_re.py via re_complete_sound_hook).
 
-Primary safety net when the email agent skips Turn A tools.
-Idempotent per Fall # via auto_lf_done.json / Speichern pending.
-Transfer: leave to fill_case_tracker resolve_transfer() from Sprinklr Quelle/Ziel.
+This module refuses EMAIL channel runs so stale callers cannot double-fill
+Case Tracker at extract. Prefer auto_lf_after_re.py.
 """
 from __future__ import annotations
 
@@ -157,6 +157,17 @@ def run_for_case(case_id: str, channel: str = "EMAIL") -> int:
     if not case_id:
         _log("run_abort no_case_id")
         return 1
+    # EMAIL Auto-LF is post-7-step only — refuse extract-time fills
+    if (channel or "EMAIL").upper() != "CALL":
+        _log(
+            f"run_skip DISABLED_FOR_EMAIL case={case_id} "
+            f"(use auto_lf_after_re after 7-step)"
+        )
+        print(
+            f"AUTO_LF_AT_EXTRACT_DISABLED case={case_id} — wait for 7-step",
+            flush=True,
+        )
+        return 0
     if not _email_session_active():
         _log("run_skip session_inactive")
         return 0
@@ -199,6 +210,13 @@ def run_for_case(case_id: str, channel: str = "EMAIL") -> int:
 def spawn(case_id: str, channel: str = "EMAIL") -> int | None:
     case_id = _norm_case(case_id)
     if not case_id:
+        return None
+    if (channel or "EMAIL").upper() != "CALL":
+        _log(f"spawn_skip DISABLED_FOR_EMAIL case={case_id}")
+        print(
+            f"AUTO_LF_AT_EXTRACT_DISABLED case={case_id} — wait for 7-step",
+            flush=True,
+        )
         return None
     write_lf_pending(case_id, channel)
     creationflags = 0

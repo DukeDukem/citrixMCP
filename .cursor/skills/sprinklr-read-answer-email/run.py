@@ -84,66 +84,44 @@ def _case_id_from_output(text: str) -> str:
 
 
 def _spawn_auto_lf_at_extract(case_id: str, channel: str = "EMAIL") -> None:
-    """Script-side Turn A safety net — LF + closeout even if agent skips tools."""
-    if not case_id:
-        return
-    try:
-        import subprocess
+    """DEPRECATED — EMAIL Auto-LF is post-7-step only (auto_lf_after_re via sound hook).
 
-        worker = _REPO_ROOT / ".cursor" / "hooks" / "auto_lf_at_extract.py"
-        if not worker.exists():
-            print(f"[WARN] auto_lf_at_extract.py missing — agent must run Turn A LF", flush=True)
-            print(f"AUTO_LF_REQUIRED case={case_id}", flush=True)
-            return
-        creationflags = 0
-        if sys.platform == "win32":
-            creationflags = 0x08000000 | 0x00000200
-        subprocess.Popen(
-            [sys.executable, str(worker), "--spawn", "--case-id", case_id, "--channel", channel],
-            cwd=str(_REPO_ROOT),
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            creationflags=creationflags,
-            close_fds=False if sys.platform == "win32" else True,
+    Kept as a no-op so any stale caller cannot double-fill Case Tracker at extract.
+    CALL still uses AUTO_LF_REQUIRED + agent same-turn voice LF (not this helper).
+    """
+    if case_id:
+        print(
+            f"AUTO_LF_AT_EXTRACT_DISABLED case={case_id} channel={channel} "
+            f"(EMAIL LF waits until 7-step; use auto_lf_after_re)",
+            flush=True,
         )
-        print(f"AUTO_LF_REQUIRED case={case_id}", flush=True)
-        print(f"AUTO_LF_AT_EXTRACT_SPAWNED case={case_id} channel={channel}", flush=True)
-    except Exception as e:
-        print(f"[WARN] auto_lf_at_extract spawn failed: {e}", flush=True)
-        print(f"AUTO_LF_REQUIRED case={case_id}", flush=True)
 
 
 def _print_re_text_only_gate(case_id: str = "") -> None:
-    """Turn A = LF+arm (script may already spawn). Turn B = 7-step text only."""
+    """7-step text first; Auto-LF once after section 7 (not at extract)."""
     print("\n" + "=" * 80, flush=True)
     print("RE_TEXT_ONLY_GATE", flush=True)
     print("=" * 80, flush=True)
     if case_id:
-        print(f"AUTO_LF_REQUIRED case={case_id}", flush=True)
+        print(f"AUTO_LF_AFTER_RE_PENDING case={case_id}", flush=True)
     print(
-        "TURN A (THIS EXTRACT TURN — tools): fill_case_tracker.py + --closeout-* NOW "
-        "(or confirm AUTO_LF_AT_EXTRACT_SPAWNED already running). Do NOT skip LF.",
+        "EMAIL ORDER (one Auto-LF only — AFTER full 7-step, never at extract):",
         flush=True,
     )
     print(
-        "TURN B (NEXT chat message — ZERO tools): CHANNEL: EMAIL + Fall # + full 7-step "
-        "sections 1–7 as plain visible text. Do NOT paste customer email body/Subject/From. "
-        "End with: 'Auto-LF filed at extract — best-guess: Transfer Nein/Ja to X.'",
+        "1) NEXT chat message — ZERO LF tools: CHANNEL: EMAIL + Fall # + sections 1–7 "
+        "as plain visible text. Do NOT paste customer email body/Subject/From. "
+        "End: '7-step complete — Auto-LF starts after this message.'",
         flush=True,
     )
     print(
-        "BANNED: writing 'Auto-LF filing now' without LF already succeeding for this Fall #. "
-        "BANNED: 7-step without prior/parallel Turn A LF for the same Fall #.",
+        "2) STOP after the 7-step. Do NOT call fill_case_tracker / --closeout-* in that message "
+        "(collapses RE). Sound hook spawns Auto-LF once when section 7 is detected.",
         flush=True,
     )
     print(
-        "BANNED: one-liners like 'extracted — 7-step next' without pasting sections 1–7. "
-        "BANNED: Task/explore / reading terminals/*.txt (collapses RE).",
-        flush=True,
-    )
-    print(
-        "RE_TEXT_ONLY_GATE = Turn B text-only constraint ONLY. It does NOT mean skip Turn A LF.",
+        "BANNED: Auto-LF at extract / before 7-step. BANNED: second LF after hook already filed. "
+        "BANNED: Task/explore / terminals/*.txt. BANNED: one-liners without pasting sections 1–7.",
         flush=True,
     )
     print("=" * 80 + "\n", flush=True)
@@ -169,7 +147,6 @@ def _emit_post_extract_gate(combined_output: str) -> None:
     case_id = _case_id_from_output(combined_output)
     if "CHANNEL: CALL" in combined_output or "CHANNEL_CALL_DETECTED" in combined_output:
         _print_call_lf_gate()
-        # CALL: agent runs voice LF — do not auto-spawn here (empty-body misdetect risk)
         if case_id:
             print(f"AUTO_LF_REQUIRED case={case_id} channel=CALL", flush=True)
         return
@@ -196,12 +173,10 @@ def _emit_post_extract_gate(combined_output: str) -> None:
                     return
     if "CHANNEL: EMAIL" in combined_output or "CUSTOMER EMAIL (for Cursor to read" in combined_output:
         _print_re_text_only_gate(case_id)
-        if case_id:
-            _spawn_auto_lf_at_extract(case_id, "EMAIL")
+        # Do NOT spawn Auto-LF at extract — waits until 7-step is typed (sound hook)
         return
     if case_id:
         _print_re_text_only_gate(case_id)
-        _spawn_auto_lf_at_extract(case_id, "EMAIL")
 
 def _write_meta(mode: str, pid: int) -> None:
     import json

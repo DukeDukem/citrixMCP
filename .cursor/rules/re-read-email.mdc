@@ -71,9 +71,9 @@ Script remembers **closed Fall #**, skips that sidebar item, polls ~25s for a di
 ## Normal workday
 
 1. **login** → Case Tracker tab.
-2. Operator **RE** once (first case) → Turn A (extract + Auto-LF + arm) → Turn B (7-step visible chat) → rest.
-3. Operator **PR** → agent pastes reply only (arm already running from Turn A). Quote: `PR done for #FALL_ID`.
-4. Operator clicks **Anwenden** → arm fires → sidetray poll → new case → agent **auto** Turn A + Turn B — no operator input.
+2. Operator **RE** once (first case) → extract → full 7-step in chat → Auto-LF once after §7 → rest.
+3. Operator **PR** → agent pastes reply only (arm already running from post-§7 Auto-LF). Quote: `PR done for #FALL_ID`.
+4. Operator clicks **Anwenden** → arm fires → sidetray poll → new case → agent **auto** extract + 7-step — no operator input.
 5. Repeat: operator types **PR** only. Agent handles everything else.
 
 **Operator types:** **login**, **RE** (first case only), **PR**, **DONE**. Never **NEXT**, **LF**, or case 2+ **RE**.
@@ -84,14 +84,12 @@ Script remembers **closed Fall #**, skips that sidebar item, polls ~25s for a di
 [Monitoring active: arm fired → sidetray click]
 
 EMAIL case:
-  sidetray click → TURN A (tools only):
-    extract (Fall #, Quelle, Ziel, Kundennummer, channel)
-    Auto-LF best-guess (parallel/immediately after extract)
-    --closeout-anwenden/weiter/extern (arm armed, monitoring disarmed)
-  → TURN B (zero tools — visible chat only):
+  sidetray click → extract only (Fall #, Quelle, Ziel, Kundennummer, channel)
+  → agent chat (zero LF tools):
     CHANNEL: EMAIL + Fall #
     7-step RE sections 1–7
-    play-ready note
+    End: 7-step complete — Auto-LF starts after this message.
+  → background once: auto_lf_after_re (fill + closeout from §3)
   → agent rests, awaiting:
       PR          → paste only → "PR done for #FALL_ID"
       reiterate LF → re-run fill_case_tracker with corrected values (**case exception** for this Fall # only — does not change TM/KB/rules)
@@ -109,7 +107,7 @@ Transfer (EMAIL or CALL):
   → arm fires → [Monitoring active] → next case
 ```
 
-**Auto-LF timing: Turn A — at extract start, before 7-step.** Best-guess from Quelle/Ziel/channel. Reiterate if needed after 7-step reveals different path.  
+**Auto-LF timing: once after full 7-step is typed** (hook). Never at extract. Never a second LF for the same Fall #.  
 **PR is independent of arming.** Arm already running from Turn A. Agent pastes and finishes.
 
 ### HARD — Prowler without RE/LF
@@ -150,33 +148,22 @@ Transfer (EMAIL or CALL):
 | `run.py --await-arm` / `--pickup` | Agent-internal listen/recovery — **never** ask operator |
 | `run.py --foreground` | Debug only: blocking in-shell watch |
 
-## After extract: paste extract + 7-step + Auto-LF (mandatory)
+## After extract: 7-step text first; Auto-LF once after section 7
 
 Every EMAIL extract (auto after login, `--await-arm`, or recovery `--once`):
 
-**Turn A (tools only — extract + Auto-LF + arm, no chat prose):**
+**Agent message (ZERO LF tools):**
+1. Read `.cursor/state/latest_extract.md` (or `run.py --pickup` if missing) if needed
+2. Write `CHANNEL: EMAIL` + Fall # + full **7-step sections 1–7** as plain chat text
+3. End: `7-step complete — Auto-LF starts after this message.` **STOP.**
+4. Do **not** call `fill_case_tracker` / `--closeout-*` here
 
-1. `run.py` extract — stdout provides Fall #, Quelle, Ziel, Kundennummer, channel
-2. **Immediately** `fill_case_tracker.py` best-guess from extract data (parallel / next tool call in same turn)
-3. If Auto-LF prints **`PAUSE_AUTO_LF`** + **`LF_CONTINUE_AFTER_SPEICHERN_ARMED`** (exit `3`): arm `--await-speichern-continue`; continue after Speichern click; do not block Turn B
-4. **Immediately** background close-out arm:
-   - Non-transfer best-guess: **`--closeout-anwenden`**
-   - Transfer best-guess: **`--closeout-weiter`** (queue) or **`--closeout-extern`** (email `@`)
-
-**Turn B (ZERO tools — visible chat prose only):**
-
-1. `CHANNEL: EMAIL` + Fall # header
-2. Full **7-step RE sections 1–7** as plain visible chat text — no dropdowns, no tools
-3. End: `Auto-LF filed at extract — best-guess: Transfer Nein/Ja to X.` (**banned:** `Auto-LF filing now`)
-4. If 7-step §3 differs from best-guess → note; await operator reiterate-LF or proceed
-
-**Turn C:** None. Arm already running. Agent rests.
-
-**Hard failure (2026-09-13):** 7-step for Fall #N with **no** Turn A LF / no `auto_lf_done.json` for #N = failure. Run LF immediately. `RE_TEXT_ONLY_GATE` does **not** authorize skipping Turn A.
+**Background (once):** `re_complete_sound_hook` → `auto_lf_after_re.py` → fill + closeout from §3. Skip if `auto_lf_done.json` already has this Fall #.
 
 **Do NOT paste the customer email body / Subject / From** — operator sees it in Sprinklr.
 
-Script may print `AUTO_LF_REQUIRED` / `AUTO_LF_AT_EXTRACT_SPAWNED` — safety net; agent still verifies LF for this Fall #.
+**Hard ban:** Auto-LF at extract; second LF for the same Fall #; LF tools in the 7-step message.
+
 Every CALL on CHANNEL detect: Auto-LF `--channel voice` → arm Next (or Weiter/Extern if transfer). BRIEF is optional and never blocks Auto-LF.
 
 ## OPERATOR INPUTS ONLY (hard)
