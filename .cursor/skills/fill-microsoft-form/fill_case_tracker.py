@@ -198,6 +198,10 @@ def find_sprinklr_console_page(ctx):
 
 _HANDLE_DIRECTLY_ZIELS = frozenset(
     {
+        # Current own-team Zielen (2026-09-18 TransferMatrix remap)
+        "EMAIL_O2_CARE",
+        "O2MOBILECARE",  # "o2 Mobile Care" after normalize (spaces stripped)
+        # Legacy Backoffice aliases
         "CBC_E_CARE_ALLGEMEIN",
         "CBC_CARE_ALLGEMEIN",
         "CBC_XF_E_CARE_ALLGEMEIN",
@@ -210,13 +214,25 @@ def _normalize_ziel(ziel: str) -> str:
 
 
 def _is_our_care_ziel(ziel: str) -> bool:
-    """True when Sprinklr Ziel is our Backoffice team (handle directly, no transfer log)."""
+    """True when Sprinklr/matrix Ziel is our team (handle directly — never Transfer Ja).
+
+    Own team:
+    - EMAIL: EMAIL_O2_CARE
+    - CALL:  o2 Mobile Care
+    Legacy: *CARE_ALLGEMEIN*
+    """
     z = _normalize_ziel(ziel)
     if not z or z.lower() in _SALCUS_UNSET:
         return False
     if z in _HANDLE_DIRECTLY_ZIELS:
         return True
-    return "CARE_ALLGEMEIN" in z
+    if "CARE_ALLGEMEIN" in z:
+        return True
+    # o2 Mobile Care variants (hyphen / extra words)
+    compact = z.replace("-", "").replace("_", "")
+    if compact == "O2MOBILECARE" or compact.startswith("O2MOBILECARE"):
+        return True
+    return False
 
 _EXTRACT_CASE_INFO_JS = r"""
 () => {
@@ -278,9 +294,10 @@ def resolve_transfer(case_info: dict | None) -> tuple[str, str]:
     # Widerruf transfer ONLY when Quelle is the Widerruf queue (e.g. "Care Widerruf").
     # Do NOT infer from email/webform Betreff category breadcrumbs (e.g. "...|Widerruf").
     if "widerruf" in quelle and "webform" not in quelle:
-        return "1", "CBC_XF_E_WIDERRUF"
+        return "1", "EMAIL_O2_WIDERRUF"
 
-    # Our team (CBC_*_CARE_ALLGEMEIN incl. CBC_E / CBC_XF_E variants) — never Transfer Ja to ourselves
+    # Our team — never Transfer Ja to ourselves
+    # EMAIL: EMAIL_O2_CARE | CALL: o2 Mobile Care | legacy: *CARE_ALLGEMEIN*
     if _is_our_care_ziel(ziel):
         return "0", ""
 

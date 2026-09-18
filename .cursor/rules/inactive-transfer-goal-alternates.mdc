@@ -14,10 +14,10 @@ When **TransferMatrix** registry shows a goal as **Inactive (no longer exists)**
 
 ## RE / customer reply impact
 
-- **Transfer eligible: No** when matrix says HANDLE DIRECTLY.
+- **Transfer eligible: No** when matrix says HANDLE DIRECTLY, or Ziel is our team (**`EMAIL_O2_CARE`** email / **`o2 Mobile Care`** calls).
 - Section 6: give **actionable self-service** (Mein o2, o2.de, status checks) per `.cursor/rules/reply-customer-solutions-qa.mdc`.
 - **No default hotline** unless KB explicitly requires it for that Fall.
-- Agent sections (4–5): KB ticket/Themen-ID steps; no Sprinklr transfer to inactive goals.
+- Agent sections (4–5): KB ticket/Themen-ID steps; no Sprinklr transfer to inactive goals or to our own team.
 
 ## Full retired goal → replacement table (2026-09-18 remap)
 
@@ -50,6 +50,6 @@ When **TransferMatrix** registry shows a goal as **Inactive (no longer exists)**
 | CS_Premium | See matrix — Exklusiv-Kunden routing |
 | BLAU_XF_IMPRESSUM | See matrix Thema 2 — BLAU |
 
-**Note:** "Never Transfer Ja to `*CARE_ALLGEMEIN*`" remains a hard rule — that queue is retired. The equivalent "handle directly" signal in the new matrix is **Ziel-Kontakt = EMAIL_O2_CARE** or **Action = HANDLE DIRECTLY**.
+**Note:** Never Transfer Ja to our own team — **`EMAIL_O2_CARE`** (email), **`o2 Mobile Care`** (calls), or legacy `*CARE_ALLGEMEIN*`. See `.cursor/rules/transfer-matrix-priority.mdc`.
 
 When updating rules for a newly removed goal, always add its alternate block to TransferMatrix.md's Removed section and to this table.

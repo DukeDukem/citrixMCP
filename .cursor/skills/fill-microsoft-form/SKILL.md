@@ -82,12 +82,12 @@ uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id 
 
 | Signal | Transfer | Target |
 |--------|----------|--------|
-| Widerruf in **Quelle** (e.g. Care Widerruf, not Webform) | **Ja** | `CBC_XF_E_WIDERRUF` |
+| Widerruf in **Quelle** (e.g. Care Widerruf, not Webform) | **Ja** | `EMAIL_O2_WIDERRUF` |
 | Care Webform + our **Ziel** | **Nein** | — (ignore `\|Widerruf` in Betreff categories) |
-| Ziel = our team (`CBC_*_CARE_ALLGEMEIN`, incl. `CBC_XF_E_CARE_ALLGEMEIN`) | **Nein** | — |
+| Ziel = our team (`EMAIL_O2_CARE`, `o2 Mobile Care`, legacy `*CARE_ALLGEMEIN*`) | **Nein** | — |
 | External Ziel queue / email | **Ja** | Ziel value |
 
-**Never** log Transfer Ja to our own Care Allgemein team.
+**Never** log Transfer Ja to our own team (`EMAIL_O2_CARE` / `o2 Mobile Care`).
 
 Default: does **not** click **Speichern**. After fill, arms a detached Speichern click watch. Next Auto-LF on a **different** Fall # is **paused** until Speichern and **auto-continues**: `LF_CONTINUE_AFTER_SPEICHERN_ARMED` → agent `--await-speichern-continue` → `CONTINUE_LF_DONE`. Full rules: `.cursor/rules/lf-log-form.mdc`.
 

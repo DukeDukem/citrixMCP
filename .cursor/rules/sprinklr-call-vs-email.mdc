@@ -78,7 +78,7 @@ uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id 
 
 - Kanal = Voice; ticketstatus **3** always.  
 - Transfer: omit flags → script `resolve_transfer()` from Sprinklr Quelle/Ziel; or pass `--transfer 1 --target "…"` if matrix/Ziel already clear.  
-- Never Transfer Ja to `*CARE_ALLGEMEIN*`.
+- Never Transfer Ja to our own team: **`EMAIL_O2_CARE`** (email) or **`o2 Mobile Care`** (calls). Legacy `*CARE_ALLGEMEIN*` also Nein.
 
 6. **Immediately arm** after Auto-LF succeeds:
 

@@ -29,7 +29,7 @@
 - **CALL** — on CHANNEL detect → Auto-LF voice → **`--arm-next`** (BRIEF optional; not required for LF)
 - Typed **LF** / **LF TR** / **PR LF** — recovery/override only
 - **CALL vs EMAIL:** After every case open, classify via overlay. Post-arm sidetray: **EMAIL click**, **CALL auto-open** (no sidetray click). **Teleprompter/STT parked** — do **not** `--arm`/`--prime` call_listen. Rule: `sprinklr-call-vs-email.mdc`
-- **Transfer path:** Always **TransferMatrix.md** first. Rule: `transfer-matrix-priority.mdc`
+- **Transfer path:** Always **TransferMatrix.md** first. Own team (**`EMAIL_O2_CARE`** email / **`o2 Mobile Care`** calls) = Transfer eligible **No**. Rule: `transfer-matrix-priority.mdc`
 - **Knowledge articles:** **`KnowledgeBase/REMAP/exports/`** only (legacy knowledgebase1–7 deleted). Rule: `knowledgebase-remap-only.mdc`
 - **Auto-LF:** Rule: `lf-log-form.mdc`
 

@@ -32,9 +32,9 @@ Use these to make a best-guess:
 
 | Ziel / Quelle | Best-guess |
 |---|---|
-| Ziel = queue / email address | Transfer Ja → that Ziel |
-| Ziel = `CARE_ALLGEMEIN` / unset | Transfer Nein |
-| Quelle = Care Widerruf (not Webform) | Transfer Ja → `CBC_XF_E_WIDERRUF` |
+| Ziel = queue / email address (**not** our team) | Transfer Ja → that Ziel |
+| Ziel = **`EMAIL_O2_CARE`** / **`o2 Mobile Care`** / `*CARE_ALLGEMEIN*` / unset | Transfer Nein |
+| Quelle = Care Widerruf (not Webform) | Transfer Ja → `EMAIL_O2_WIDERRUF` (legacy `CBC_XF_E_WIDERRUF`) |
 | Kundennummer = numeric | Salcus = those digits; Ticketstatus 1 |
 | Kundennummer = `C-…` / unset | Salcus empty; Ticketstatus 3 |
 
@@ -200,12 +200,12 @@ Prefer `[data-testid="htmlText"]` first; else `span.spr-text-03` for unset. Neve
 
 ### Transfer (mandatory)
 
-**Never** Transfer Ja to `*CARE_ALLGEMEIN*`. Prefer **TransferMatrix** Ziel-Kontakt for Auto-LF when §3 says transfer; else script `resolve_transfer()` from Quelle/Ziel.
+**Never** Transfer Ja to our own team: **`EMAIL_O2_CARE`** (email), **`o2 Mobile Care`** (calls), or legacy `*CARE_ALLGEMEIN*`. Prefer **TransferMatrix** Ziel-Kontakt for Auto-LF when §3 says transfer; else script `resolve_transfer()` from Quelle/Ziel.
 
 | Signal | Transfer | Target |
 |--------|----------|--------|
-| Care Widerruf Quelle (not Webform) | Ja | `CBC_XF_E_WIDERRUF` |
-| Our Care team / CARE_ALLGEMEIN | Nein | empty |
+| Care Widerruf Quelle (not Webform) | Ja | `EMAIL_O2_WIDERRUF` (or legacy `CBC_XF_E_WIDERRUF`) |
+| Our team: `EMAIL_O2_CARE` / `o2 Mobile Care` / `*CARE_ALLGEMEIN*` | Nein | empty |
 | External queue / email Ziel | Ja | that Ziel |
 | Unset Ziel | Nein | empty |
 

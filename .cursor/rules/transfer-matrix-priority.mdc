@@ -1,5 +1,5 @@
 ---
-description: Transfer Matrix overrides Knowledge Base for case handling path / transfer eligibility.
+description: Transfer Matrix overrides Knowledge Base for case handling path / transfer eligibility. Own team = EMAIL_O2_CARE (email) / o2 Mobile Care (calls) → never transfer.
 alwaysApply: true
 ---
 
@@ -7,35 +7,51 @@ alwaysApply: true
 
 **Hard rule for RE / CALL / routing:** [`KnowledgeBase/TransferMatrix.md`](KnowledgeBase/TransferMatrix.md) decides **whether** and **where** a case is handled. The Knowledge Base (`REMAP/exports` articles, templates) must **not** override that path.
 
+## Own team = Transfer eligible: No (hard)
+
+This agent’s queues/teams are:
+
+| Channel | Our Ziel-Kontakt | Transfer eligible |
+|---------|------------------|-------------------|
+| **EMAIL** | **`EMAIL_O2_CARE`** | **No** — we handle |
+| **CALL** | **`o2 Mobile Care`** | **No** — we handle |
+
+Never Sprinklr-transfer / LF Transfer Ja **to ourselves**. Matrix Action may still say “Cold transfer” for *other* agents reading Sabio; **for this workspace** those two Zielen always mean **handle here**.
+
+Legacy aliases still treated as our team (non-transfer): `*CARE_ALLGEMEIN*`, `CBC_CARE_ALLGEMEIN`, `CBC_E_CARE_ALLGEMEIN`, `CBC_XF_E_CARE_ALLGEMEIN`.
+
 ## Authority order
 
 1. **Transfer Matrix** — Thema → Fall → **Ziel-Kontakt** + **Action** (handling hint)
-2. **Documented chat exceptions** / inactive-goal alternates (e.g. removed queues → HANDLE DIRECTLY)
-3. **Knowledge Base** — ticket/Themen-ID detail, process steps, reply substance **only when compatible with (1)**
+2. **Own-team override** (table above) — if Ziel is our team → Transfer eligible **No**
+3. **Documented chat exceptions** / inactive-goal alternates
+4. **Knowledge Base** — ticket/Themen-ID detail, process steps, reply substance **only when compatible with (1)–(2)**
 
-If KB text suggests a different queue, “always transfer”, “always hotline”, or “handle elsewhere” than the matrix row → **ignore that KB routing**. Follow the matrix.
+If KB text suggests a different queue, “always transfer”, “always hotline”, or “handle elsewhere” than the matrix row → **ignore that KB routing**. Follow the matrix (+ own-team override).
 
 ## Every case (verified / CALL brief / awaiting manual verification)
 
 1. Identify Thema / Fall from the customer issue.
 2. **Grep TransferMatrix.md first** — read **Ziel-Kontakt** and **Action**.
-3. Set RE section 3 from the matrix only:
+3. Set RE section 3 from the matrix + own-team override:
 
 | Ziel-Kontakt / Action | Transfer eligible | What to do |
 |----------------------|-------------------|------------|
-| Other queue / coding (not `*CARE_ALLGEMEIN*`) | **Yes** | Transfer / LF TR to that Ziel-Kontakt |
+| **`EMAIL_O2_CARE`** (email) | **No** | We handle; use Action as handling hint |
+| **`o2 Mobile Care`** (call) | **No** | We handle; use Action as handling hint |
+| **`CBC_*CARE_ALLGEMEIN*`** (legacy) | **No** | Same — our team |
+| **HANDLE DIRECTLY** / **Kein Transfer** | **No** | Follow Action handling hint |
+| Other queue / coding / hotline team (not ours) | **Yes** | Transfer / LF TR to that Ziel-Kontakt |
 | Email address (`@…`) | **Yes** | External transfer to that email |
-| **`CBC_CARE_ALLGEMEIN`** / **HANDLE DIRECTLY** | **No** | We handle; use **Action** column as primary handling hint |
-| **Kein Transfer** (+ instructions in Action) | **No** | Do **not** Sprinklr-transfer; follow **Action** handling hint |
 | Ticket instruction in Action | Per Action | e.g. create named ticket — not a free KB invent |
 
-4. Only then query KB articles under **`KnowledgeBase/REMAP/exports/`** — for **how** to execute the matrix path (Themen-ID, steps, customer wording), never to **re-route**. Use `SEARCH_HINT.md` / `INDEX.md`. **No** legacy `knowledgebase1–7` (deleted 2026-09-17). See `.cursor/rules/knowledgebase-remap-only.mdc`.
+4. Only then query KB articles under **`KnowledgeBase/REMAP/exports/`** — for **how** to execute the matrix path (Themen-ID, steps, customer wording), never to **re-route**. Use `SEARCH_HINT.md` / `INDEX.md`. See `.cursor/rules/knowledgebase-remap-only.mdc`.
 
 ## Non-transferable cases — handling hint first
 
 When Transfer eligible = **No**:
 
-1. Quote / apply the matrix **Action** / handling hint next to Ziel-Kontakt (e.g. Mein o2 paths, KB Themen-ID refs already in the Action cell, “process per KB …”, text-block names for **agent** use).
+1. Quote / apply the matrix **Action** / handling hint next to Ziel-Kontakt (e.g. Mein o2 paths, Themen-ID refs in the Action cell, “process per KB …”, text-block names for **agent** use).
 2. Use KB to flesh out that hint (ticket fields, process detail, reply options).
 3. If KB is silent or conflicts on **routing**, still stay on the matrix path (handle directly / Kein Transfer instructions).
 
@@ -43,11 +59,11 @@ Do **not** invent a transfer because the KB article “usually” goes to anothe
 
 ## Transferable cases
 
-When Transfer eligible = **Yes**: Ziel-Kontakt from the matrix is final (unless an explicit always-applied exception overrides, e.g. English → `CBC_XF_E_ENGLISCH`, Care Widerruf window → `CBC_XF_E_WIDERRUF`). Skip deep KB solution-hunting; short RE 4a/5 is enough.
+When Transfer eligible = **Yes**: Ziel-Kontakt from the matrix is final (unless an explicit always-applied exception overrides, e.g. English → `EMAIL_O2_ENGLISCH` / legacy `CBC_XF_E_ENGLISCH`, Care Widerruf window → `EMAIL_O2_WIDERRUF` / legacy `CBC_XF_E_WIDERRUF`). Skip deep KB solution-hunting; short RE 4a/5 is enough.
 
 ## Inactive / removed goals
 
-If the matrix marks a former Ziel as **Inactive**, follow [`.cursor/rules/inactive-transfer-goal-alternates.mdc`](.cursor/rules/inactive-transfer-goal-alternates.mdc) and the matrix alternate row — usually **CBC_CARE_ALLGEMEIN — HANDLE DIRECTLY** + Action hint. Never transfer to a removed queue even if old KB text still names it.
+If the matrix marks a former Ziel as **Inactive**, follow [`.cursor/rules/inactive-transfer-goal-alternates.mdc`](.cursor/rules/inactive-transfer-goal-alternates.mdc) and the matrix alternate row — usually **EMAIL_O2_CARE — HANDLE DIRECTLY** + Action hint. Never transfer to a removed queue even if old KB text still names it.
 
 ## Customer-facing replies
 
@@ -55,4 +71,4 @@ Matrix queue names stay in **agent** sections only. Customer body: no TransferMa
 
 ## Intent
 
-Agents always open with **Transfer Matrix for the handling path**; KB supports execution, it does not outrank Ziel-Kontakt / Action.
+Agents always open with **Transfer Matrix for the handling path**; **own team Ziel = no transfer**; KB supports execution, it does not outrank Ziel-Kontakt / Action / own-team override.

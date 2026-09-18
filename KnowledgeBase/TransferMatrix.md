@@ -2,19 +2,22 @@
 
 > Extracted from Sabio Transfer Matrix screenshots. Covers both E-Mail and Hotline channels.
 > Last updated: 2026-09-18 (full remap from 512 screenshots).
-> Our domain (E-Mail): **EMAIL_O2_CARE** — email cases with this Ziel-Kontakt are handled directly.
+> Our domain (E-Mail): **EMAIL_O2_CARE** — email cases with this Ziel-Kontakt are handled directly (**Transfer eligible: No**).
+> Our domain (Call): **o2 Mobile Care** — voice cases with this Ziel-Kontakt are handled directly (**Transfer eligible: No**).
 > Sprinklr (SIKAS) is the active platform. WDE is retired — all WDE-specific instructions are disregarded.
 
 ## How to use this document
 
 **Priority:** This Transfer Matrix is the **authoritative handling path** for every case. If Knowledge Base articles disagree on transfer vs handle-directly, **this matrix wins**.
 
+**Own-team override (this workspace):** Ziel-Kontakt **`EMAIL_O2_CARE`** (email) or **`o2 Mobile Care`** (calls) always means **we handle — Transfer eligible: No**. Do not Sprinklr-transfer to ourselves even if an Action cell says “Cold transfer” (that wording is for other Sabio readers).
+
 1. **Identify the Thema** (topic) from the customer contact.
 2. **Identify the Fall** (case type) and **Kanal** (E-Mail or Hotline).
 3. **Look up the Ziel-Kontakt** and read the **Action** column.
-4. **If Ziel-Kontakt = EMAIL_O2_CARE** (or Action = **HANDLE DIRECTLY**): Handle the email case directly.
-5. **If Ziel-Kontakt = EMAIL_O2_*** queue: Forward the email via Sprinklr to that queue.
-6. **If Ziel-Kontakt = internal hotline team** (e.g. o2 Mobile Care, o2 Tech Fixnet): Transfer call — cold transfer unless Action says warm/traffic-light. Respect 120s wait threshold unless stated otherwise.
+4. **If Ziel-Kontakt = EMAIL_O2_CARE** (email) **or o2 Mobile Care** (call) **or Action = HANDLE DIRECTLY**: Handle directly — **Transfer eligible: No**.
+5. **If Ziel-Kontakt = EMAIL_O2_*** queue **other than EMAIL_O2_CARE**: Forward the email via Sprinklr to that queue.
+6. **If Ziel-Kontakt = other internal hotline team** (e.g. o2 Tech Fixnet, o2 Fixnet Care — **not** o2 Mobile Care): Transfer call — cold transfer unless Action says warm/traffic-light. Respect 120s wait threshold unless stated otherwise.
 7. **If Ziel-Kontakt = email address**: Forward via Sprinklr **Externer Transfer** to that address.
 8. **If Ziel-Kontakt = Kein Transfer**: Do not transfer. Follow the Action steps (Themen-ID tickets, text blocks, hotline referral for customer, etc.).
 9. **If Action = ticket instruction**: Create the specified ticket (Themen-ID number, copy email content to Problembeschreibung as instructed).
@@ -29,7 +32,7 @@ See also: `.cursor/rules/transfer-matrix-priority.mdc`
 
 | Queue | Description |
 |---|---|
-| EMAIL_O2_CARE | General o2 care — handle directly |
+| EMAIL_O2_CARE | General o2 care — **our email team** — handle directly (Transfer eligible: No) |
 | EMAIL_O2_MOBILE_TECHNIK | Mobile technical support team |
 | EMAIL_O2_ENGLISCH | English-language care |
 | EMAIL_COLLECTIONS | Collections (dunning) |
@@ -54,7 +57,7 @@ See also: `.cursor/rules/transfer-matrix-priority.mdc`
 
 | Team | Hours | Transfer type |
 |---|---|---|
-| o2 Mobile Care | Mo–Fr 7–20 Uhr, Sa 10–18 Uhr | Cold (kalt), 120s threshold |
+| o2 Mobile Care | Mo–Fr 7–20 Uhr, Sa 10–18 Uhr | **Our call team** — handle directly (Transfer eligible: No). Sabio may show “Cold transfer” for other readers. |
 | o2 Fixnet Care | Mo–Fr 7–20 Uhr, Sa 10–18 Uhr | Cold (kalt), 120s threshold |
 | o2 Tech Mobile (Postpaid, Homespot, FMS) | Mo–Fr 7–20 Uhr, Sa 10–18 Uhr | Cold (kalt), 120s threshold |
 | o2 Tech Fixnet (DSL, FTTH, Kabel) | Mo–Fr 7–22 Uhr, Sa 10–18 Uhr | Cold (kalt), 120s threshold |
@@ -110,7 +113,7 @@ See also: `.cursor/rules/transfer-matrix-priority.mdc`
 | 9 | Geschäftsführung – Beschwerde | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
 | 10 | Geschäftsführung – Beschwerde | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
 | 11 | Geschäftsführung – Beschwerde | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 4073 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
-| 12 | Händleranfragen (Händlerstornos, provisionsrelevante Änderungen) | Hotline | Kein Transfer | Händler an Händlerbetreuung verweisen: 089/41551717 oder 0176/86888888. |
+| 12 | Händleranfragen (Händlerstornos, provisionsrelevante Änderungen) | Hotline | Kein Transfer | Händler an Händlerbetreuung verweisen: 089/41851717 oder 0176/88888888. |
 | 13 | Händlerbeschwerde — Kundenbeschwerden über Vertriebspartner (Händlernr. 12..., 13..., 14..., 19...) | Hotline – DSL/Glasfaser/Kabel | o2 Fixnet Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. |
 | 14 | Händlerbeschwerde — Kundenbeschwerden über Vertriebspartner (Händlernr. 12..., 13..., 14..., 19...) | Hotline – Mobile | o2 Mobile Care | Cold transfer; Mo–Fr 7–20 Uhr, Sa 10–18 Uhr; ab 120 s Wartezeit informieren. Ticket Themen-ID 4304 erstellen. |
 | 15 | Händlerbeschwerde — Kundenbeschwerden über Vertriebspartner (Händlernr. 12..., 13..., 14..., 19...) | E-Mail | Kein Transfer | Kein Transfer. Ticket Themen-ID 4304 (Portalanfrage: Themen-ID ändern + Fall-ID; sonst: neu anlegen mit vollst. E-Mail-Inhalt + Fall-ID). Textbaustein "An Fachabteilung weitergeleitet". |
