@@ -29,7 +29,7 @@ When in doubt in a mixed thread: if the user sends **only** `RE`, `PR`, `LF`, `l
 | **login** | Sprinklr login-only / startup automation |
 | **DONE** / **Done for today** | `done_for_today.py` stop script (run in case chat) |
 | **`[AUTO_PIPELINE]`** (hook followup) | **DO NOT process.** The stop hook fired in this chat instead of the email processing chat. See warning below. |
-| **`[AUTO_PIPELINE_TURN_C]`** | **DO NOT process.** Obsolete — LF is now handled by the background chain (sound hook → auto_lf_after_re.py). Block and warn. |
+| **`[AUTO_PIPELINE_TURN_C]`** | **DO NOT process.** Obsolete. Block and warn. |
 
 **Allowed here (not case processing):** **`revert last`** — restore file checkpoint (see `.cursor/rules/revert-last.mdc`).
 

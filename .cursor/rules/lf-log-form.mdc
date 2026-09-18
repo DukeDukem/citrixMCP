@@ -22,7 +22,7 @@ The agent fills Case Tracker **while processing** each newly opened case. The op
 
 | Channel | When | Tracker |
 |---------|------|---------|
-| **EMAIL** | **Once after full 7-step is typed in chat** (sound hook → `auto_lf_after_re.py`). Never at extract. Transfer from RE §3 / Sprinklr. | E-Mail Care; one LF per Fall # |
+| **EMAIL** | **Once after full 7-step is typed in chat** (`re_auto_lf_hook` → `auto_lf_after_re.py`). Never at extract. Never via audio. Transfer from RE §3 / Sprinklr. | E-Mail Care; one LF per Fall # |
 | **CALL** | As soon as **CHANNEL: CALL** is known (no BRIEF wait) | **`--channel voice`**; Transfer via `resolve_transfer()` / Ziel |
 
 ### Best-guess Auto-LF (EMAIL — at extract time)
@@ -51,7 +51,7 @@ If the 7-step RE later reveals a different transfer target, or the operator send
 3. End: `7-step complete — Auto-LF starts after this message.`
 4. **STOP** — do not call `fill_case_tracker` / `--closeout-*` here (collapses RE)
 
-**Background (once):** `re_complete_sound_hook` detects section 7 → `auto_lf_after_re.py` → `fill_case_tracker` (from §3) + `--closeout-*`. Idempotent via `auto_lf_done.json`.
+**Background (once):** `re_auto_lf_hook` (text, not audio) detects section 7 → `auto_lf_after_re.py` → `fill_case_tracker` (from §3) + closeout arm-only. Idempotent via `auto_lf_done.json`.
 
 **Hard failure:** Agent runs Auto-LF **before** 7-step, or runs a **second** LF after the hook already filed this Fall #.
 

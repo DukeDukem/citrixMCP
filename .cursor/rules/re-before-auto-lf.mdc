@@ -19,11 +19,13 @@ AGENT MESSAGE (text-only):
   End: "7-step complete — Auto-LF starts after this message."
   STOP. NO fill_case_tracker. NO --closeout-* in this message.
 
-BACKGROUND (once, automatic):
-  re_complete_sound_hook detects section 7
-  → saves latest_re_visible.md
+BACKGROUND (once, automatic — NOT audio):
+  re_auto_lf_hook (afterAgentResponse text) detects section 7 / 7-step-complete
   → spawns auto_lf_after_re.py
-  → fill_case_tracker (from §3 / Sprinklr) + --closeout-* + Dexter
+  → fill_case_tracker (from §3 / Sprinklr) + closeout arm-only + bg await
+
+Sounds (Prowler / book / Dexter) are cues only — never processing triggers.
+Extract → 7-step uses arm + extract_ready → extract_auto_continue_hook [AUTO_PIPELINE].
 
 Agent must NOT run a second LF for the same Fall # if auto_lf_done.json / Speichern pending already has it.
 ```
@@ -47,6 +49,7 @@ Extract-time Auto-LF + a second LF after the agent read the email caused **two C
 ## Related
 
 - `.cursor/hooks/auto_lf_after_re.py`
-- `.cursor/hooks/re_complete_sound_hook.py`
+- `.cursor/hooks/re_auto_lf_hook.py` (text → LF; not audio)
+- `.cursor/hooks/extract_auto_continue_hook.py` (extract_ready → 7-step)
 - `.cursor/rules/lf-log-form.mdc`
 - `.cursor/rules/re-no-background-tasks-ui.mdc`

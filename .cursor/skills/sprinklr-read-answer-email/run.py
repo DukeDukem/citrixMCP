@@ -197,12 +197,22 @@ def _write_meta(mode: str, pid: int) -> None:
     )
 
 
-def _closeout_listen(runner: Path, watch_flag: str, env: dict) -> int:
-    """Arm detached watch, then block until extract — for post-PR/transfer/CALL close-out."""
-    rc = _spawn_detached(runner, watch_flag, env, auto_await=False)
+def _closeout_listen(runner: Path, watch_flag: str, env: dict, *, arm_only: bool = False) -> int:
+    """Arm detached watch; optionally block until extract.
+
+    arm_only=True: arm + background await, return immediately (for Auto-LF worker).
+    """
+    rc = _spawn_detached(runner, watch_flag, env, auto_await=True)
     if rc != 0:
         return rc
     print("CLOSEOUT_LISTEN_ACTIVE", flush=True)
+    if arm_only:
+        print(
+            "CLOSEOUT_ARM_ONLY — bg await writes extract_ready; "
+            "agent continues via [AUTO_PIPELINE] on next stop (not audio).",
+            flush=True,
+        )
+        return 0
     print(
         "Close-out listen running — operator clicks Sprinklr button only; "
         "agent continues on AWAIT_ARM_EXTRACT_DONE (no typed RE/NEXT).",
@@ -477,7 +487,9 @@ def main() -> int:
     }
     for closeout_flag, watch_flag in closeout_map.items():
         if closeout_flag in argv:
-            return _closeout_listen(runner, watch_flag, env)
+            return _closeout_listen(
+                runner, watch_flag, env, arm_only="--arm-only" in argv
+            )
 
     if "--pickup" in argv:
         # Recovery when Prowler played but agent did not continue RE/LF

@@ -265,6 +265,10 @@ def main() -> int:
         f"keys={list(payload.keys())[:12]}"
     )
 
+    # AUDIO ONLY — never spawn Auto-LF / never drive the case pipeline.
+    # Processing: arm + extract_ready → extract_auto_continue_hook;
+    #             7-step text → re_auto_lf_hook → auto_lf_after_re.
+
     if _any(text, _CLOSEOUT_DONE_PATTERNS):
         if not _debounce_allow("closeout"):
             _log("closeout_dexter debounced")
@@ -276,28 +280,12 @@ def main() -> int:
     if _should_play_re_ready(text):
         _save_latest_re_visible(text)
         if not _debounce_allow("re_ready"):
-            _log("re_ready_book debounced (skip sound + skip duplicate auto_lf spawn)")
+            _log("re_ready_book debounced")
             return _ok()
-        # Primary Auto-LF path: once after section 7 is in chat (not at extract)
-        _spawn_auto_lf_after_re(text)
         ok = play_re_ready_sound()
         clear_re_pending_sound()
-        _log(f"re_ready_book ok={ok}")
+        _log(f"re_ready_book ok={ok} (audio only — LF via re_auto_lf_hook)")
         return _ok()
-
-    # stop often has text_len=0 — backup spawn if RE was saved seconds ago and LF not done
-    if (not text) and str(event).lower() in ("stop", ""):
-        try:
-            if _LATEST_RE_VISIBLE.exists():
-                age = time.time() - _LATEST_RE_VISIBLE.stat().st_mtime
-                if age < 90:
-                    saved = _LATEST_RE_VISIBLE.read_text(encoding="utf-8", errors="replace")
-                    if _should_play_re_ready(saved) and _debounce_allow("re_ready_stop_backup"):
-                        _log(f"stop_backup_spawn age={age:.1f}s len={len(saved)}")
-                        _spawn_auto_lf_after_re(saved)
-                        return _ok()
-        except Exception as e:
-            _log(f"stop_backup_spawn failed: {e!r}")
 
     _log("no_sound_match")
     return _ok()

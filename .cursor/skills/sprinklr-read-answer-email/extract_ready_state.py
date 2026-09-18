@@ -66,7 +66,7 @@ def write_extract_ready(
     marker: str = "",
     source: str = "arm_watch",
 ) -> None:
-    """Mark extract ready for agent pickup (Prowler / EXTRACT_DONE)."""
+    """Mark extract ready for agent pickup (arm/await — not audio)."""
     if "CHANNEL: CALL" in segment or "CALL_LF_GATE" in segment:
         channel = "CALL"
         gate = "CALL_LF_GATE"
@@ -92,6 +92,8 @@ def write_extract_ready(
         _dispatched = _STATE_DIR / "auto_continue_dispatched.json"
         if _dispatched.exists():
             _dispatched.unlink(missing_ok=True)
+        # Keep processing window open until AUTO_PIPELINE consumes this extract
+        set_monitoring_armed(True)
         print(f"EXTRACT_READY_WRITTEN {_READY_FILE}", flush=True)
     except Exception as e:
         print(f"[WARN] extract_ready write failed: {e}", flush=True)
@@ -153,6 +155,7 @@ def write_extract_ready_simple(
         _dispatched = _STATE_DIR / "auto_continue_dispatched.json"
         if _dispatched.exists():
             _dispatched.unlink(missing_ok=True)
+        set_monitoring_armed(True)
         print(f"EXTRACT_READY_WRITTEN {_READY_FILE}", flush=True)
     except Exception as e:
         print(f"[WARN] extract_ready simple write failed: {e}", flush=True)

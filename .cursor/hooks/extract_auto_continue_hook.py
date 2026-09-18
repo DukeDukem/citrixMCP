@@ -90,8 +90,8 @@ def _followup(case_id: str, channel: str, gate: str) -> str:
         f"  Do NOT paste customer email body/Subject/From.\n"
         f"*** FORBIDDEN in this message: fill_case_tracker / --closeout-* / Auto-LF tools ***\n"
         f"*** FORBIDDEN: Auto-LF before the full 7-step is typed ***\n"
-        f"Background: re_complete_sound_hook detects section 7 → auto_lf_after_re.py "
-        f"(one LF + closeout from §3). Do not run a second LF.\n"
+        f"Background (NOT audio): afterAgentResponse text hook → auto_lf_after_re.py "
+        f"(one LF + closeout from §3). Sounds are cues only — never processing triggers.\n"
         f"Forbidden: Task/explore; asking operator anything."
     )
 
@@ -125,20 +125,17 @@ def main() -> int:
     except Exception:
         pass
 
-    # Gate: monitoring window — only active between arm fire and mark_consumed().
-    # Outside this window (waiting for PR, idle, between cases) the hook is silent.
-    # Window: set True in _spawn_detached() → set False in mark_consumed().
+    # Processing trigger = pending extract_ready from arm/await (NOT audio).
+    # monitoring_armed is advisory; do NOT block when extract is waiting —
+    # otherwise Prowler plays, agent stays idle, and 7-step never starts.
     try:
         if str(_READ_SKILL) not in sys.path:
             sys.path.insert(0, str(_READ_SKILL))
         from extract_ready_state import is_monitoring_armed
         if not is_monitoring_armed():
-            _log("monitoring_not_armed — hook silent (outside arm window)")
-            sys.stdout.write("{}\n")
-            sys.stdout.flush()
-            return 0
+            _log("monitoring_not_armed — still checking pending extract_ready")
     except Exception as e:
-        _log(f"monitoring_armed_check_failed={e!r} — allowing (safe default)")
+        _log(f"monitoring_armed_check_failed={e!r}")
 
     if loop_count >= _LOOP_LIMIT:
         _log("loop_limit_reached")

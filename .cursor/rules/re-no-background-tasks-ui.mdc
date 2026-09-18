@@ -40,7 +40,7 @@ After **each** EMAIL extract for **each** new Fall #:
 
 **Do NOT paste the customer email body / Subject / From into chat.** Operator sees it in Sprinklr.
 
-**Auto-LF:** once in background after section 7 (`re_complete_sound_hook` → `auto_lf_after_re.py`). **Never** at extract. **Never** a second LF for the same Fall #.
+**Auto-LF:** once in background after section 7 (`re_auto_lf_hook` → `auto_lf_after_re.py`). **Never** at extract. **Never** via audio hooks. **Never** a second LF for the same Fall #.
 
 ### Notification path (DETACHED_ARM_EXTRACT_READY / [AUTO_PIPELINE])
 
@@ -67,7 +67,7 @@ Write **full 7-step text first** (zero LF tools). Auto-LF runs **once** after se
 |-------|------|-------|
 | Extract | `run.py` / await-arm / pickup | extract only — **no** Auto-LF |
 | Agent chat | Full 7-step sections 1–7 | **ZERO** (no LF) |
-| After §7 | Auto-LF once via sound hook | `auto_lf_after_re.py` (background) |
+| After §7 | Auto-LF once via text hook (not audio) | `re_auto_lf_hook` → `auto_lf_after_re.py` |
 
 ## Auto-start
 

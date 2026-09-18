@@ -155,11 +155,18 @@ def _run_fill(case_id: str, transfer: str | None, target: str) -> int:
 
 
 def _run_closeout(transfer: str, target: str | None) -> int:
+    """Arm close-out + background await only (do not block this worker).
+
+    Blocking await hid extract completion from the email agent (no Cursor shell
+    notify). Detached arm + bg await writes extract_ready; stop hook fires
+    [AUTO_PIPELINE] for the next 7-step.
+    """
     if transfer == "1":
         flag = "--closeout-extern" if target and "@" in target else "--closeout-weiter"
     else:
         flag = "--closeout-anwenden"
-    cmd = [sys.executable, str(_RUN), flag]
+    # --arm-only: spawn detached watch + bg await; return immediately
+    cmd = [sys.executable, str(_RUN), flag, "--arm-only"]
     _log(f"CLOSEOUT_CMD {' '.join(cmd)}")
     return subprocess.call(cmd, cwd=str(_REPO))
 
