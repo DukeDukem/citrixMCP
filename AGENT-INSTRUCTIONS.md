@@ -59,7 +59,7 @@ At the start of a non-trivial task, infer pacing from **remaining days in the bi
 5. CALL → CHANNEL detect → Auto-LF voice → **Next** (BRIEF optional)
 6. Next case → RE + Auto-LF again
 
-**EMAIL three-turn RE:** (1) `run.py` extract → `RE_TEXT_ONLY_GATE` → stop (2) **text-only** 7-step — zero tools (3) play-ready → Auto-LF → PR or transfer arm. Recovery: **`RE SHOW`**, **`RE FILE`**, or open `.cursor/state/latest_re_visible.md`. Rule: `re-no-background-tasks-ui.mdc`.
+**EMAIL three-turn RE:** (1) `run.py` extract → `RE_TEXT_ONLY_GATE` → stop (2) **text-only** 7-step — zero tools (3) Auto-LF (re_auto_lf_hook) → PR or transfer arm. Recovery: **`RE SHOW`**, **`RE FILE`**, or open `.cursor/state/latest_re_visible.md`. Rule: `re-no-background-tasks-ui.mdc`.
 
 Call STT/teleprompter: **parked** (`capture_path.json` `enabled=false`) until better model.
 
@@ -96,7 +96,7 @@ Use when the case agent needs a delta without full GO re-bootstrap (copy block f
 ```
 UPDATE — rules sync 2026-09-11 (baseline 0a98818):
 
-RE — THREE TURNS (EMAIL): (1) run.py only → RE_TEXT_ONLY_GATE → stop (2) text-only full 7-step sections 1–7 — ZERO tools (3) play-ready → Auto-LF → PR or transfer arm. No Task/explore; no Read terminals/*.txt.
+RE — THREE TURNS (EMAIL): (1) run.py only → RE_TEXT_ONLY_GATE → stop (2) text-only full 7-step sections 1–7 — ZERO tools (3) Auto-LF (re_auto_lf_hook) → PR or transfer arm. No Task/explore; no Read terminals/*.txt.
 
 RE recovery: RE SHOW / visible RE / RE FILE (show_latest_re.py). Backup: .cursor/state/latest_re_visible.md
 

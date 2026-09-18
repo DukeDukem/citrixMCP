@@ -202,8 +202,8 @@ def _followup(case_id: str, channel: str, gate: str) -> str:
         f"  Do NOT paste customer email body/Subject/From.\n"
         f"*** FORBIDDEN in this message: fill_case_tracker / --closeout-* / Auto-LF tools ***\n"
         f"*** FORBIDDEN: Auto-LF before the full 7-step is typed ***\n"
-        f"Background (NOT audio): re_auto_lf_hook → auto_lf_after_re.py "
-        f"(one LF + closeout from §3). Sounds are cues only.\n"
+        f"Background: re_auto_lf_hook → auto_lf_after_re.py "
+        f"(one LF + closeout from §3). No audio.\n"
         f"Forbidden: Task/explore; asking operator anything."
     )
 

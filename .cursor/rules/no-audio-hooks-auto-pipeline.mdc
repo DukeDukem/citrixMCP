@@ -1,0 +1,36 @@
+---
+description: No audio hooks — silent auto pipeline; never wait for operator nudge between cases
+alwaysApply: true
+---
+
+# No audio hooks — silent auto case pipeline
+
+## Hard ban
+
+- **Never** play, call, or wait for any case-processing sound / `play-ready` / sound hook.
+- **Never** treat audio (or lack of audio) as a processing gate.
+- Sound hook modules are **deleted**. Do not recreate them.
+
+## What replaces audio (mandatory)
+
+| Former audio role | Replacement |
+|---|---|
+| “Extract done” nudge | Live `--await-arm` shell completion → `AWAIT_ARM_EXTRACT_DONE` / `DETACHED_ARM_EXTRACT_READY` **or** `extract_ready.json` (`ready: true`, `consumed: false`) **or** stop-hook `[AUTO_PIPELINE]` |
+| “RE complete” → Auto-LF | `re_auto_lf_hook` (payload text **or** `transcript_path` jsonl) + detached `auto_lf_watchdog` poll if hooks miss |
+| “Click ready” | `READY_FOR_YOUR_CLICK` + `ARM_WATCH_DETACHED` only |
+
+## Agent must auto-continue (no operator nudge)
+
+1. **Every agent turn start (email chat):** If `extract_ready.json` has `ready: true` and `consumed: false` → **immediately** run the EMAIL/CALL pipeline for that Fall #. Do **not** wait for the operator to type RE / AUTO_PIPELINE / anything.
+2. **After every `--closeout-*` / Auto-LF arm:** Keep a **foreground or chat-visible** `--await-arm` (or closeout that blocks on await) so Cursor delivers a completion notification. Detached arm alone is not enough if the agent then idles without await.
+3. **On `AWAIT_ARM_EXTRACT_DONE` / shell notify / `[AUTO_PIPELINE]`:** Same turn or immediate next turn → full 7-step (EMAIL) or CALL Auto-LF — **zero** “waiting for you.”
+4. **After PR / LF TR quote:** Confirm await is running; if `extract_ready` already pending for a **new** Fall #, process it before resting.
+5. **Forbidden:** Stopping after PR with “awaiting Anwenden” and then ignoring the next extract until the operator pings.
+
+## Operator inputs unchanged
+
+Operator still only: **login**, **RE** (first case / recovery), **PR**, **DONE**, optional **BRIEF**. Never ask for NEXT / case-2+ RE / LF to unstick the pipeline.
+
+## Auto-LF
+
+EMAIL Auto-LF = once after visible section 7 via `re_auto_lf_hook` (text), not audio. If the text hook fails and `auto_lf_done.json` lacks this Fall #, agent runs `fill_case_tracker` + `--closeout-*` after the 7-step turn (recovery) — still no audio.

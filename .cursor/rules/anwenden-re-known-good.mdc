@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Anwenden RE — known-good baseline (current)
 
-**Status:** Current as of **2026-09-04**. Detached arm + typed-RE `--once` + next-case Fall skip + sounds.
+**Status:** Current as of **2026-09-18**. Detached arm + typed-RE `--once` + next-case Fall skip. **No audio** — silent `--await-arm` + `extract_ready` + text hooks only.
 
 ## Operator inputs only
 
@@ -20,7 +20,7 @@ alwaysApply: true
 | **Auto-LF TR** (queue) | **`--closeout-weiter`** | Transfer UI → Weiter |
 | **Auto-LF TR** (email) | **`--closeout-extern`** | Externer Transfer → Weiterleiten |
 
-On notify / stop-hook `[AUTO_PIPELINE]`: immediate 7-step + Auto-LF. Prowler ≠ stop.
+On notify / stop-hook `[AUTO_PIPELINE]`: immediate 7-step + Auto-LF. Extract-done notify ≠ stop.
 
 **Senden is NOT an arming criterion** — independent of Anwenden. Operator clicks either in any order. Agent never says "Senden, then Anwenden".
 
@@ -40,14 +40,14 @@ On notify / stop-hook `[AUTO_PIPELINE]`: immediate 7-step + Auto-LF. Prowler ≠
 
 ## Detached arm + click-ready
 
-1. `run.py --arm*` → **`ARM_WATCH_DETACHED`** + **`READY_FOR_YOUR_CLICK`** + **Dexter** (no console window: `CREATE_NO_WINDOW`).
+1. `run.py --arm*` → **`ARM_WATCH_DETACHED`** + **`READY_FOR_YOUR_CLICK`** (no console window: `CREATE_NO_WINDOW`).
 2. Chat: `Armed — click … now.` + finishing quote (`PR done` / `LF done` / `LF TR done`).
 3. `run.py --await-arm` (user may already click; await spinner ≠ “not ready”).
-4. Full **7-step RE** + `--play-ready` + **Auto-LF**, then transfer arm or wait for **PR**.
+4. Full **7-step RE** + **Auto-LF**, then transfer arm or wait for **PR**.
 
 If `--await-arm` aborted → **re-run `--await-arm`**. If log has `ERROR: NEXT CASE NOT OPEN` → **`run.py --once`**. Never stack a second arm while one wait is live.
 
-**Click-ready = Dexter + READY_FOR_YOUR_CLICK** — not “await finished.”
+**Click-ready = READY_FOR_YOUR_CLICK** — not “await finished.”
 
 ## Next-case open (post Anwenden / Weiter / Weiterleiten)
 
@@ -61,12 +61,12 @@ If `--await-arm` aborted → **re-run `--await-arm`**. If log has `ERROR: NEXT C
 
 **Weiter:** exact **Weiter** only (ignore Weiterleiten / Weiteleiten).  
 **Extern:** exact **Weiterleiten** only (ignore Externer Transfer).  
-**Prowler:** extract DONE — agent continues via closeout notify or stop-hook `[AUTO_PIPELINE]`. **Forbidden:** idle after sound; asking operator for NEXT/RE/LF.
+**Extract done:** agent continues via closeout `--await-arm` notify or stop-hook `[AUTO_PIPELINE]`. **Forbidden:** idle after extract; asking operator for NEXT/RE/LF.
 
 ## Workday flow
 
 1. **login** → agent **auto `--once`** on first visible case (no typed **RE**) → **CHANNEL: CALL|EMAIL** (do **not** arm call_listen while STT parked)
-2. **EMAIL** → agent **auto** 7-step → `--play-ready` → **Auto-LF** → operator **PR** (non-transfer) or transfer arm (no PR)
+2. **EMAIL** → agent **auto** 7-step → **Auto-LF** → operator **PR** (non-transfer) or transfer arm (no PR)
 3. **CALL** → CHANNEL detect → **Auto-LF** voice immediately → **`--arm-next`** (BRIEF optional)
 4. Close-out arm + await → next case → Auto-LF again
 5. **DONE** at end of day

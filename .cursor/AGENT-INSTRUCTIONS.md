@@ -22,7 +22,7 @@
 **Typed LF / LF TR / PR LF:** recovery only.  
 **Call listen/teleprompter:** parked until reactivated.
 
-**Sounds:** Dexter on arm; Prowler after armed extract; book after section 7.  
+**Notify:** READY_FOR_YOUR_CLICK on arm; `--await-arm` / `[AUTO_PIPELINE]` after extract; `re_auto_lf_hook` after section 7. No audio.  
 **Baseline:** `.cursor/rules/anwenden-re-known-good.mdc`, `lf-log-form.mdc`
 
 ---

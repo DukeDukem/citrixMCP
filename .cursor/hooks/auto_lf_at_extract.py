@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """DEPRECATED for EMAIL — Auto-LF now runs once after the full 7-step
-(see auto_lf_after_re.py via re_complete_sound_hook).
+(see auto_lf_after_re.py via re_auto_lf_hook text detection).
 
 This module refuses EMAIL channel runs so stale callers cannot double-fill
 Case Tracker at extract. Prefer auto_lf_after_re.py.

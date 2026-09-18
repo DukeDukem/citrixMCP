@@ -6,10 +6,5 @@
   "login_password": "tHUnDerBoLt!92#fLaMe",
   "case_tracker_url": "https://roberta.yoummday.com/casetracker/",
   "case_tracker_nq": "NQ10061547",
-  "case_tracker_password": "",
-  "re_complete_sound_volume": 0.75,
-  "re_ready_sound_path": "c:\\Users\\PC ENTER\\Downloads\\(With sound sfx) Book opening with turning pages Fairy Tale - No Watermark Free iStock Footage Video.mp3",
-  "re_ready_sound_volume": 0.75,
-  "pr_lf_done_sound_path": "c:\\Users\\PC ENTER\\Downloads\\Dexter Meme Sound Effect.mp3",
-  "pr_lf_done_sound_volume": 0.75
+  "case_tracker_password": ""
 }

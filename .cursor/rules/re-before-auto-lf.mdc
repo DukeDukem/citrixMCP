@@ -14,18 +14,18 @@ priority: CRITICAL
 EXTRACT (script): run.py / await-arm — NO Auto-LF spawn for EMAIL
 
 AGENT MESSAGE (text-only):
-  Optional: Read latest_extract.md
-  Write CHANNEL: EMAIL / Fall # / sections 1–7 as PLAIN chat text
-  End: "7-step complete — Auto-LF starts after this message."
-  STOP. NO fill_case_tracker. NO --closeout-* in this message.
+ Optional: Read latest_extract.md
+ Write CHANNEL: EMAIL / Fall # / sections 1–7 as PLAIN chat text
+ End: "7-step complete — Auto-LF starts after this message."
+ STOP. NO fill_case_tracker. NO --closeout-* in this message.
 
 BACKGROUND (once, automatic — NOT audio):
-  re_auto_lf_hook (afterAgentResponse text) detects section 7 / 7-step-complete
-  → spawns auto_lf_after_re.py
-  → fill_case_tracker (from §3 / Sprinklr) + closeout arm-only + bg await
+ re_auto_lf_hook (afterAgentResponse text) detects section 7 / 7-step-complete
+ → spawns auto_lf_after_re.py
+ → fill_case_tracker (from §3 / Sprinklr) + closeout arm-only + bg await
 
-Sounds (Prowler / book / Dexter) are **RETIRED** — never play, never trigger processing.
-Use arm → extract_ready → `[AUTO_PIPELINE]` → `re_auto_lf_hook` only.
+Audio cues are **REMOVED** — never play, never trigger processing.
+Use arm → extract_ready → `--await-arm` / `[AUTO_PIPELINE]` → `re_auto_lf_hook` only.
 
 Agent must NOT run a second LF for the same Fall # if auto_lf_done.json / Speichern pending already has it.
 ```

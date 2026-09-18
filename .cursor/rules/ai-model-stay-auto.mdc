@@ -54,7 +54,7 @@ Switch the model picker to Claude 4.6 Sonnet (or Composer 2.5), then resend.
 
 ## Quality + speed behaviours (case agent)
 
-1. **Visible 7-step first**, then tools (play-ready / Auto-LF / arms).  
+1. **Visible 7-step first**, then tools (Auto-LF / arms).  
 2. **Parallelize** independent tools (e.g. TransferMatrix grep + attachment open + KB) in one turn after CHANNEL: EMAIL.  
 3. **Do not** re-extract or re-query KB when the current extract + matrix row already decide the path.  
 4. Transfer-eligible: short §4a/5; skip deep solution hunting.  

@@ -1,6 +1,9 @@
 """
 Skill 2: Read email in Sprinklr.
 
+Processing is driven by arm + extract_ready + --await-arm + text hooks only.
+Never audio. Never wait for operator nudge between cases.
+
 Default RE (typed RE / bare run.py):
   Always extract the currently open case (--once).
   Never arm Anwenden on typed RE — arm only after LF close-out via --arm*.
@@ -13,10 +16,10 @@ Explicit flags:
   --arm-next / --watch-next-re   arm call disposition Next watch (after CALL LF)
   --await-arm            poll detached arm log until extract done (then exit 0)
   --pickup               agent-internal: replay extract if already done (not operator command)
-  --closeout-anwenden    post-PR: arm Anwenden + block until next-case extract (background + notify)
-  --closeout-weiter      post-transfer: arm Weiter + block until extract
-  --closeout-extern      post-transfer: arm Extern + block until extract
-  --closeout-next        post-CALL LF: arm Next + block until extract
+  --closeout-anwenden    arm Anwenden + block on --await-arm until next-case extract
+  --closeout-weiter      arm Weiter + block on --await-arm until extract
+  --closeout-extern      arm Extern + block on --await-arm until extract
+  --closeout-next        arm Next + block on --await-arm until extract
   --background           with --await-arm: detached poll + write extract_ready (no console)
   --no-auto-await        with --arm*: do not spawn background --await-arm
   --foreground           do NOT detach (legacy blocking watch in this shell)
@@ -24,6 +27,7 @@ Explicit flags:
 Detached by default on Windows for --arm / --arm-weiter / --arm-extern / --arm-next so Cursor
 aborting the agent shell does not kill the watch (common cause of
 ANWENDEN WATCH DIED BEFORE EXTRACT).
+After --closeout-*: shell stays on --await-arm so Cursor gets completion when extract finishes.
 """
 from __future__ import annotations
 
@@ -62,8 +66,8 @@ def _safe_print(text: str) -> None:
         print(text.encode(enc, errors="replace").decode(enc), flush=True)
 
 # Await-arm must only complete on explicit *EXTRACT_DONE* lines written after the
-# current arm session — never on RE_PENDING_SOUND / CHANNEL_CALL_DETECTED alone
-# (those caused stale-log false positives when --await-arm raced --arm-next).
+# current arm session — never on CHANNEL_CALL_DETECTED alone (stale-log false
+# positives when --await-arm raced --arm-next).
 _EXTRACT_DONE_MARKERS = (
     "ANWENDEN_RE_EXTRACT_DONE",
     "WEITER_RE_EXTRACT_DONE",
@@ -84,7 +88,7 @@ def _case_id_from_output(text: str) -> str:
 
 
 def _spawn_auto_lf_at_extract(case_id: str, channel: str = "EMAIL") -> None:
-    """DEPRECATED — EMAIL Auto-LF is post-7-step only (auto_lf_after_re via sound hook).
+    """DEPRECATED — EMAIL Auto-LF is post-7-step only (re_auto_lf_hook → auto_lf_after_re).
 
     Kept as a no-op so any stale caller cannot double-fill Case Tracker at extract.
     CALL still uses AUTO_LF_REQUIRED + agent same-turn voice LF (not this helper).
@@ -116,7 +120,8 @@ def _print_re_text_only_gate(case_id: str = "") -> None:
     )
     print(
         "2) STOP after the 7-step. Do NOT call fill_case_tracker / --closeout-* in that message "
-        "(collapses RE). Sound hook spawns Auto-LF once when section 7 is detected.",
+        "(collapses RE). re_auto_lf_hook spawns Auto-LF once when section 7 is detected "
+        "(payload text, or agent-transcript scan for pending Fall #).",
         flush=True,
     )
     print(
@@ -173,7 +178,7 @@ def _emit_post_extract_gate(combined_output: str) -> None:
                     return
     if "CHANNEL: EMAIL" in combined_output or "CUSTOMER EMAIL (for Cursor to read" in combined_output:
         _print_re_text_only_gate(case_id)
-        # Do NOT spawn Auto-LF at extract — waits until 7-step is typed (sound hook)
+        # Do NOT spawn Auto-LF at extract — waits until 7-step is typed (re_auto_lf_hook)
         return
     if case_id:
         _print_re_text_only_gate(case_id)
@@ -209,13 +214,13 @@ def _closeout_listen(runner: Path, watch_flag: str, env: dict, *, arm_only: bool
     if arm_only:
         print(
             "CLOSEOUT_ARM_ONLY — bg await writes extract_ready; "
-            "agent continues via [AUTO_PIPELINE] on next stop (not audio).",
+            "agent continues via [AUTO_PIPELINE] on next stop.",
             flush=True,
         )
         return 0
     print(
         "Close-out listen running — operator clicks Sprinklr button only; "
-        "agent continues on AWAIT_ARM_EXTRACT_DONE (no typed RE/NEXT).",
+        "blocking on --await-arm until extract (shell notify when done).",
         flush=True,
     )
     return _await_arm(timeout_s=1800.0)
@@ -291,11 +296,9 @@ def _spawn_detached(runner: Path, watch_flag: str, env: dict, *, auto_await: boo
         print(">>> CLICK exact Next NOW — watch is armed <<<", flush=True)
     print(
         "Watch runs outside this shell (no console window). "
-        "You may click now. Agent will await extract with: run.py --await-arm",
+        "You may click now. Agent awaits extract with: run.py --await-arm",
         flush=True,
     )
-    # Audio (Dexter) RETIRED — READY_FOR_YOUR_CLICK is the only click-ready signal
-    print("AUDIO_RETIRED — skip Dexter on arm", flush=True)
     if auto_await:
         _spawn_detached_await_arm(env)
     # Do not wait on proc; leave log_f open for child on Windows
@@ -323,7 +326,7 @@ def _spawn_detached_await_arm(env: dict) -> None:
         )
         print("AWAIT_ARM_BACKGROUND_SPAWNED", flush=True)
         print(
-            "AGENT: after close-out click, run --await-arm (audio cues retired).",
+            "AGENT: after close-out click, --await-arm (or bg poll) notifies on extract.",
             flush=True,
         )
     except Exception as e:
@@ -389,6 +392,23 @@ def _replay_arm_extract_segment(segment: str, *, write_out_file: bool = True) ->
             print(f"[WARN] await_arm_out write failed: {e}", flush=True)
 
 
+def _case_already_auto_lf_done(case_id: str) -> bool:
+    """True if auto_lf_done.json already has this Fall # (stale extract replay guard)."""
+    dig = "".join(c for c in (case_id or "") if c.isdigit())
+    if not dig:
+        return False
+    done_path = _STATE_DIR / "auto_lf_done.json"
+    if not done_path.exists():
+        return False
+    try:
+        import json
+
+        data = json.loads(done_path.read_text(encoding="utf-8"))
+        return "".join(c for c in str(data.get("case_id") or "") if c.isdigit()) == dig
+    except Exception:
+        return False
+
+
 def _await_arm(
     timeout_s: float = 1800.0,
     poll_s: float = 1.0,
@@ -419,6 +439,15 @@ def _await_arm(
             if "ARM_WATCH_RESET" in boot:
                 break
         time.sleep(0.15)
+    # Remember reset position at await start — ignore EXTRACT_DONE that predates this await
+    await_started_reset = ""
+    if _ARM_LOG.exists():
+        try:
+            boot = _ARM_LOG.read_text(encoding="utf-8", errors="replace")
+            await_started_reset = _arm_log_segment_after_reset(boot)[:200]
+        except Exception:
+            pass
+    seen_done_for_stale = False
     while time.time() < deadline:
         if _ARM_LOG.exists():
             try:
@@ -435,6 +464,28 @@ def _await_arm(
                         print(line, flush=True)
                 last_size = size
             if any(m in segment for m in _EXTRACT_DONE_MARKERS):
+                case_id = _case_id_from_output(segment)
+                # Stale: same Fall # already Auto-LF'd — keep waiting for a NEW extract
+                if case_id and _case_already_auto_lf_done(case_id):
+                    if not seen_done_for_stale:
+                        print(
+                            f"STALE_EXTRACT_IGNORED case={case_id} "
+                            f"(already Auto-LF'd — waiting for next Fall #)",
+                            flush=True,
+                        )
+                        seen_done_for_stale = True
+                    time.sleep(poll_s)
+                    continue
+                # Stale: EXTRACT_DONE already present at await start with no new click growth
+                if (
+                    await_started_reset
+                    and segment.startswith(await_started_reset[:80])
+                    and "Waiting for" not in segment[-500:]
+                    and seen_done_for_stale is False
+                    and _case_already_auto_lf_done(case_id)
+                ):
+                    time.sleep(poll_s)
+                    continue
                 _replay_arm_extract_segment(segment)
                 return 0
             if any(m in segment for m in _FAIL_MARKERS):
@@ -484,7 +535,7 @@ def main() -> int:
             )
 
     if "--pickup" in argv:
-        # Recovery when Prowler played but agent did not continue RE/LF
+        # Recovery when extract finished but agent did not continue RE/LF
         if _ARM_LOG.exists():
             try:
                 text = _ARM_LOG.read_text(encoding="utf-8", errors="replace")

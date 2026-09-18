@@ -5457,7 +5457,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 )
             else:
                 ok = self.process_current_page_once(
-                    chat_only=False, extract_only=True, cue_on_extract_start=True
+                    chat_only=False, extract_only=True, armed_extract=True
                 )
                 if ok:
                     # Final guard if header flipped back to closed Fall
@@ -5516,10 +5516,6 @@ Use cursor-agent's file reading capabilities to read these files before generati
         )
         print("ERROR: NEXT CASE NOT OPEN — run run.py --once", flush=True)
         return False
-
-    def _cue_armed_re_start_sound(self) -> None:
-        """RETIRED — audio cues disabled; extract_ready / AUTO_PIPELINE drive processing."""
-        print("AUDIO_RETIRED — skip Prowler (arm/extract/AUTO_PIPELINE only)", flush=True)
 
     def monitor_anwenden_then_open_case_for_re(self, wait_seconds: int | None = None) -> bool:
         """
@@ -5986,13 +5982,13 @@ Use cursor-agent's file reading capabilities to read these files before generati
         self,
         chat_only: bool = False,
         extract_only: bool = False,
-        cue_on_extract_start: bool = False,
+        armed_extract: bool = False,
     ) -> bool:
         """
         Process the current page once: if on email content page, extract and optionally reply; if on console, process first visible email. Then exit (no monitoring).
         When extract_only=True: only print the customer email to stdout and exit (no AI, no KB, no suggested reply in script). Cursor then queries KB and writes reply in chat.
         When chat_only=True: extract, query AI, print summary + suggested reply to stdout; do not write to editor.
-        When cue_on_extract_start=True (armed Anwenden/Weiter/Extern): play Prowler only after CUSTOMER EMAIL extract is fully printed (not before sidetray click).
+        When armed_extract=True (post Anwenden/Weiter/Extern/Next): print ARMED_EXTRACT_DONE after extract so --await-arm / extract_ready can notify the agent (no audio).
         Returns True if an email was processed, False otherwise.
         """
         logger.info("Process-current-only: detecting page state (no navigation)...")
@@ -6065,7 +6061,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
                 ):
                     self._sidetray_channel_hint = None
                     self._print_call_case_and_exit(
-                        case_id, cue_on_extract_start=cue_on_extract_start
+                        case_id, armed_extract=armed_extract
                     )
                     return True
 
@@ -6109,11 +6105,11 @@ Use cursor-agent's file reading capabilities to read these files before generati
                         if channel_retry != "email" and ch_once != "email":
                             self._print_call_case_and_exit(
                                 case_id,
-                                cue_on_extract_start=cue_on_extract_start,
+                                armed_extract=armed_extract,
                             )
                             return True
                     self._print_customer_email_and_exit(
-                        case_id, email_content, cue_on_extract_start=cue_on_extract_start
+                        case_id, email_content, armed_extract=armed_extract
                     )
                     return True
                 email_data = {
@@ -6151,7 +6147,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
     def _print_call_case_and_exit(
         self,
         case_id: str,
-        cue_on_extract_start: bool = False,
+        armed_extract: bool = False,
     ) -> None:
         """CALL case after extract — no CUSTOMER EMAIL block; agent does voice Auto-LF only."""
         display_case_id = case_id
@@ -6179,15 +6175,14 @@ Use cursor-agent's file reading capabilities to read these files before generati
         print("=" * 80, flush=True)
         print("CALL_LF_GATE", flush=True)
         print("=" * 80 + "\n", flush=True)
-        if cue_on_extract_start:
-            self._cue_armed_re_start_sound()
-            print("ARMED_EXTRACT_DONE_SOUND", flush=True)
+        if armed_extract:
+            print("ARMED_EXTRACT_DONE", flush=True)
 
     def _print_customer_email_and_exit(
         self,
         case_id: str,
         email_content: dict,
-        cue_on_extract_start: bool = False,
+        armed_extract: bool = False,
     ) -> None:
         """Print the customer email to stdout so Cursor can read it; then script is done. Cursor queries KB and writes suggested reply in chat."""
         if self._is_empty_email_extract(email_content):
@@ -6198,7 +6193,7 @@ Use cursor-agent's file reading capabilities to read these files before generati
                     flush=True,
                 )
                 self._print_call_case_and_exit(
-                    case_id, cue_on_extract_start=cue_on_extract_start
+                    case_id, armed_extract=armed_extract
                 )
                 return
         print("CHANNEL: EMAIL", flush=True)
@@ -6265,17 +6260,9 @@ Use cursor-agent's file reading capabilities to read these files before generati
         print("\n" + "=" * 80)
         print("RE_TEXT_ONLY_GATE — agent: STOP tools; next message = 7-step sections 1–7 only")
         print("=" * 80 + "\n")
-        try:
-            if str(_script_dir) not in sys.path:
-                sys.path.insert(0, str(_script_dir))
-            # RE_PENDING_SOUND retired with audio cues — no-op flag write removed
-            print("AUDIO_RETIRED — skip RE_PENDING_SOUND", flush=True)
-        except Exception as e:
-            logger.debug(f"RE pending sound flag failed: {e}")
 
         # Armed auto-RE: extract done → extract_ready / await-arm notify (no audio)
-        if cue_on_extract_start:
-            self._cue_armed_re_start_sound()
+        if armed_extract:
             print("ARMED_EXTRACT_DONE", flush=True)
 
     def monitor_next_email_extract_only(self, check_interval: int = 5) -> None:
@@ -6841,6 +6828,22 @@ def main():
                         encoding="utf-8",
                     )
                     print("EMAIL_SESSION_ACTIVE")
+                    try:
+                        import subprocess as _sp
+                        _wd = _script_dir.parent.parent / "hooks" / "auto_lf_watchdog.py"
+                        if _wd.exists():
+                            _cf = 0x08000000 | 0x00000200 if sys.platform == "win32" else 0
+                            _sp.Popen(
+                                [sys.executable, str(_wd), "--spawn"],
+                                cwd=str(_script_dir.parent.parent.parent),
+                                stdin=_sp.DEVNULL,
+                                stdout=_sp.DEVNULL,
+                                stderr=_sp.DEVNULL,
+                                creationflags=_cf,
+                            )
+                            print("AUTO_LF_WATCHDOG_SPAWNED")
+                    except Exception as _wd_e:
+                        logger.warning(f"auto_lf_watchdog spawn failed: {_wd_e}")
                     # Next stop in THIS chat claims AUTO_PIPELINE ownership (blocks instructions chat)
                     _bind = _script_dir.parent.parent / "state" / "pipeline_bind_pending.json"
                     _bind.write_text(

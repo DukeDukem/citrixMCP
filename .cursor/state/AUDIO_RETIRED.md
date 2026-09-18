@@ -1,21 +1,13 @@
-# Audio cues RETIRED (2026-09-18)
+# Silent pipeline (audio deleted 2026-09-18)
 
-All Prowler / book / Dexter playback is disabled.
+Case-processing audio modules and hooks were removed. Nothing plays for RE / PR / LF / arm / extract.
 
-## Processing path (only)
+## Path (only)
 
-1. Arm (`--closeout-*` / `--arm*`) → `monitoring_armed`
-2. Extract → `extract_ready.json` pending
-3. Stop hook `extract_auto_continue_hook` → `[AUTO_PIPELINE]` (email chat owner)
-4. Agent types 7-step
-5. `re_auto_lf_hook` (text) → `auto_lf_after_re.py`
+1. Arm (`--closeout-*`) → `monitoring_armed` + live `--await-arm`
+2. Operator clicks Sprinklr close-out → extract → `extract_ready.json`
+3. `--await-arm` completes and/or `extract_auto_continue_hook` → `[AUTO_PIPELINE]`
+4. Agent types full 7-step immediately (no operator nudge)
+5. `re_auto_lf_hook` → `auto_lf_after_re.py` → Case Tracker + next closeout
 
-## Removed from active hooks
-
-- `re_complete_sound_hook` (removed from `hooks.json`)
-
-## Code no-ops
-
-- `re_complete_sound.py` — all `play_*` return False
-- Extract path — no Prowler / `RE_PENDING_SOUND`
-- Arm path — no Dexter
+Rule: `.cursor/rules/no-audio-hooks-auto-pipeline.mdc`

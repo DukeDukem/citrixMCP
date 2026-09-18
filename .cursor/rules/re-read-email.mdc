@@ -28,16 +28,16 @@ alwaysApply: true
 
 **Every** CHANNEL: EMAIL Fall # — first case, every later case, after every Anwenden/Weiter/Extern/Next extract, every recovery `--once`:
 
-1. You **MUST** write the full **7-step RE** as **visible chat text** for **that** Fall # — plain markdown in this chat. **Every time. New case = new 7-step.** Prior Fall # output does not satisfy this. **Do NOT paste the customer email body / Subject / From into chat** — operator sees it directly in Sprinklr; it is noise here.  
-2. **Forbidden shortcuts:** Auto-LF only; “transfer done” one-liner; **“extracted — 7-step next”** / **“writing RE…”** without pasting; paste-ready reply without sections 1–5/7; tool-only turn with no extract/7-step text; pointing at `latest_extract.md` instead of pasting; skipping paste because “operator can scroll up” or “same session”.  
-3. **Forbidden hiding:** Do **not** put extract/7-step only inside tool results, background-task panels, collapsed **“finished N background tasks”** / task dropdowns, or anything the user must click to expand. Extract + 7-step must appear as **normal chat prose** above the fold **for each case**.  
-4. **Turn order (EMAIL) — repeat per Fall #:**  
- - **A:** Extract (`run.py` / await-arm) — tools only; **no** operator-facing one-liner.  
- - **B (immediate, no wait for operator):** paste **extract** + sections **1–7** as plain chat — **ZERO tools**. See `.cursor/rules/re-no-background-tasks-ui.mdc`.  
- - **C:** only after B is visible: `--play-ready`, **Auto-LF**, transfer arm **or** wait for **PR**.  
- - Operator recovery: **`RE SHOW`** / **`visible RE`** → re-print **extract + full 7-step** for the **current** Fall #; **`RE FILE`** → `show_latest_re.py`.  
-5. Transfer-eligible EMAIL still gets extract + all 7 sections visible in chat (section 6 may be short forward notice).  
-6. **CALL** does **not** use the email 7-step form (Auto-LF voice on CHANNEL detect).  
+1. You **MUST** write the full **7-step RE** as **visible chat text** for **that** Fall # — plain markdown in this chat. **Every time. New case = new 7-step.** Prior Fall # output does not satisfy this. **Do NOT paste the customer email body / Subject / From into chat** — operator sees it directly in Sprinklr; it is noise here. 
+2. **Forbidden shortcuts:** Auto-LF only; “transfer done” one-liner; **“extracted — 7-step next”** / **“writing RE…”** without pasting; paste-ready reply without sections 1–5/7; tool-only turn with no extract/7-step text; pointing at `latest_extract.md` instead of pasting; skipping paste because “operator can scroll up” or “same session”. 
+3. **Forbidden hiding:** Do **not** put extract/7-step only inside tool results, background-task panels, collapsed **“finished N background tasks”** / task dropdowns, or anything the user must click to expand. Extract + 7-step must appear as **normal chat prose** above the fold **for each case**. 
+4. **Turn order (EMAIL) — repeat per Fall #:** 
+ - **A:** Extract (`run.py` / await-arm) — tools only; **no** operator-facing one-liner. 
+ - **B (immediate, no wait for operator):** paste **extract** + sections **1–7** as plain chat — **ZERO tools**. See `.cursor/rules/re-no-background-tasks-ui.mdc`. 
+ - **C:** only after B is visible: **Auto-LF** (re_auto_lf_hook), transfer arm **or** wait for **PR**. 
+ - Operator recovery: **`RE SHOW`** / **`visible RE`** → re-print **extract + full 7-step** for the **current** Fall #; **`RE FILE`** → `show_latest_re.py`. 
+5. Transfer-eligible EMAIL still gets extract + all 7 sections visible in chat (section 6 may be short forward notice). 
+6. **CALL** does **not** use the email 7-step form (Auto-LF voice on CHANNEL detect). 
 
 If you already ran Auto-LF / tools without a visible extract + 7-step for **this** Fall # in chat: **STOP**, paste extract + full 7-step now, then continue.
 
@@ -51,13 +51,13 @@ Cursor **aborts** long-running agent shells (~20s) when a turn ends. That used t
 
 | Step | Command | Expect |
 |------|---------|--------|
-| 1 | **Background** `run.py --closeout-anwenden` (post-PR) / `--closeout-weiter` / `--closeout-extern` / `--closeout-next` | `CLOSEOUT_LISTEN_ACTIVE` + `ARM_WATCH_DETACHED` + Dexter; notify on extract gate |
+| 1 | **Background** `run.py --closeout-anwenden` (post-PR) / `--closeout-weiter` / `--closeout-extern` / `--closeout-next` | `CLOSEOUT_LISTEN_ACTIVE` + `ARM_WATCH_DETACHED`; notify on extract gate |
 | 2 | Finishing quote only | `PR done` / `LF TR done` / `LF done` — operator clicks Sprinklr button only |
 | 3 | Notify or stop-hook `[AUTO_PIPELINE]` | `DETACHED_ARM_EXTRACT_READY` + gate → **immediate** 7-step + Auto-LF (zero operator typing) |
 | 3b | **EMAIL sidetray path** | On `CASE_ITEM_AUTO_CLICKED` → extract in same chain — immediate 7-step + Auto-LF |
-| 4 | Full **7-step RE** + `--play-ready` + **Auto-LF** | On extract stdout / notify — never wait for operator RE/NEXT/LF |
+| 4 | Full **7-step RE** + **Auto-LF** | On extract stdout / notify — never wait for operator RE/NEXT/LF |
 
-- **Click-ready = Dexter + READY_FOR_YOUR_CLICK** — do not wait for await to finish before clicking.
+- **Click-ready = READY_FOR_YOUR_CLICK** — do not wait for await to finish before clicking.
 - If **`--await-arm`** is aborted by Cursor → **re-run `--await-arm`** (detached watch still running).
 - If log shows **`ERROR: NEXT CASE NOT OPEN`** → **`run.py --once`** on the visible case (arm already stopped).
 - Use **`--once`** also if `ARM_WATCH_LOG` has **no** CUSTOMER EMAIL after timeout.
@@ -84,52 +84,51 @@ Script remembers **closed Fall #**, skips that sidebar item, polls ~25s for a di
 [Monitoring active: arm fired → sidetray click]
 
 EMAIL case:
-  sidetray click → extract only (Fall #, Quelle, Ziel, Kundennummer, channel)
-  → agent chat (zero LF tools):
-    CHANNEL: EMAIL + Fall #
-    7-step RE sections 1–7
-    End: 7-step complete — Auto-LF starts after this message.
-  → background once: auto_lf_after_re (fill + closeout from §3)
-  → agent rests, awaiting:
-      PR          → paste only → "PR done for #FALL_ID"
-      reiterate LF → re-run fill_case_tracker with corrected values (**case exception** for this Fall # only — does not change TM/KB/rules)
-      reiterate PR → rewrite reply section 6 (**case exception** for this Fall # only)
-      arm fires   → [Monitoring active] → next case
+ sidetray click → extract only (Fall #, Quelle, Ziel, Kundennummer, channel)
+ → agent chat (zero LF tools):
+ CHANNEL: EMAIL + Fall #
+ 7-step RE sections 1–7
+ End: 7-step complete — Auto-LF starts after this message.
+ → background once: auto_lf_after_re (fill + closeout from §3)
+ → agent rests, awaiting:
+ PR → paste only → "PR done for #FALL_ID"
+ reiterate LF → re-run fill_case_tracker with corrected values (**case exception** for this Fall # only — does not change TM/KB/rules)
+ reiterate PR → rewrite reply section 6 (**case exception** for this Fall # only)
+ arm fires → [Monitoring active] → next case
 
 CALL case:
-  case pops up → CHANNEL: CALL → Auto-LF voice → --closeout-next/weiter
-  → agent rests, awaiting:
-      BRIEF (optional) → KB/TM lookup / talk-track
-      arm fires        → [Monitoring active] → next case
+ case pops up → CHANNEL: CALL → Auto-LF voice → --closeout-next/weiter
+ → agent rests, awaiting:
+ BRIEF (optional) → KB/TM lookup / talk-track
+ arm fires → [Monitoring active] → next case
 
 Transfer (EMAIL or CALL):
-  Auto-LF TR at extract time → --closeout-weiter/extern → rest → no PR
-  → arm fires → [Monitoring active] → next case
+ Auto-LF TR at extract time → --closeout-weiter/extern → rest → no PR
+ → arm fires → [Monitoring active] → next case
 ```
 
-**Auto-LF timing: once after full 7-step is typed** (hook). Never at extract. Never a second LF for the same Fall #.  
+**Auto-LF timing: once after full 7-step is typed** (hook). Never at extract. Never a second LF for the same Fall #. 
 **PR is independent of arming.** Arm already running from Turn A. Agent pastes and finishes.
 
-### HARD — Prowler without RE/LF
+### HARD — Extract without RE/LF
 
-**Prowler = extract DONE.** Agent **must** continue via shell notify or stop-hook `[AUTO_PIPELINE]` — agent runs `--pickup` internally if needed. **Never** ask operator to type anything.
+**Extract done** (`--await-arm` / `[AUTO_PIPELINE]`). Agent **must** continue via shell notify or stop-hook — agent runs `--pickup` internally if needed. **Never** ask operator to type anything.
 
 ## Recovery — when user sends **RE** / **re** / **RE SHOW** / **RE FILE**
 
 **Hard rule:** Typed **RE** = **manual re-extract** (`--once`) or visibility recovery — **not** the default path. It must **never** arm Anwenden.
 
 1. Run default RE entrypoint:
-   ```powershell
-   Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
-   ```
-   Expect **`MODE: --once`** and either `FIRST_RE_ONCE_CONSUMED` (after login) or `RE_ONCE_DEFAULT`. **Trust script stdout:** `CHANNEL: CALL` + `CALL_LF_GATE` → voice Auto-LF + Next (no 7-step). `CHANNEL: EMAIL` + `CUSTOMER EMAIL` + `RE_TEXT_ONLY_GATE` → three-turn 7-step RE (see `sprinklr-call-vs-email.mdc`).
+ ```powershell
+ Set-Location "c:\Users\PC ENTER\Desktop\Citrix"; uv run python .cursor/skills/sprinklr-read-answer-email/run.py
+ ```
+ Expect **`MODE: --once`** and either `FIRST_RE_ONCE_CONSUMED` (after login) or `RE_ONCE_DEFAULT`. **Trust script stdout:** `CHANNEL: CALL` + `CALL_LF_GATE` → voice Auto-LF + Next (no 7-step). `CHANNEL: EMAIL` + `CUSTOMER EMAIL` + `RE_TEXT_ONLY_GATE` → three-turn 7-step RE (see `sprinklr-call-vs-email.mdc`).
 2. **Do not** run `--arm` / `--await-arm` on typed RE. Arms run after Auto-LF / PR close-out (below).
-3. **Audio:**
-   - **Armed auto-RE start:** After Anwenden / Weiter / Extern / Next → sidetray poll (`SIDETRAY_WATCH_ARMED`) → **EMAIL:** click sidetray item; **CALL:** skip click, wait for overlay (`SIDETRAY_CALL_AUTO_OPEN`) → extract begins → Prowler (`ARMED_RE_START_SOUND`).
-   - **RE ready (after section 7):** Hook plays book-opening cue (`RE_READY_SOUND`) when `RE_PENDING_SOUND` was set — case is ready to read.
-   - **PR done / LF TR done:** Finishing quotes → Dexter (`PR_LF_DONE_SOUND`).
-   - Manual: **`sound`** → `--play-ready`.
-4. After 7-step + `--play-ready`: **Auto-LF** (do not wait for typed `LF`). See `.cursor/rules/lf-log-form.mdc`.
+3. **Notify (no audio):**
+ - **Armed extract:** Anwenden / Weiter / Extern / Next → sidetray → extract → `--await-arm` completes / `extract_ready` / `[AUTO_PIPELINE]`.
+ - **After section 7:** `re_auto_lf_hook` → `auto_lf_after_re.py`.
+ - **PR / LF TR done:** finishing quotes only.
+4. After 7-step: **Auto-LF** (do not wait for typed `LF`). See `.cursor/rules/lf-log-form.mdc`.
 5. **EMAIL non-transfer:** wait for user **PR** → after paste succeeds → background **`--closeout-anwenden`** + notify. Quote `PR done for #FALL_ID`.
 6. **EMAIL / CALL transfer:** after Auto-LF Transfer Ja → background **`--closeout-weiter`** / **`--closeout-extern`**. Quote `LF TR done for #FALL_ID`.
 7. **CALL:** on CHANNEL detect → **immediately Auto-LF** voice → background **`--closeout-next`**. Quote `LF done for #FALL_ID`. Do **not** wait for BRIEF.
@@ -158,7 +157,7 @@ Every EMAIL extract (auto after login, `--await-arm`, or recovery `--once`):
 3. End: `7-step complete — Auto-LF starts after this message.` **STOP.**
 4. Do **not** call `fill_case_tracker` / `--closeout-*` here
 
-**Background (once):** `re_complete_sound_hook` → `auto_lf_after_re.py` → fill + closeout from §3. Skip if `auto_lf_done.json` already has this Fall #.
+**Background (once):** `re_auto_lf_hook` → `auto_lf_after_re.py` → fill + closeout from §3. Skip if `auto_lf_done.json` already has this Fall #.
 
 **Do NOT paste the customer email body / Subject / From** — operator sees it in Sprinklr.
 
@@ -193,7 +192,7 @@ Arm (`--closeout-anwenden`) already started at Auto-LF time. PR just pastes the 
 | **CALL non-transfer** | **`--closeout-next`** | exact Next |
 | **CALL transfer** | **`--closeout-weiter`** / **`--closeout-extern`** | Weiter / Weiterleiten |
 
-**Prowler = extract done** — never stop idle; agent fixes internally; never push recovery commands to the operator.
+**Extract done** — never stop idle; agent fixes internally; never push recovery commands to the operator.
 
 Do **not** arm twice for the same close-out. Do **not** start a new arm on PR — arm was already started at Auto-LF.
 
@@ -201,13 +200,13 @@ Do **not** arm twice for the same close-out. Do **not** start a new arm on PR �
 
 **Language:** Sections **1–5** and **7** → **English** (to the operator). Section **6** → **German only** (customer). All other agent chat to the user → English. See `.cursor/rules/agent-english-user-customer-german.mdc`.
 
-1. Customer summary (EN)  
-2. Verification (EN) — **compressed** 2–4 lines; status + key ids only; no tables (`.cursor/rules/re-verification-format.mdc`)  
-3. Transfer eligibility (EN)  
-4a/4b. Backend / instructions (EN)  
-5. Instructions on handling case (EN)  
-6. Your response to customer (**German**, code block; **chat** soft-wrap ~72 for vertical read; **PR** uses mail-format length — not chat wraps)  
-7. Summary of response (EN) — then run **`re_complete_sound.py --play-ready`** (book) — then **Auto-LF**
+1. Customer summary (EN) 
+2. Verification (EN) — **compressed** 2–4 lines; status + key ids only; no tables (`.cursor/rules/re-verification-format.mdc`) 
+3. Transfer eligibility (EN) 
+4a/4b. Backend / instructions (EN) 
+5. Instructions on handling case (EN) 
+6. Your response to customer (**German**, code block; **chat** soft-wrap ~72 for vertical read; **PR** uses mail-format length — not chat wraps) 
+7. Summary of response (EN) — then **Auto-LF** via `re_auto_lf_hook` (no audio)
 
 ## Integrity
 
@@ -222,4 +221,4 @@ If this experiment fails or you dislike it, in the **instructions** chat type **
 
 ## Hooks note
 
-Requires project hooks enabled (`.cursor/hooks.json`). View **Output → Hooks** if sound does not play.
+Requires project hooks enabled (`.cursor/hooks.json`: `re_auto_lf_hook` + `extract_auto_continue_hook`). No audio hooks.

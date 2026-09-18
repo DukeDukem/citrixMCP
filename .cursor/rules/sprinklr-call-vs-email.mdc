@@ -123,7 +123,7 @@ If the user pastes what the customer said (or types **BRIEF**), produce a **CALL
 uv run python .cursor/skills/sprinklr-read-answer-email/run.py --arm-next
 ```
 
-Expect **`NEXT_RE_ARMED`** + **`ARM_WATCH_DETACHED`** + **`READY_FOR_YOUR_CLICK: Next`** + Dexter.  
+Expect **`NEXT_RE_ARMED`** + **`ARM_WATCH_DETACHED`** + **`READY_FOR_YOUR_CLICK: Next`**.  
 User clicks exact **Next** on `button[data-tracker-event-id="@guidedWorkflow/runner/screenButton"]` (ignore Back / Weiter / Weiterleiten).
 
 **Next detection:** DOM only (`screenButton` + exact `"Next"`); tray position irrelevant; close DevTools Inspect before click. Stale watch → kill arm + fresh `--arm-next`. Missed extract → `run.py --once`.

@@ -1,5 +1,12 @@
 # Email Processing Agent — startup instructions
 
+## Audio hooks — WIPED (hard ban)
+
+- **Never** play any case-processing sound / `play-ready` / sound script.
+- Sound modules and sound hooks are **deleted**.
+- Silent pipeline only: detached closeout arm → live `--await-arm` → `AWAIT_ARM_EXTRACT_DONE` / `extract_ready.json` / `[AUTO_PIPELINE]` → immediate 7-step → `re_auto_lf_hook` → Auto-LF + next closeout.
+- Agent must **not** wait for operator nudge between cases. See `.cursor/rules/no-audio-hooks-auto-pipeline.mdc`.
+
 **You are the Email Processing Agent.** Operator types: **login**, **RE** (first case only), **PR**, **DONE**. Agent auto-runs RE+LF between cases — no NEXT/extra commands.
 
 **Not for rules/skills** — use separate chat with `AGENT-INSTRUCTIONS.md`.
@@ -32,10 +39,10 @@ COMMANDS (operator types ONLY these in chat):
 - DONE -> end session. Rule: .cursor/rules/operator-minimal-input.mdc
 - EMAIL sidetray click -> CASE_ITEM_AUTO_CLICKED -> SIDETRAY_EMAIL_PROCESSING_IMMEDIATE -> extract runs immediately in script; agent immediately continues 7-step + Auto-LF when await-arm/extract stdout completes (no pause, no new operator message).
 - Typed RE / run.py --once = RECOVERY ONLY (re-read visible case, await-arm failed). NEVER arm Anwenden on recovery RE.
-- EMAIL RE = EVERY CASE, EVERY TIME: (1) extract only (NO Auto-LF at extract); (2) TEXT-ONLY 7-step (sections 1–7, ZERO LF tools) — DO NOT paste email body; end with '7-step complete — Auto-LF starts after this message.'; (3) Auto-LF once via re_complete_sound_hook → auto_lf_after_re.py (fill + closeout). NEVER hide 7-step under background tasks. NEVER double-LF same Fall #. Rule: re-before-auto-lf.mdc.
+- EMAIL RE = EVERY CASE, EVERY TIME: (1) extract only (NO Auto-LF at extract); (2) TEXT-ONLY 7-step (sections 1–7, ZERO LF tools) — DO NOT paste email body; end with '7-step complete — Auto-LF starts after this message.'; (3) Auto-LF once via re_auto_lf_hook → auto_lf_after_re.py (fill + closeout). NEVER hide 7-step under background tasks. NEVER double-LF same Fall #. Rule: re-before-auto-lf.mdc.
 - If I type RE SHOW / visible RE / RE FILE: recover per EMAIL-PROCESSING-AGENT.md troubleshooting — re-print extract + 7-step. Backup file: .cursor/state/latest_re_visible.md
 - Section 6 in chat: UTF-8 code block soft-wrapped ~72 chars for vertical reading only. **PR / Sprinklr paste** must stay **mail format** (previous length, encoding, signature layout) — never let chat wraps change the pasted email.
-- Auto-LF runs ONCE after the full 7-step is typed in chat (sound hook → auto_lf_after_re.py). NEVER at extract. Do NOT wait for typed LF. Transfer from RE §3; operator reiterate LF = case exception only.
+- Auto-LF runs ONCE after the full 7-step is typed in chat (re_auto_lf_hook → auto_lf_after_re.py). NEVER at extract. Do NOT wait for typed LF. Transfer from RE §3; operator reiterate LF = case exception only.
 - After AUTO-LF transfer: IMMEDIATELY --arm-weiter (queue) or --arm-extern (email @) + await. Quote: LF TR done for #FALL_ID. No PR.
 - After extract: write full 7-step in chat (no LF tools). Auto-LF + closeout arm start after section 7. Then rest, await PR or reiterate-LF.
 - PR (EMAIL non-transfer) -> paste + verify only. --closeout-anwenden already running from Auto-LF time. Quote: PR done for #FALL_ID. No new arm at PR. Operator clicks Senden (independent) + Anwenden (arm reacts) in any order.
@@ -55,10 +62,10 @@ CLOSE-OUT LISTEN (background + notify — case 2+):
 | Auto-LF TR (email) | --closeout-extern | Externer Transfer → Weiterleiten |
 | CALL Auto-LF | --closeout-next | exact Next |
 
-On notify or stop-hook [AUTO_PIPELINE]: write full 7-step text first (zero LF tools); Auto-LF once after section 7 via sound hook. Zero operator chat input.
+On notify or stop-hook [AUTO_PIPELINE] or extract_ready unconsumed: write full 7-step text FIRST (zero LF tools); Auto-LF once after section 7 via re_auto_lf_hook. Zero operator chat input. NEVER wait for a nudge. NEVER audio. Rule: no-audio-hooks-auto-pipeline.mdc.
 
 AUTO-LF (mandatory — user does not type LF):
-- EMAIL: once AFTER full 7-step is typed (`re_complete_sound_hook` → `auto_lf_after_re.py`). NEVER at extract. Transfer from RE §3.
+- EMAIL: once AFTER full 7-step is typed (`re_auto_lf_hook` → `auto_lf_after_re.py`). NEVER at extract. Transfer from RE §3.
 - CALL: as soon as CHANNEL: CALL → fill_case_tracker.py --channel voice (no BRIEF wait).
 - Speichern stays manual. After each LF fill, script arms Speichern watch (`LF_SPEICHERN_WATCH_ARMED`).
 - Speichern gate: if next case Auto-LF runs and previous Speichern was NOT registered → PAUSE_AUTO_LF + **LF_CONTINUE_AFTER_SPEICHERN_ARMED** (exit 3). Warn me to Speichern previous LF; Auto-LF for the **current** case continues automatically after that click. Agent must `--await-speichern-continue`, then on CONTINUE_LF_DONE do transfer arm or wait for PR. Do not ask me to re-run Auto-LF unless continue failed.
@@ -68,7 +75,7 @@ AUTO-LF (mandatory — user does not type LF):
 
 CALL LF ARM (disposition Next — not Anwenden):
 - After CALL Auto-LF (--channel voice): IMMEDIATELY run.py --arm-next (NOT --arm).
-- Expect NEXT_RE_ARMED + ARM_WATCH_DETACHED + READY_FOR_YOUR_CLICK: Next + Dexter.
+- Expect NEXT_RE_ARMED + ARM_WATCH_DETACHED + READY_FOR_YOUR_CLICK: Next.
 - Finishing quote: LF done for #FALL_ID
 - Then --await-arm. I left-click exact label Next on screenButton (ignore Back/Weiter/Weiterleiten).
 - Detection = DOM (screenButton + exact "Next"), NOT pixel coordinates. Tray position does not matter. Close DevTools Inspect before clicking Next.
@@ -77,9 +84,9 @@ CALL LF ARM (disposition Next — not Anwenden):
 
 DETACHED ARM (mandatory — fixes false "watch died"):
 - After PR (EMAIL non-transfer): paste + verify only. --closeout-anwenden was started at Auto-LF time. No new arm at PR. Finishing quote: PR done for #FALL_ID.
-- After CALL Auto-LF: run.py --arm-next → NEXT_RE_ARMED + READY_FOR_YOUR_CLICK: Next + Dexter → "Armed — click Next now" + finishing quote → THEN --await-arm.
-- After transfer Auto-LF: --arm-weiter or --arm-extern → READY_FOR_YOUR_CLICK + Dexter → finishing quote → --await-arm.
-- Dexter / READY_FOR_YOUR_CLICK = safe to click NOW. Do NOT wait for await to finish before clicking. Await only waits for extract after your click.
+- After CALL Auto-LF: run.py --arm-next → NEXT_RE_ARMED + READY_FOR_YOUR_CLICK: Next → "Armed — click Next now" + finishing quote → THEN --await-arm.
+- After transfer Auto-LF: --arm-weiter or --arm-extern → READY_FOR_YOUR_CLICK → finishing quote → --await-arm.
+- READY_FOR_YOUR_CLICK = safe to click NOW. Do NOT wait for await to finish before clicking. Await only waits for extract after your click.
 - No console window should pop on arm (CREATE_NO_WINDOW).
 - If --await-arm is aborted, re-run --await-arm. Only use --once if ARM_WATCH_LOG has no CUSTOMER EMAIL.
 - NEVER start a second --arm* while one detached watch is still waiting.
@@ -87,7 +94,7 @@ DETACHED ARM (mandatory — fixes false "watch died"):
 CHANNEL DETECT (after every case open — auto --once after login OR after await-arm extract):
 - Trust extract stdout: CHANNEL: CALL + CALL_LF_GATE → voice Auto-LF (no 7-step). CHANNEL: EMAIL + CUSTOMER EMAIL → three-turn RE. After arm: sidetray poll (CollapsedPreviewsList, ~0.25s) — EMAIL icons clicked; CALL icons skip click (overlay auto-opens: SIDETRAY_CALL_SKIP_CLICK → SIDETRAY_CALL_AUTO_OPEN); then post-open DOM poll.
 - CALL LISTEN / TELEPROMPTER: PARKED (capture_path.json enabled=false). Do NOT run call_listen --arm or --prime. Expect CALL_LISTEN_DISABLED if tried.
-- EMAIL → MUST write full 7-step RE as VISIBLE chat text (1–7; not behind “finished background tasks”) → play-ready → AUTO-LF → (transfer arm OR wait for PR). Skipping or hiding the 7-step is a hard failure.
+- EMAIL → MUST write full 7-step RE as VISIBLE chat text (1–7; not behind “finished background tasks”) → AUTO-LF → (transfer arm OR wait for PR). Skipping or hiding the 7-step is a hard failure.
 - If EMAIL has Anhänge: open/download so the agent can read them for full case understanding (not a separate process). Helper: open_case_attachments.py --view / --download → yoummday temporaries. Rule: sprinklr-attachments.mdc
 - CALL → do NOT run email RE/PR. Immediately AUTO-LF voice + --arm-next (or transfer arm). Do NOT wait for BRIEF. BRIEF optional if I want a handling pack mid-call.
 
@@ -118,15 +125,14 @@ CALL NEXT PATH (I click; script reacts ONLY to exact Next):
 - IGNORE Back / Weiter / Weiterleiten
 - After Next: sidetray poll (EMAIL click / CALL auto-open; skip closed Fall) -> extract -> CHANNEL detect
 
-SOUNDS (volume 0.75; do not change unless I ask):
-- After --arm / --arm-next / --arm-weiter / --arm-extern succeeds → Dexter ~2.5s once (script plays; means click now; 15s debounce vs hook)
-- After full 7-step RE (section 7) → MUST run: re_complete_sound.py --play-ready (book). Do not rely on hooks alone.
-- EXTRACT DONE (armed only, after CUSTOMER EMAIL) → Prowler
+SOUNDS: REMOVED. Processing = arm + extract_ready + --await-arm + text hooks only.
+- READY_FOR_YOUR_CLICK after --arm* = click now (no audio)
+- Extract done → --await-arm completes / [AUTO_PIPELINE] → write 7-step
+- After section 7 → re_auto_lf_hook → Auto-LF
 - Finishing quotes still required: PR done / LF done / LF TR done for #FALL_ID
-- Manual: type "sound" → play ready cue
 
 OTHER:
-- Full 7-step RE form for EMAIL cases is MANDATORY in chat every case (sprinklr-read-answer-email SKILL) + AUTO-LF only after section 7 + play-ready.
+- Full 7-step RE form for EMAIL cases is MANDATORY in chat every case (sprinklr-read-answer-email SKILL) + AUTO-LF only after section 7.
 - Section 2 Verification: compressed only (status + key identifiers, ~60 words max, no tables) — re-verification-format.mdc.
 - CALL cases: on CHANNEL detect → AUTO-LF voice → --arm-next (no BRIEF wait; no PR unless I ask).
 - C-... in Kundennummer box is NOT Salcus -> leave empty -> ticketstatus 3.
@@ -159,7 +165,7 @@ Confirm you loaded this, then wait for my next command (usually login or RE).
 | 3c | Transfer Auto-LF (email) | Transfer Ja → **`--arm-extern`** + **`--await-arm`**; Externer Transfer → **Weiterleiten** |
 | 4 | Final trigger click | sidetray poll → EMAIL click or CALL auto-open → extract → CHANNEL / 7-step + **Auto-LF** |
 
-**LF TR queue:** Arm listens only for exact **Weiter** (4/4).  
+**LF TR queue:** Arm listens only for exact **Weiter** (4/4). 
 **LF TR email:** Arm listens only for exact **Weiterleiten** (2/3 after Externer Transfer).
 
 **Forced modes:** `run.py --once` | `run.py --arm` | `run.py --arm-next` | `run.py --arm-weiter` | `run.py --arm-extern` | `run.py --await-arm`
@@ -192,58 +198,47 @@ Rules: `re-read-email.mdc`, `pr-paste-reply.mdc`, `lf-log-form.mdc`, `lf-tr-tran
 
 ---
 
-## RE / close-out sounds
+## RE / close-out notify (silent — no audio)
 
-| When | Sound | Marker |
-|------|-------|--------|
-| Armed extract starts (CUSTOMER EMAIL) | Prowler | `ARMED_RE_START_SOUND` / `RE_COMPLETE_SOUND` |
-| Agent finishes **7-step RE** (section 7) | Book opening | `RE_READY_SOUND` |
-| Agent finishes **PR** (`PR done for #…` / `PR LF done`) | Dexter | `PR_LF_DONE_SOUND` |
-| Agent finishes **LF TR** (`LF TR done for #…`) | Dexter | `PR_LF_DONE_SOUND` |
+| When | Notify |
+|------|--------|
+| Arm succeeds | `READY_FOR_YOUR_CLICK` + detached watch |
+| Armed extract done | `--await-arm` → `AWAIT_ARM_EXTRACT_DONE` / `extract_ready` / `[AUTO_PIPELINE]` |
+| Section 7 typed | `re_auto_lf_hook` → `auto_lf_after_re.py` |
+| PR / LF TR done | Finishing quote only (`PR done` / `LF TR done`) |
 
-- Volume: **0.75** (`re_complete_sound_volume` / `re_ready_sound_volume` / `pr_lf_done_sound_volume`).
-- **Dexter length:** ~**2.5 s** hard Stop/Close (`hold_ms=2500` in `re_complete_sound.py`) — not the full ~11 s clip. Same cue for PR LF done, LF TR done, and `--arm*` click-ready. Prowler / book lengths unchanged.
-- **Dexter once per close-out:** shared **15 s** debounce (`dexter_debounce.json` in `play_pr_lf_done_sound`). Hook does **not** match `READY_FOR_YOUR_CLICK` / `PR_LF_DONE_SOUND` (arm script already plays). Avoids double Dexter from arm + finishing-quote hook.
-- Manual tests:  
-  `…/re_complete_sound.py --play` (Prowler)  
-  `…/re_complete_sound.py --play-ready` (book)  
-  `…/re_complete_sound.py --play-pr-lf` (Dexter)  
-- Type **`sound`** in case chat → play ready cue (`--play-ready`).
+**Hard:** Never wait for operator nudge between cases. On extract ready → immediate 7-step. Rule: `.cursor/rules/no-audio-hooks-auto-pipeline.mdc`.
 
 ---
 
-## GO — sound cues only (paste to case agent)
+## GO — silent arm + await (paste to case agent)
 
 ```
-SOUND CUES + DETACHED ARM (keep working as usual; do not change volumes/files unless I ask):
+DETACHED ARM + AWAIT (silent — no audio):
 
-Volumes are 0.75 in config.json.
-
-CRITICAL — CLICK-READY vs AWAIT SPINNER:
-- After PR (EMAIL non-transfer): paste + verify only. --closeout-anwenden already running from Auto-LF. Finishing quote: PR done for #FALL_ID.
-- After CALL Auto-LF: run.py --arm-next → READY_FOR_YOUR_CLICK: Next + Dexter → "Armed — click Next now" + finishing quote → THEN --await-arm.
-- Dexter / READY_FOR_YOUR_CLICK = I may click NOW. Await spinner is NOT "wait longer before clicking".
-- After transfer Auto-LF: --arm-weiter or --arm-extern → same (Dexter + READY_FOR_YOUR_CLICK) → --await-arm.
-- No console window on arm. If --await-arm aborted, re-run it. Never second arm while one waits.
+CRITICAL — AUTO-CONTINUE (no operator nudge):
+- Keep --await-arm live after every closeout / Auto-LF arm.
+- On AWAIT_ARM_EXTRACT_DONE / extract_ready (unconsumed) / [AUTO_PIPELINE] → immediate 7-step (EMAIL) or CALL Auto-LF. Do NOT wait for RE / ping / sound.
+- After PR (EMAIL non-transfer): paste + verify only. --closeout-anwenden already running from Auto-LF. Quote: PR done for #FALL_ID.
+- READY_FOR_YOUR_CLICK = operator may click NOW. Await spinner is NOT "wait longer before clicking".
+- Transfer: --closeout-weiter / --closeout-extern → READY_FOR_YOUR_CLICK → await.
+- If --await-arm aborted, re-run it. Never second arm while one waits.
 
 1) CLOSE-OUT / CLICK-READY
-   - Played by --arm / --arm-next / --arm-weiter / --arm-extern script (Dexter)
-   - Meaning: watch armed — click Anwenden / Next / Weiter / Weiterleiten now
+ - --closeout-* / --arm* → READY_FOR_YOUR_CLICK + ARM_WATCH_DETACHED
+ - Operator clicks Anwenden / Next / Weiter / Weiterleiten
 
-2) EXTRACT DONE (armed path only)
-   - After CUSTOMER EMAIL fully printed → Prowler
-   - Meaning: write full 7-step RE + Auto-LF now
+2) EXTRACT DONE
+ - --await-arm exits / extract_ready / [AUTO_PIPELINE]
+ - Agent writes full 7-step immediately (no typed RE)
 
-3) RE READY (after section 7)
-   - YOU MUST run: uv run python .cursor/skills/sprinklr-email-automation/re_complete_sound.py --play-ready
-   - Then AUTO-LF (do not wait for typed LF)
-   - Do not rely on hooks alone (Windows often sends empty stdin to hooks)
-   - Manual: if I type "sound" → same --play-ready
+3) AFTER SECTION 7
+ - re_auto_lf_hook (text) → auto_lf_after_re.py → Auto-LF + next closeout
+ - Do not wait for typed LF
 
-Finishing quotes still required: PR done / LF done / LF TR done for #FALL_ID
+Finishing quotes: PR done / LF done / LF TR done for #FALL_ID
 
-Do not invent extra sounds. Do not change config sound paths or volumes unless I ask.
-Confirm you loaded SOUND CUES + DETACHED ARM, then continue with my next command.
+Confirm silent DETACHED ARM + AWAIT, then continue with my next command.
 ```
 
 ---
@@ -260,12 +255,12 @@ Cursor **collapses tool/subagent work** into rows like `Finished 2 background ta
 |-------|---------|
 | Extract | `run.py` / await-arm only — **no** Auto-LF |
 | Agent chat | **Full 7-step (sections 1–7)** — text-only, **zero LF tools**. End: `7-step complete — Auto-LF starts after this message.` No email body paste. |
-| After §7 | Auto-LF once via `re_complete_sound_hook` → `auto_lf_after_re.py` (fill + closeout). Await PR or arm fires. |
+| After §7 | Auto-LF once via `re_auto_lf_hook` → `auto_lf_after_re.py` (fill + closeout). Await PR or arm fires. |
 
 ### Your recovery (when chat shows only trays / no extract)
 
-1. **`RE SHOW`** / **`visible RE`** — agent re-prints **extract + 7-step** in main chat  
-2. **`RE FILE`** — agent runs `show_latest_re.py` and pastes the backup  
+1. **`RE SHOW`** / **`visible RE`** — agent re-prints **extract + 7-step** in main chat 
+2. **`RE FILE`** — agent runs `show_latest_re.py` and pastes the backup 
 3. **Open in editor:** `.cursor/state/latest_re_visible.md` (after section 7) or `latest_extract.md` (after extract) — backup only; agent must still paste into chat
 
 Rule: `.cursor/rules/re-no-background-tasks-ui.mdc`. **If trays keep happening:** switch email chat from **Auto** to **Composer 2.5** or **Sonnet** (named model).
@@ -294,11 +289,11 @@ STDOUT TO TRUST (armed path, before extract):
 - CASE_ITEM_AUTO_CLICKED — EMAIL only: sidetray click to open case
 
 YOUR BEHAVIOUR (unchanged workflow, new timing):
-1) After PR / transfer arm / CALL Next arm: Dexter + READY_FOR_YOUR_CLICK — click immediately when ready (do NOT wait for await to finish).
+1) After PR / transfer arm / CALL Next arm: READY_FOR_YOUR_CLICK — click immediately when ready (do NOT wait for await to finish).
 2) After your click: script sidetray-polls → EMAIL: clicks sidetray icon; CALL: waits for auto-open overlay (no click) → extract.
 3) Trust extract stdout:
-   - SIDETRAY_CHANNEL: CALL + CHANNEL: CALL + CALL_LF_GATE → voice Auto-LF same turn (no 7-step, no PR)
-   - CHANNEL: EMAIL + CUSTOMER EMAIL + RE_TEXT_ONLY_GATE → three-turn 7-step RE
+ - SIDETRAY_CHANNEL: CALL + CHANNEL: CALL + CALL_LF_GATE → voice Auto-LF same turn (no 7-step, no PR)
+ - CHANNEL: EMAIL + CUSTOMER EMAIL + RE_TEXT_ONLY_GATE → three-turn 7-step RE
 4) Do NOT override CALL to EMAIL because of empty sidetray hint alone — post-open CHANNEL line is authoritative.
 5) Do NOT re-arm or run --once because sidetray was “slow” unless log shows ERROR: NEXT CASE NOT OPEN.
 
@@ -326,13 +321,13 @@ UPDATE — OPERATOR INPUTS ONLY: login, RE (first case), PR. Nothing else.
 FORBIDDEN: asking operator for NEXT, RE (case 2+), LF, or any continue command.
 
 POST-PR (mandatory last shell action, background + notify):
-  uv run python .cursor/skills/sprinklr-read-answer-email/run.py --closeout-anwenden
+ uv run python .cursor/skills/sprinklr-read-answer-email/run.py --closeout-anwenden
 Transfer: --closeout-weiter / --closeout-extern. CALL: --closeout-next.
 Notify pattern: AWAIT_ARM_EXTRACT_DONE|RE_TEXT_ONLY_GATE|CALL_LF_GATE|DETACHED_ARM_EXTRACT_READY
 
 On notify OR stop-hook [AUTO_PIPELINE]: immediate 7-step + Auto-LF. Operator clicks Sprinklr only.
 
-Prowler = extract done — never stop idle. Agent fixes internally (--pickup); never push to operator.
+Extract done — never stop idle. Agent fixes internally (--pickup); never push to operator.
 
 Confirm loaded.
 ```
@@ -363,7 +358,7 @@ SECTION 6 CUSTOMER REPLY — NO PARROTING (reply-no-case-parroting.mdc):
 - PR gate: parroting → do not paste; rewrite.
 
 STILL IN FORCE:
-- Three-turn RE (extract → text-only 7-step → play-ready + Auto-LF)
+- Three-turn RE (extract → text-only 7-step → Auto-LF (re_auto_lf_hook))
 - English sections 1–5/7; German section 6 only
 - No internal systems in customer body; no uninvited promises
 
@@ -381,8 +376,8 @@ When a new EMAIL arrives in CollapsedPreviewsList (BrandEmailCircleClr):
 1) Script clicks -> CASE_ITEM_AUTO_CLICKED -> SIDETRAY_EMAIL_PROCESSING_IMMEDIATE
 2) Extract runs immediately in the same automation chain (no operator RE)
 3) On --await-arm / DETACHED_ARM_EXTRACT_READY / RE_TEXT_ONLY_GATE / [AUTO_PIPELINE]:
-   Write full 7-step text first (ZERO LF tools). End: '7-step complete — Auto-LF starts after this message.'
-   Auto-LF runs once after section 7 (sound hook → auto_lf_after_re.py). Never at extract.
+ Write full 7-step text first (ZERO LF tools). End: '7-step complete — Auto-LF starts after this message.'
+ Auto-LF runs once after section 7 (re_auto_lf_hook → auto_lf_after_re.py). Never at extract.
 4) Do NOT stop between sidetray click and 7-step. Do NOT Auto-LF before the 7-step is typed.
 
 CALL sidetray: still no click (SIDETRAY_CALL_AUTO_OPEN) -> Auto-LF voice only.
@@ -425,7 +420,7 @@ UPDATE — SIDETRAY CALL vs EMAIL (apply now):
 Sidetray watch always runs after Anwenden / Weiter / Extern / Next.
 - EMAIL sidetray → script CLICKS item (CASE_ITEM_AUTO_CLICKED)
 - CALL sidetray (BrandVoiceCircleClr) → NO click; overlay auto-opens
-  (SIDETRAY_CALL_SKIP_CLICK → SIDETRAY_CALL_AUTO_OPEN)
+ (SIDETRAY_CALL_SKIP_CLICK → SIDETRAY_CALL_AUTO_OPEN)
 
 Trust SIDETRAY_CHANNEL + CASE_ITEM_AUTO_CLICKED or SIDETRAY_CALL_AUTO_OPEN, then CHANNEL stdout.
 Confirm and continue — no login restart.
@@ -444,7 +439,7 @@ HARD FIX — EMAIL 7-STEP RE MUST BE VISIBLE CHAT TEXT (NOT BEHIND A MENU):
 - Every CHANNEL: EMAIL case: type the full 7-step RE (sections 1–7) as normal assistant chat text the user can read immediately.
 - NEVER put the 7-step only under Cursor “finished N background tasks”, collapsed task dropdowns, tool summaries, or anything that requires a click to open.
 - NEVER use Task/subagent/explore for the 7-step (causes “Finished N background tasks” / “Explored …” menus). Parent agent writes 1–7 as plain chat.
-- Three-turn pattern: (1) run.py only → RE_TEXT_ONLY_GATE → stop; (2) **text-only** full 7-step — ZERO tools; (3) play-ready → Auto-LF → immediately --closeout-anwenden/weiter (arm) → rest, await PR or arm fires. NEVER Read terminals/*.txt or explore/Task.
+- Three-turn pattern: (1) run.py only → RE_TEXT_ONLY_GATE → stop; (2) **text-only** full 7-step — ZERO tools; (3) Auto-LF (re_auto_lf_hook) → immediately --closeout-anwenden/weiter (arm) → rest, await PR or arm fires. NEVER Read terminals/*.txt or explore/Task.
 - If I type RE SHOW / visible RE: re-print 7-step in main thread. RE FILE: run show_latest_re.py. Backup: .cursor/state/latest_re_visible.md
 - Rule file: .cursor/rules/re-no-background-tasks-ui.mdc
 - If the current EMAIL case has no visible 7-step in the main chat thread: output the full 7-step NOW as plain chat text.
@@ -457,14 +452,14 @@ HARD FIX — SECTION 6 CHAT WIDTH vs PR PASTE FORMAT:
 AUTO-LF IS MANDATORY FOR BOTH EMAIL AND CALL (I do not type LF):
 
 EMAIL:
-1) After 7-step RE + play-ready → fill_case_tracker.py for this Fall #
+1) After 7-step RE → fill_case_tracker.py for this Fall #
 2) Transfer Nein best-guess → --closeout-anwenden in Turn A → 7-step in Turn B → rest → wait for PR (paste only)
 3) Transfer Ja → --arm-weiter (queue) or --arm-extern (@) + --await-arm; quote LF TR done for #FALL_ID
 
 CALL (no BRIEF gate):
 1) As soon as you see CHANNEL: CALL → do NOT wait for BRIEF. No email RE/PR. Teleprompter/STT parked — do not call_listen --arm/--prime.
 2) SAME TURN immediately Auto-LF voice:
-   uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --channel voice
+ uv run python .cursor/skills/fill-microsoft-form/fill_case_tracker.py --case-id "#FALL_ID" --channel voice
 3) SAME TURN after Auto-LF: --arm-next (or weiter/extern if transfer) + await; quote LF done / LF TR done.
 4) BRIEF optional only after Auto-LF if I want a mid-call pack.
 

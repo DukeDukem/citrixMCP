@@ -58,15 +58,15 @@ If customer is **not verified**: do steps 1, 2, then skip transfer matrix; use u
 
 1. **Run the skill / after armed extract.** User types **RE** → bare `run.py` is **always `--once`**. After **PR** (EMAIL non-transfer; Auto-LF already done), use **`--arm`** then **`--await-arm`**. After **CALL Auto-LF** (`--channel voice`), use **`--arm-next`** then **`--await-arm`**. After **transfer Auto-LF**, use **`--arm-weiter`** / **`--arm-extern`** then **`--await-arm`**.
 1a. **CHANNEL gate (mandatory):** Read script stdout after extract — **`CHANNEL: CALL`** or **`CHANNEL: EMAIL`** (post-open DOM poll in `email_automation.py`; see `sprinklr-call-vs-email.mdc`). Echo as first analysis line.
-   - **CALL** (`CHANNEL_CALL_DETECTED` / `CALL_LF_GATE`) → **no** sections 1–7; Auto-LF voice + arm Next/weiter/extern immediately. BRIEF optional after. **No PR.**  
-   - **EMAIL** (`CUSTOMER EMAIL` / `RE_TEXT_ONLY_GATE`) → continue sections 1–7 below (email RE).  
+ - **CALL** (`CHANNEL_CALL_DETECTED` / `CALL_LF_GATE`) → **no** sections 1–7; Auto-LF voice + arm Next/weiter/extern immediately. BRIEF optional after. **No PR.** 
+ - **EMAIL** (`CUSTOMER EMAIL` / `RE_TEXT_ONLY_GATE`) → continue sections 1–7 below (email RE). 
 1b. **Attachments (EMAIL):** If Anhänge are present, open them **only so you understand the full case**. **`.png`** → click the attachment card, read it, then close with `button[data-testid="@media/preview/close"]` (Schließen). Other types (esp. PDF) → hover **View Detail** (close preview after if the same close control appears), or `--download` to `yoummday temporaries` if needed. Helper: `open_case_attachments.py --view`. Rule: `.cursor/rules/sprinklr-attachments.mdc`.
 2) **After script output (EMAIL only)** — **three-turn protocol, EVERY CASE** (see `.cursor/rules/re-no-background-tasks-ui.mdc`):
-   - **Turn A:** extract Shell only; when stdout shows **`RE_TEXT_ONLY_GATE`**, end the tool turn with **no** operator-facing one-liner (banned: “extracted — 7-step next”).
-   - **Turn B (immediate, every Fall #, do not wait for operator):** paste **this case’s** **CUSTOMER EMAIL extract** (Fall #, Subject, From, Body) **and** sections **1–7** as **plain chat markdown** — **text-only message, ZERO tool calls**. New Fall # = paste again; prior cases do not count.
-   - **Turn C:** play-ready → Auto-LF → arms or wait for PR.
-   Do **not** spawn explore/Task to read terminal capture files. Use CUSTOMER EMAIL from Shell stdout and **paste it into chat**. Backup on disk: `.cursor/state/latest_re_visible.md` (hook) / `latest_extract.md` (extract) — **never a substitute for pasting**.
-   If the operator cannot see extract + 7-step for **the current Fall #** in this chat, you failed — paste both immediately.
+ - **Turn A:** extract Shell only; when stdout shows **`RE_TEXT_ONLY_GATE`**, end the tool turn with **no** operator-facing one-liner (banned: “extracted — 7-step next”).
+ - **Turn B (immediate, every Fall #, do not wait for operator):** paste **this case’s** **CUSTOMER EMAIL extract** (Fall #, Subject, From, Body) **and** sections **1–7** as **plain chat markdown** — **text-only message, ZERO tool calls**. New Fall # = paste again; prior cases do not count.
+ - **Turn C:** Auto-LF (via re_auto_lf_hook after §7) → arms or wait for PR.
+ Do **not** spawn explore/Task to read terminal capture files. Use CUSTOMER EMAIL from Shell stdout and **paste it into chat**. Backup on disk: `.cursor/state/latest_re_visible.md` (hook) / `latest_extract.md` (extract) — **never a substitute for pasting**.
+ If the operator cannot see extract + 7-step for **the current Fall #** in this chat, you failed — paste both immediately.
 3. **Verification (section 2):** At least 3 key identifiers (name, Kundennummer, Geburtsdatum, bill/invoice number, last 4 IBAN, home address, or third party with Vollmacht). **Never ask for PKK.** Apply the **2-of-3 exception** (see below) when exactly 2 identifiers are present and neither is the Von: (From:) email address.
 4. **If NOT verified:** Use **only** the premade template for unverified customers (case-specific thank you + sympathy + the fixed security text asking for last 4 IBAN and Kundennummer + tip Mein o2). Do **not** query the KnowledgeBase for substantive handling. Output section 5 briefly, then 6 (full template) and 7.
 5. **If verified** or **Awaiting manual verification:** Query **TransferMatrix.md** first (section 3) — **Ziel-Kontakt + Action are authoritative** over KB routing. If **Transfer eligible: Yes** → section 4a (matrix transfer goal). If **Transfer eligible: No** → section 4b (matrix Action/handling hint, then KB only for compatible detail). Then **Exceptions** and **Standard premade** as usual. Fill 5 (instructions), draft **case-specific** reply (6), summary (7). For **Awaiting manual verification**, state in section 2 and in section 7 that the user must manually verify; if they confirm verified, use the drafted reply; if they say unverified, reply with the **standard verification inquiry email** (unverified template with security block + Mein o2).
@@ -75,11 +75,7 @@ If customer is **not verified**: do steps 1, 2, then skip transfer matrix; use u
 
 **Iterations and case specificity:** Premade responses (unverified template, router/Schadensersatz, etc.) may be **adapted** to the case. During RE output, **draft the full customer response autonomously** unless the user explicitly overrides.
 
-7. **When section 7 (Summary of response) is complete**, play book cue explicitly (Windows hooks often get empty stdin):
-   ```powershell
-   uv run python .cursor/skills/sprinklr-email-automation/re_complete_sound.py --play-ready
-   ```
-   Hook is a backup only. Manual: type **`sound`**.
+7. **When section 7 (Summary of response) is complete**, stop tools. Auto-LF is spawned by `re_auto_lf_hook` (text) → `auto_lf_after_re.py`. Never audio.
 7b. **Auto-LF (mandatory):** Immediately fill Case Tracker for this Fall # (`fill_case_tracker.py`). Do **not** wait for typed `LF`. Transfer Nein or Ja per section 3 / TransferMatrix. See `.cursor/rules/lf-log-form.mdc`.
 7c. **If Transfer eligible: Yes** after Auto-LF: arm **`--arm-weiter`** or **`--arm-extern`**, finishing quote `LF TR done for #FALL_ID`, then **`--await-arm`**. No PR.
 7d. **If Transfer eligible: No:** stop after Auto-LF and wait for user **PR**. Do **not** arm Anwenden yet.
@@ -149,8 +145,8 @@ Do **not** process the case. Use **only** the following premade template. The re
 >
 > Lassen Sie uns mit Ihrer Anfrage bitte noch folgende Informationen zukommen:
 >
-> - die letzten 4 Stellen Ihrer IBAN  
-> - und Ihre Kundennummer  
+> - die letzten 4 Stellen Ihrer IBAN 
+> - und Ihre Kundennummer 
 >
 > Senden Sie bei Rückfragen den bisherigen E-Mail-Verlauf sowie mögliche Anhänge mit und fügen Sie Ihre Antwort ganz oben ein. Dann kümmern wir uns sofort um Ihr Anliegen.
 >
@@ -204,65 +200,65 @@ Treat the provided Authentifizierung matrix screenshots as authoritative process
 1. Check if process is **keine Authentifizierung nötig** for the relevant channel.
 2. Otherwise apply **3-Eckdaten rule** for E-Mail.
 3. Then apply exact channel/result from matrix row:
-   - `✓` = handling allowed in that channel
-   - `nur mit Kopie Ausweis/Pass` = only allowed with ID/pass copy
-   - `Web/App/Hotline` or `Hotline` or `Web` or `Formular` = do not process in Backoffice E-Mail; route customer accordingly
-   - `✗` = not allowed; route to allowed channel
+ - `✓` = handling allowed in that channel
+ - `nur mit Kopie Ausweis/Pass` = only allowed with ID/pass copy
+ - `Web/App/Hotline` or `Hotline` or `Web` or `Formular` = do not process in Backoffice E-Mail; route customer accordingly
+ - `✗` = not allowed; route to allowed channel
 
 ### Process-specific matrix snapshot (from screenshots)
 
 - **1. Kundendaten (persönlich):**
-  - Änderung Name -> Web/App (mit Kopie Ausweis/Pass)
-  - Änderung Geburtsdatum -> Schriftweg (mit Kopie Ausweis/Pass)
-  - Änderung Kontakt-/Rechnungsadresse -> E-Mail: Web/App/Hotline
-  - Änderung Kontakt-E-Mail-Adresse -> Web/App/Hotline
-  - Bankverbindung auf Dritte ändern -> Formular
-  - Kundeneinwilligung einrichten/ändern -> E-Mail: Web/App/Hotline
-  - Kundeneinwilligung löschen -> E-Mail: ✓
-  - Telefonbucheintrag anlegen/ändern/auf Dritte ändern/Inverssuche freischalten -> Formular
-  - Telefonbucheintrag löschen / Inverssuche widersprechen -> E-Mail: ✓
+ - Änderung Name -> Web/App (mit Kopie Ausweis/Pass)
+ - Änderung Geburtsdatum -> Schriftweg (mit Kopie Ausweis/Pass)
+ - Änderung Kontakt-/Rechnungsadresse -> E-Mail: Web/App/Hotline
+ - Änderung Kontakt-E-Mail-Adresse -> Web/App/Hotline
+ - Bankverbindung auf Dritte ändern -> Formular
+ - Kundeneinwilligung einrichten/ändern -> E-Mail: Web/App/Hotline
+ - Kundeneinwilligung löschen -> E-Mail: ✓
+ - Telefonbucheintrag anlegen/ändern/auf Dritte ändern/Inverssuche freischalten -> Formular
+ - Telefonbucheintrag löschen / Inverssuche widersprechen -> E-Mail: ✓
 
 - **2. Kundendaten (vertragsbezogen):**
-  - Accounttrennung/-zusammenlegung -> Hotline
-  - Vertragsübernahme Postpaid -> Web
-  - FSK-Einstellungen ändern -> Hotline
-  - PKK-Änderung -> Formular (mit Kopie Ausweis/Pass)
-  - PKK-Versand per Ticket -> keine Authentifizierung nötig
-  - PIN/PUK-Auskunft -> E-Mail: Web/App/Hotline
-  - Herausgabe Festnetz-Zugangsdaten oder MAC-Adresse -> E-Mail: Hotline
-  - Änderung MAC-Adresse / Auskunft Vertragslaufzeit / Versand Vertragsdokumente an Kontaktadresse -> E-Mail: ✓
+ - Accounttrennung/-zusammenlegung -> Hotline
+ - Vertragsübernahme Postpaid -> Web
+ - FSK-Einstellungen ändern -> Hotline
+ - PKK-Änderung -> Formular (mit Kopie Ausweis/Pass)
+ - PKK-Versand per Ticket -> keine Authentifizierung nötig
+ - PIN/PUK-Auskunft -> E-Mail: Web/App/Hotline
+ - Herausgabe Festnetz-Zugangsdaten oder MAC-Adresse -> E-Mail: Hotline
+ - Änderung MAC-Adresse / Auskunft Vertragslaufzeit / Versand Vertragsdokumente an Kontaktadresse -> E-Mail: ✓
 
 - **3. Tarife & Optionen:** Allgemeine Fragen -> keine Authentifizierung nötig; gezeigte Änderungsprozesse -> E-Mail: ✓
 
 - **4. Hardware:**
-  - Allgemeine Fragen / Störung erfassen / Technikertermin -> keine Authentifizierung nötig
-  - Entsperrung/Teilsperrung, Multicard/Datacard deaktivieren, Multicard-Einstellungen ändern -> Web/App/Hotline
-  - Reparatur beauftragen, Retouren-Erfassung, vollständige SIM-Sperre, Teilsperrung SIM -> E-Mail: ✓
+ - Allgemeine Fragen / Störung erfassen / Technikertermin -> keine Authentifizierung nötig
+ - Entsperrung/Teilsperrung, Multicard/Datacard deaktivieren, Multicard-Einstellungen ändern -> Web/App/Hotline
+ - Reparatur beauftragen, Retouren-Erfassung, vollständige SIM-Sperre, Teilsperrung SIM -> E-Mail: ✓
 
 - **5. Rechnung & Zahlung:**
-  - Fragen zur Rechnung **mit** Nennung von Verkehrsdaten in Antwort -> E-Mail: Web/App/Hotline (Brief/Fax: ✗)
-  - EVN einrichten/ändern -> Web/App
-  - Rechnungsduplikat abweichende Adresse -> Hotline
-  - übrige gezeigte Zeilen (z. B. Rechnungsart ändern, Umbuchung, offene Posten, Mahnstatus) -> E-Mail: ✓
+ - Fragen zur Rechnung **mit** Nennung von Verkehrsdaten in Antwort -> E-Mail: Web/App/Hotline (Brief/Fax: ✗)
+ - EVN einrichten/ändern -> Web/App
+ - Rechnungsduplikat abweichende Adresse -> Hotline
+ - übrige gezeigte Zeilen (z. B. Rechnungsart ändern, Umbuchung, offene Posten, Mahnstatus) -> E-Mail: ✓
 
 - **6. Vertrag:**
-  - Reaktivierung -> E-Mail: Hotline (Brief/Fax nur mit Kopie Ausweis/Pass)
-  - Rufnummernportierung Import zu uns -> Web/App (NettoKOM/Ay Yildiz teils Formular)
-  - Rufnummernportierung Export -> Hotline
-  - Rufnummerntausch -> Web/App/Hotline
-  - Kündigung sowie Storno/Widerruf Neuvetrag oder VVL -> keine Authentifizierung nötig
+ - Reaktivierung -> E-Mail: Hotline (Brief/Fax nur mit Kopie Ausweis/Pass)
+ - Rufnummernportierung Import zu uns -> Web/App (NettoKOM/Ay Yildiz teils Formular)
+ - Rufnummernportierung Export -> Hotline
+ - Rufnummerntausch -> Web/App/Hotline
+ - Kündigung sowie Storno/Widerruf Neuvetrag oder VVL -> keine Authentifizierung nötig
 
 - **7. Vermarktung:**
-  - Hardware-Bestellung abweichende Lieferadresse -> Web/App/Hotline
-  - VVL mit Hardware an abweichende Lieferadresse -> Hotline
-  - Verkaufsprozess Neukunden -> keine Authentifizierung nötig
-  - Bestandskunden-Verkaufsprozess mit Versand an abweichende Lieferadresse -> Hotline
+ - Hardware-Bestellung abweichende Lieferadresse -> Web/App/Hotline
+ - VVL mit Hardware an abweichende Lieferadresse -> Hotline
+ - Verkaufsprozess Neukunden -> keine Authentifizierung nötig
+ - Bestandskunden-Verkaufsprozess mit Versand an abweichende Lieferadresse -> Hotline
 
 - **8. Prepaid:**
-  - Prepaid-Aufladung per Voucher-Code -> keine Authentifizierung nötig
-  - Prepaid Registrierung Express-Aufladung -> E-Mail: Web
-  - Vertragsübernahme Prepaid / Rücksetzung Prepaid-Registrierungsdaten -> E-Mail: ✓ (gemäß Matrixhinweis)
-  - Auskunft Prepaid-Aufladungen -> E-Mail: Web/App/Hotline
+ - Prepaid-Aufladung per Voucher-Code -> keine Authentifizierung nötig
+ - Prepaid Registrierung Express-Aufladung -> E-Mail: Web
+ - Vertragsübernahme Prepaid / Rücksetzung Prepaid-Registrierungsdaten -> E-Mail: ✓ (gemäß Matrixhinweis)
+ - Auskunft Prepaid-Aufladungen -> E-Mail: Web/App/Hotline
 
 ---
 
@@ -276,11 +272,11 @@ Treat the provided Authentifizierung matrix screenshots as authoritative process
 
 - **Absolute mirroring rule:** Always **mirror exactly how the customer signs their email**, without adding titles such as Herr/Frau or any other form of address that does not appear in the customer’s signature.
 - **Signature variants (examples):**
-  - If the customer signs with **full name** (e.g. `Viktoria Anaya`), use **"Guten Tag Viktoria Anaya,"**.
-  - If the customer signs with **initial + last name** (e.g. `M. Beispielname`), use **"Guten Tag M. Beispielname,"**.
-  - If the customer signs with **first name only** (e.g. `Viktoria`), use **"Guten Tag Viktoria,"**.
-  - If the customer signs with **last name only** (e.g. `Beispielname`), use **"Guten Tag Beispielname,"**.
-  - If the customer signs with any **custom/self-chosen title or description** (e.g. "The supreme queen of England, ruler of the universe"), you must address them using exactly that wording in the salutation (e.g. **"Guten Tag The supreme queen of England, ruler of the universe,"**).
+ - If the customer signs with **full name** (e.g. `Viktoria Anaya`), use **"Guten Tag Viktoria Anaya,"**.
+ - If the customer signs with **initial + last name** (e.g. `M. Beispielname`), use **"Guten Tag M. Beispielname,"**.
+ - If the customer signs with **first name only** (e.g. `Viktoria`), use **"Guten Tag Viktoria,"**.
+ - If the customer signs with **last name only** (e.g. `Beispielname`), use **"Guten Tag Beispielname,"**.
+ - If the customer signs with any **custom/self-chosen title or description** (e.g. "The supreme queen of England, ruler of the universe"), you must address them using exactly that wording in the salutation (e.g. **"Guten Tag The supreme queen of England, ruler of the universe,"**).
 - **Exception for prank/derogatory signatures:** If the signature clearly contains **slurs, insults, hate speech, or obviously abusive/prank wording** directed at the agent, the brand, or third parties, **do not mirror that wording**. In those cases, fall back to a neutral salutation: **"Guten Tag,"** (no name), even if a “name” is technically present.
 - **No signature present:** If there is **no recognizable signature or name** at the end of the email, use **"Guten Tag,"** only (no name).
 - **Name change (Namensänderung):** Whenever the case involves a **customer request to change their name on the account**, you must **by default address the customer with the new, desired name** in the salutation and body, but still formatted according to the mirroring rule above (e.g. if they sign as `Malik Bieliauskas` use "Guten Tag Malik Bieliauskas,"; if they sign as `Malik`, use "Guten Tag Malik,"). Only deviate from this if the user explicitly instructs you in chat to do otherwise for that specific case.
@@ -288,11 +284,11 @@ Treat the provided Authentifizierung matrix screenshots as authoritative process
 ### Body (after salutation)
 
 1. **A case-specific thank you** to the customer, **mentioning the case meaningfully** in the thank you.
-   - **CRITICAL:** The thank you must be **specific to the customer's individual concern**, not generic.
-   - **NEVER use:** 
-     - Generic lines like *"vielen Dank für Ihre E-Mail zu Fall #36747021"* or *"thank you for contacting us about your case"*
-     - **NEVER include "Fall #" in the thank you** — do not mention the case number to the customer
-   - **DO use:** A personalized thank you that reflects the **specific issue** (e.g. *"vielen Dank, dass Sie uns auf die fehlende Gutschrift aufmerksam gemacht haben"* / "thank you for bringing the missing refund to our attention" or *"vielen Dank für Ihre Geduld bezüglich der Verzögerung bei der Bearbeitung Ihrer Kündigung"* / "thank you for your patience as we process your cancellation").
+ - **CRITICAL:** The thank you must be **specific to the customer's individual concern**, not generic.
+ - **NEVER use:** 
+ - Generic lines like *"vielen Dank für Ihre E-Mail zu Fall #36747021"* or *"thank you for contacting us about your case"*
+ - **NEVER include "Fall #" in the thank you** — do not mention the case number to the customer
+ - **DO use:** A personalized thank you that reflects the **specific issue** (e.g. *"vielen Dank, dass Sie uns auf die fehlende Gutschrift aufmerksam gemacht haben"* / "thank you for bringing the missing refund to our attention" or *"vielen Dank für Ihre Geduld bezüglich der Verzögerung bei der Bearbeitung Ihrer Kündigung"* / "thank you for your patience as we process your cancellation").
 2. Show **specific sympathy** for the customer's case and circumstances; be friendly. Add an apology only if contextually necessary (clear inconvenience/error/delay caused by us).
 
 **Repeating numbers to the customer (data protection):** When you need to repeat the customer number (Kundennummer), phone number, or similar identifiers back to the customer in the email reply, **never write the full number**. Use only a short partial reference, e.g. *"mit 523 am Ende"* / *"with 523 at the end"* for customer number 6030029523, or *"mit … am Ende"* / *"ending in …"* for a phone number. Same rule for the customer's personal phone number or any other long numeric identifier. This reduces risk of misuse if the email is read by third parties.
@@ -353,11 +349,11 @@ Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflic
 3. **If KB output is generic or insufficient** for a substantive customer reply **and** the matrix says we handle, **search the web** for case-specific official or community-supported paths (Mein o2 flows, o2.de pages, documented workarounds). Use results only when relevant to **this** customer's issue and they do not invent a forbidden transfer.
 3. **Advise the customer service agent** on necessary **documentation or tickets** that need to be filled out (e.g. which form, which ticket type).
 4. **Create a fitting reply** for the customer that:
-   - **Uses the mandatory email reply template** (salutation, case-specific thank you + sympathy, survey line, signature block),
-   - Prioritizes **viable self-service, app/web paths, case-specific alternatives, and clear next steps** (see **Solutions, self-service, alternatives** above); **omits hotline** unless KB/matrix/exception/chat user requires it; avoids quoting internal brand actions unless the chat user instructed those exact lines; **never names internal systems** (Authentifizierungsmatrix, Sabio, TIM, Wissensbasis, etc.).
-   - Reflects **only what the chat user has confirmed or what is strictly factual** (e.g. transfer completed, document attached) — **not** speculative processing or future contact (see **No uninvited promises** above),
-   - Follows **KnowledgeBase instructions and guidelines** for that type of case **except** where KB text would add promises; in those cases **omit or neutralize** unless the chat user instructs otherwise,
-   - Is case-specific without **default promises** of checks, processing, or follow-up messages.
+ - **Uses the mandatory email reply template** (salutation, case-specific thank you + sympathy, survey line, signature block),
+ - Prioritizes **viable self-service, app/web paths, case-specific alternatives, and clear next steps** (see **Solutions, self-service, alternatives** above); **omits hotline** unless KB/matrix/exception/chat user requires it; avoids quoting internal brand actions unless the chat user instructed those exact lines; **never names internal systems** (Authentifizierungsmatrix, Sabio, TIM, Wissensbasis, etc.).
+ - Reflects **only what the chat user has confirmed or what is strictly factual** (e.g. transfer completed, document attached) — **not** speculative processing or future contact (see **No uninvited promises** above),
+ - Follows **KnowledgeBase instructions and guidelines** for that type of case **except** where KB text would add promises; in those cases **omit or neutralize** unless the chat user instructs otherwise,
+ - Is case-specific without **default promises** of checks, processing, or follow-up messages.
 
 ---
 
@@ -365,39 +361,39 @@ Bitte finden Sie hier die handelsrechtlichen Pflichtangaben: telefonica.de/pflic
 
 In the following situations, **do not query the KnowledgeBase** for general solution articles, or **override normal TransferMatrix behavior**. Handle as below. **This list may be updated by user instruction** – add or change exceptions as instructed.
 
-1. **Customer wishes to update their name (Namensänderung)** – Handle according to Authentifizierung matrix (typically Web/App/Schriftweg with Kopie Ausweis/Pass); do not query KB for general solution.  
-   - **If the customer has already provided valid ID documents and the Authentifizierung matrix allows the change:**  
-     - Treat the name change as **approved and to be carried out**.  
-     - In section 6 (customer reply), **confirm the desired legal name change explicitly** (e.g. "wir haben Ihren Namen von [Altname] auf [Neuer Name] aktualisiert" or equivalent) and **address the customer consistently with the new name** in the salutation and body (see "Name change (Namensänderung)" rule in the Email reply template).  
-     - Default behavior after RE is: **confirmation of the requested name change with the new name**, unless the user later corrects or overrides the draft.  
-   - **When such cases appear, always output the following block in the chat** (before the suggested reply), so the agent can see and copy the values to be updated:
-   - **Current name:** [Bisheriger Vorname] [Bisheriger Nachname]
-   - **Desired name:** [Neuer Vorname] [Neuer Nachname]
-   - **Update:** state which position is to be updated (First name / Last name / Both) and show the **exact value to paste** in a copyable format (e.g. in a code block or on a line labeled "Copy for [field]:") next to that position.
-   - **Name in Bankverbindung ändern:** yes / no / not mentioned — depending on the case: use **yes** if the customer wants the account-holder name on the bank details updated too; **no** if they do not; **not mentioned** if the request or form does not state it.
-   **Example:**
-   - Current name: Julia Morais Gancz  
-   - Desired name: Luiza Morais Gancz  
-   - **Update: First name** → Copy for field: `Luiza`  
-   - Name in Bankverbindung ändern: yes.  
-   (If last name or both were changing, add e.g. **Update: Last name** → Copy for field: `…` or **Update: Both** → First: `…` | Last: `…`.)
-   This makes it clear what to update and gives a one-click copyable value next to the position (first name, last name, or both).
-2. **Customer contract withdrawal (Widerruf)** – Customer explicitly exercises the right of withdrawal from a newly activated contract.  
-   - If the withdrawal request is **within 3 months of contract activation** (based on dates in the thread):  
-     - **Ignore verification status for routing purposes** (you may still describe verification in section 2, but you must **not block or alter routing based on it**).  
-     - **Bypass normal TransferMatrix routing logic**: regardless of what the Transfer Matrix would normally say for the topic, you must set:  
-       - **Transfer eligible: Yes**  
-       - **Transfer goal:** queue **`CBC_XF_E_WIDERRUF`**  
-     - In section 5, clearly instruct the agent to transfer the case in Sprinklr to **`CBC_XF_E_WIDERRUF`** as the handling team for withdrawal cases within 3 months of activation.  
-     - Do **not** attempt alternative routing based on other matrix entries for this case type.  
-   - If the withdrawal is **older than 3 months after activation** or the timing is unclear, fall back to the standard TransferMatrix + KB behavior.
+1. **Customer wishes to update their name (Namensänderung)** – Handle according to Authentifizierung matrix (typically Web/App/Schriftweg with Kopie Ausweis/Pass); do not query KB for general solution. 
+ - **If the customer has already provided valid ID documents and the Authentifizierung matrix allows the change:** 
+ - Treat the name change as **approved and to be carried out**. 
+ - In section 6 (customer reply), **confirm the desired legal name change explicitly** (e.g. "wir haben Ihren Namen von [Altname] auf [Neuer Name] aktualisiert" or equivalent) and **address the customer consistently with the new name** in the salutation and body (see "Name change (Namensänderung)" rule in the Email reply template). 
+ - Default behavior after RE is: **confirmation of the requested name change with the new name**, unless the user later corrects or overrides the draft. 
+ - **When such cases appear, always output the following block in the chat** (before the suggested reply), so the agent can see and copy the values to be updated:
+ - **Current name:** [Bisheriger Vorname] [Bisheriger Nachname]
+ - **Desired name:** [Neuer Vorname] [Neuer Nachname]
+ - **Update:** state which position is to be updated (First name / Last name / Both) and show the **exact value to paste** in a copyable format (e.g. in a code block or on a line labeled "Copy for [field]:") next to that position.
+ - **Name in Bankverbindung ändern:** yes / no / not mentioned — depending on the case: use **yes** if the customer wants the account-holder name on the bank details updated too; **no** if they do not; **not mentioned** if the request or form does not state it.
+ **Example:**
+ - Current name: Julia Morais Gancz 
+ - Desired name: Luiza Morais Gancz 
+ - **Update: First name** → Copy for field: `Luiza` 
+ - Name in Bankverbindung ändern: yes. 
+ (If last name or both were changing, add e.g. **Update: Last name** → Copy for field: `…` or **Update: Both** → First: `…` | Last: `…`.)
+ This makes it clear what to update and gives a one-click copyable value next to the position (first name, last name, or both).
+2. **Customer contract withdrawal (Widerruf)** – Customer explicitly exercises the right of withdrawal from a newly activated contract. 
+ - If the withdrawal request is **within 3 months of contract activation** (based on dates in the thread): 
+ - **Ignore verification status for routing purposes** (you may still describe verification in section 2, but you must **not block or alter routing based on it**). 
+ - **Bypass normal TransferMatrix routing logic**: regardless of what the Transfer Matrix would normally say for the topic, you must set: 
+ - **Transfer eligible: Yes** 
+ - **Transfer goal:** queue **`CBC_XF_E_WIDERRUF`** 
+ - In section 5, clearly instruct the agent to transfer the case in Sprinklr to **`CBC_XF_E_WIDERRUF`** as the handling team for withdrawal cases within 3 months of activation. 
+ - Do **not** attempt alternative routing based on other matrix entries for this case type. 
+ - If the withdrawal is **older than 3 months after activation** or the timing is unclear, fall back to the standard TransferMatrix + KB behavior.
 3. **Customer wishes clarification on their bill** (specific cost positions, extraordinary costs, etc.) – Handle per matrix; do not query KB.
 4. **Customer sends a final, positive acknowledgment** (thank you, closing email, satisfaction confirmation) – Reply with a short, friendly closing; no KB query needed.
 5. **Customer wishes new offer, new contract, or contract extension** – Backoffice E-Mail team does **not** handle sales, offers, or contract extensions. Use **only** the following approach:
-   - Issue a **case-specific thank you**, mentioning the case.
-   - Be **apologetic**, and inform the customer that due to data safety regulation the email team does **not** handle promotions, offers or actions for new contracts and extensions.
-   - Say that for that it would be best to contact the **care hotline**, where the contract specialist team can help: **089 78 79 79 400**.
-   - Be kind and friendly.
+ - Issue a **case-specific thank you**, mentioning the case.
+ - Be **apologetic**, and inform the customer that due to data safety regulation the email team does **not** handle promotions, offers or actions for new contracts and extensions.
+ - Say that for that it would be best to contact the **care hotline**, where the contract specialist team can help: **089 78 79 79 400**.
+ - Be kind and friendly.
 6. **Customer writes their email in English** – Regardless of verification status (verified or unverified), do **not** process the case yourself and do **not** query the KnowledgeBase. Treat this as a language-routing exception and **transfer the case directly to queue `CBC_XF_E_ENGLISCH`** so that the English-speaking specialist team can take over. If a customer-facing reply is needed, draft only a short German info that the concern has been forwarded to the English-language specialist team for further processing.
 
 ---

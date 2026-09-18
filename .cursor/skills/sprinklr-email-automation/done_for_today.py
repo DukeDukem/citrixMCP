@@ -35,6 +35,7 @@ _KILL_CMDLINE_MARKERS = (
     "teleprompter_ui.py",
     "--watch-speichern",
     "--continue-after-speichern",
+    "auto_lf_watchdog.py",
 )
 
 # Never kill ourselves or the Cursor host by broad matches alone.
@@ -47,7 +48,6 @@ _SAFE_SKIP = (
 def _clear_session_flags() -> None:
     state_dir = _REPO / ".cursor" / "state"
     for name in (
-        "re_pending_sound.json",
         "fall_watch_primed.json",
         "first_re_once.json",
         "arm_watch.json",
@@ -64,6 +64,8 @@ def _clear_session_flags() -> None:
         "extract_ready.json",
         "auto_continue_dispatched.json",
         "monitoring_armed.json",
+        "auto_lf_watchdog.json",
+        "auto_lf_watchdog.log",
     ):
         path = state_dir / name
         if path.exists():

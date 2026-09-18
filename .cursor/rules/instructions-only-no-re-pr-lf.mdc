@@ -49,10 +49,10 @@ Also do **not** partially run case steps (no CDP Sprinklr reads "just to check" 
 The stop hook should only fire in the email processing chat.
 
 Go to the email processing chat — agent must write the 7-step and Auto-LF there.
-Sounds are operator audio cues only; they do not file Case Tracker.
+Silent pipeline only (await-arm + extract_ready + re_auto_lf_hook). No audio.
 ```
 
-3. **Do not** assume background Auto-LF from a sound hook — that path was removed.
+3. **Do not** run Auto-LF / case processing here — that belongs in the email chat via `re_auto_lf_hook` after section 7.
 4. **Do not** arm `--closeout-anwenden`, `--closeout-weiter`, or any arm command here.
 
 **Prevention:** Keep the **email processing chat** in focus during a shift. Switch to this instructions chat only between cases or after DONE.
@@ -88,7 +88,7 @@ The **email processing agent chat** (startup: **`EMAIL-PROCESSING-AGENT.md`**) r
 
 - **login** — Sprinklr + Case Tracker tab
 - **RE** — Anwenden-gated auto-RE (or `--once`) → 7-step RE
-- **RE** — extract → 7-step + Auto-LF  
+- **RE** — extract → 7-step + Auto-LF 
 - **PR** — paste reply (then Anwenden arm; LF already done at RE)
 
 ## Bonus chat

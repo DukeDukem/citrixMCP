@@ -221,12 +221,43 @@ def run_from_text(text: str) -> int:
     )
     _mark_done(case_id, transfer=tflag, target=target or "", closeout=closeout)
     crc = _run_closeout(tflag, target)
+    _ensure_auto_lf_watchdog()
     _log(f"AUTO_LF_AFTER_RE_DONE case={case_id} closeout={closeout} closeout_rc={crc}")
     if tflag == "1":
         print(f"LF TR done for {case_id}", flush=True)
     else:
         print(f"LF done for {case_id} — armed, awaiting PR or Anwenden.", flush=True)
     return 0 if crc == 0 else crc
+
+
+def _ensure_auto_lf_watchdog() -> None:
+    """Keep detached watchdog alive so missed hooks still Auto-LF."""
+    try:
+        meta = _STATE / "auto_lf_watchdog.json"
+        if meta.exists():
+            data = json.loads(meta.read_text(encoding="utf-8"))
+            pid = int(data.get("pid") or 0)
+            if pid > 0:
+                try:
+                    os.kill(pid, 0)
+                    return  # still running
+                except OSError:
+                    pass
+        wd = Path(__file__).resolve().parent / "auto_lf_watchdog.py"
+        if wd.exists():
+            subprocess.Popen(
+                [sys.executable, str(wd), "--spawn"],
+                cwd=str(_REPO),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=(0x08000000 | 0x00000200) if sys.platform == "win32" else 0,
+                close_fds=False if sys.platform == "win32" else True,
+            )
+            _log("AUTO_LF_WATCHDOG_ENSURE spawned")
+    except Exception as e:
+        _log(f"watchdog_ensure_failed={e!r}")
+
 
 
 def spawn_self_from_hook(text: str) -> int | None:
