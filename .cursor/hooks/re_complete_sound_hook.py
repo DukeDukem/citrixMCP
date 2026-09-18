@@ -27,6 +27,11 @@ _SECTION7_PATTERNS = (
     re.compile(r"(?mi)7\.\s*Summary of response"),
     re.compile(r"(?mi)Summary of response\s*\(EN\)"),
 )
+# Explicit end-of-RE marker (agent always types this after §7)
+_RE_COMPLETE_MARKERS = (
+    re.compile(r"(?mi)7-step\s+complete"),
+    re.compile(r"(?mi)Auto-LF\s+starts\s+after\s+this\s+message"),
+)
 _SECTION1_PATTERNS = (
     re.compile(r"(?mi)^\s*#{0,3}\s*\*{0,2}\s*1\.\s*Customer(?:\s+case)?\s+summary"),
     re.compile(r"(?mi)1\.\s*Customer(?:\s+case)?\s+summary"),
@@ -100,18 +105,33 @@ def _extract_text(payload: dict) -> str:
 
 
 def _should_play_re_ready(text: str) -> bool:
-    if not _any(text, _SECTION7_PATTERNS):
+    """True when a full EMAIL 7-step just appeared (or its end marker)."""
+    if not text:
         return False
+    has_s7 = _any(text, _SECTION7_PATTERNS)
+    has_done = _any(text, _RE_COMPLETE_MARKERS)
+    if not has_s7 and not has_done:
+        return False
+    # End marker alone is enough (agent always types it after §7)
+    if has_done:
+        return True
     if is_re_pending_sound():
         return True
     return _any(text, _SECTION1_PATTERNS) or _any(text, _SECTION6_PATTERNS)
 
 
 def _save_latest_re_visible(text: str) -> None:
-    """Backup full agent RE to disk when section 7 is present (UI collapse fallback)."""
-    if not text or not _any(text, _SECTION7_PATTERNS):
+    """Backup full agent RE to disk when section 7 / complete marker is present."""
+    if not text:
         return
-    if not (_any(text, _SECTION1_PATTERNS) or _any(text, _SECTION6_PATTERNS)):
+    if not (_any(text, _SECTION7_PATTERNS) or _any(text, _RE_COMPLETE_MARKERS)):
+        return
+    if not (
+        _any(text, _SECTION1_PATTERNS)
+        or _any(text, _SECTION6_PATTERNS)
+        or _any(text, _SECTION7_PATTERNS)
+        or _any(text, _RE_COMPLETE_MARKERS)
+    ):
         return
     try:
         _STATE.mkdir(parents=True, exist_ok=True)
@@ -169,7 +189,11 @@ def _read_stdin_payload() -> dict:
 
 
 def _spawn_auto_lf_after_re(text: str) -> None:
-    """One Auto-LF after full 7-step is visible — never at extract."""
+    """One Auto-LF after full 7-step is visible — never at extract.
+
+    Writes the RE text to disk, then starts --run directly (single process).
+    Logs spawn pid; worker logs to auto_lf_after_re.log.
+    """
     try:
         import subprocess
 
@@ -177,20 +201,48 @@ def _spawn_auto_lf_after_re(text: str) -> None:
         if not worker.exists():
             _log("auto_lf_after_re.py missing")
             return
+        _STATE.mkdir(parents=True, exist_ok=True)
+        text_path = _STATE / "auto_lf_after_re_input.txt"
+        # Prefer live hook text; fall back to latest_re_visible already on disk
+        payload = (text or "").strip()
+        if not payload and _LATEST_RE_VISIBLE.exists():
+            payload = _LATEST_RE_VISIBLE.read_text(encoding="utf-8", errors="replace")
+        if payload:
+            text_path.write_text(payload, encoding="utf-8")
+            if not _LATEST_RE_VISIBLE.exists() or len(payload) > 200:
+                try:
+                    _LATEST_RE_VISIBLE.write_text(payload.strip() + "\n", encoding="utf-8")
+                except Exception:
+                    pass
+        elif not text_path.exists() and not _LATEST_RE_VISIBLE.exists():
+            _log("auto_lf_after_re spawn aborted — no RE text")
+            return
+
         creationflags = 0
         if sys.platform == "win32":
-            creationflags = 0x08000000 | 0x00000200
-        # Prefer saved latest_re_visible; also pass text via spawn's write
-        subprocess.Popen(
-            [sys.executable, str(worker), "--spawn", "--text-file", str(_LATEST_RE_VISIBLE)],
-            cwd=str(_REPO),
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            creationflags=creationflags,
-            close_fds=False if sys.platform == "win32" else True,
-        )
-        _log("auto_lf_after_re spawn requested")
+            creationflags = 0x08000000 | 0x00000200  # CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP
+        err_log = _STATE / "auto_lf_after_re_spawn.err"
+        err_f = open(err_log, "a", encoding="utf-8")
+        try:
+            err_f.write(f"\n--- spawn {datetime.now(timezone.utc).isoformat()} ---\n")
+            err_f.flush()
+            proc = subprocess.Popen(
+                [sys.executable, str(worker), "--run", "--text-file", str(text_path)],
+                cwd=str(_REPO),
+                stdin=subprocess.DEVNULL,
+                stdout=err_f,
+                stderr=err_f,
+                creationflags=creationflags,
+                close_fds=False if sys.platform == "win32" else True,
+            )
+        finally:
+            # Child keeps the handle; parent must not close yet on Windows if inherited —
+            # close our reference; child has its own dup.
+            try:
+                err_f.close()
+            except Exception:
+                pass
+        _log(f"auto_lf_after_re spawn requested pid={proc.pid} text_len={len(payload)}")
     except Exception as e:
         _log(f"auto_lf_after_re spawn failed: {e!r}")
 
@@ -232,6 +284,20 @@ def main() -> int:
         clear_re_pending_sound()
         _log(f"re_ready_book ok={ok}")
         return _ok()
+
+    # stop often has text_len=0 — backup spawn if RE was saved seconds ago and LF not done
+    if (not text) and str(event).lower() in ("stop", ""):
+        try:
+            if _LATEST_RE_VISIBLE.exists():
+                age = time.time() - _LATEST_RE_VISIBLE.stat().st_mtime
+                if age < 90:
+                    saved = _LATEST_RE_VISIBLE.read_text(encoding="utf-8", errors="replace")
+                    if _should_play_re_ready(saved) and _debounce_allow("re_ready_stop_backup"):
+                        _log(f"stop_backup_spawn age={age:.1f}s len={len(saved)}")
+                        _spawn_auto_lf_after_re(saved)
+                        return _ok()
+        except Exception as e:
+            _log(f"stop_backup_spawn failed: {e!r}")
 
     _log("no_sound_match")
     return _ok()
